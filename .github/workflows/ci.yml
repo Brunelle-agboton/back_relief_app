@@ -1,0 +1,71 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test-backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_HOST: db
+          POSTGRES_USER: backrelief
+          POSTGRES_PASSWORD: password100
+          POSTGRES_DB: healthtracker
+          PGDATA: customDataFolder
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
+
+    - name: Install backend dependencies
+      working-directory: ./backend
+      run: npm install
+
+    - name: Build backend
+      working-directory: ./backend
+      run: npm run build
+
+    - name: Run backend tests
+      working-directory: ./backend
+      run: npm run test
+
+    - name: Healthcheck backend
+      run: |
+        docker compose up -d backend
+        sleep 10
+        curl --fail http://localhost:3000/health || exit 1
+
+  build-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
+
+    - name: Install frontend dependencies
+      working-directory: ./front-client
+      run: npm install
+
+    - name: Lint frontend code
+      working-directory: ./front-client
+      run: npm run lint || echo "Linting failed"
