@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  api:
+    build: 
+      dockerfile: "Dockerfile"
+      context: .
+    ports:
+      - "3000:3000"
+    command: npm run start:dev
+    volumes:
+      - .:/api
+      - /api/node_modules
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_USER: backrelief
+      POSTGRES_PASSWORD: password100
+      POSTGRES_DB: healthtracker
+      PGDATA: customDataFolder
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./dbData:/var/lib/postgresql/data/customDataFolder
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d healthtracker -U backrelief" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
