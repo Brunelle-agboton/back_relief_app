@@ -9,11 +9,14 @@ on:
 jobs:
   build-and-test-backend:
     runs-on: ubuntu-latest
+    
+    env:
+      MODE: DEV 
+
     services:
       postgres:
         image: postgres
         env:
-          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DATABASE }}
@@ -39,9 +42,11 @@ jobs:
     - name: Build backend
       working-directory: ./backend
       run: npm run build
+
     - name: Create .env file
       run: |
-        echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> backend/.env
+        echo "MODE=DEV" >> backend/.env
+        echo "POSTGRES_HOST=localhost" >> backend/.env
         echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> backend/.env
         echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> backend/.env
         echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> backend/.env
@@ -53,7 +58,7 @@ jobs:
 
     - name: Healthcheck backend
       run: |
-        docker compose up -d backend
+        npm run start:dev &
         sleep 10
         docker logs $(docker ps -q --filter name=backend)
         curl --fail http://localhost:3000/health || exit 1
