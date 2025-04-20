@@ -48,7 +48,7 @@ jobs:
       run: |
         docker compose up -d backend
         sleep 10
-        docker logs $(docker ps -q --filter name=backrelief_api)
+        docker logs $(docker ps -q --filter name=backend)
         curl --fail http://localhost:3000/health || exit 1
 
   build-frontend:
