@@ -9,8 +9,11 @@ services:
     command: npm run start:dev
     volumes:
       - ./backend/:/api
-    env_file:
-      - ./backend/.env
+    environment:
+      - POSTGRES_HOST
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
     depends_on:
       db:
         condition: service_healthy
