@@ -1,9 +1,25 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { DataSource } from 'typeorm';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    preflightContinue: false,
+  });
+
+  const dataSource = app.get(DataSource);
+  try {
+    await dataSource.initialize();
+    console.log('Database connection successful');
+  } catch (error) {
+    console.error('Database connection failed', error);
+  }
+  
   const config = new DocumentBuilder()
     .setTitle('Health Tracker API')
     .setDescription('API for health tracking app')
