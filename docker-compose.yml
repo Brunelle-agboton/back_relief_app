@@ -8,6 +8,7 @@ services:
     command: npm run start:dev
     volumes:
       - ./backend/:/api
+      - ./front-client/assets/images:/front-client/assets/images:ro
     env_file:
       - ./backend/.env
     environment:

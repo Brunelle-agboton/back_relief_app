@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DataSource } from 'typeorm';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { seedRest } from './modules/rest/seeds/rest.seed';
+import { Rest } from './modules/rest/entities/rest.entity';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,10 +16,18 @@ async function bootstrap() {
 
   const dataSource = app.get(DataSource);
   try {
-    await dataSource.initialize();
-    console.log('Database connection successful');
+     // Vérification si les données ont déjà été seed
+    const restRepository = dataSource.getRepository(Rest);
+    const existingData = await restRepository.count();
+    if (existingData === 0) {
+      console.log('Seeding database...');
+      await seedRest(dataSource);
+      console.log('Seeding completed.');
+    } else {
+      console.log('Database already seeded. Skipping seed.');
+    }
   } catch (error) {
-    console.error('Database connection failed', error);
+    console.error('failed', error);
   }
   
   const config = new DocumentBuilder()

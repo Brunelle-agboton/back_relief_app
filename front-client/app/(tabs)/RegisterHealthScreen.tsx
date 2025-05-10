@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, TextInput, StyleSheet } from 'react-native';
+import { View, Text, Button, TextInput, StyleSheet, ScrollView } from 'react-native';
 import Slider from '@react-native-community/slider';
 import BodyMap from '../../components/BodyMap';
 import { getUserId } from '../../utils/storage';
 import { useRouter } from 'expo-router';
-
-
 import api from '../../services/api';
 import {useNavigation, NavigationProp } from '@react-navigation/native';
 
@@ -42,7 +40,6 @@ export default function RegisterHealthScreen() {
     const response = await api.post('/health/pain', { userId, painLocation, painLevel, description });
     if (response.data) {
       router.push('/pauseActive');
-      alert('Données envoyées avec succès');
     } else {
       alert('Erreur lors de l\'envoi des données');
     }
@@ -53,13 +50,13 @@ export default function RegisterHealthScreen() {
   };
 
   return (
-    <View>
+    <ScrollView>
       <Text>Où avez-vous mal ?</Text>
 
       <View style={{ height: 450, marginBottom: 6 }}>
         <BodyMap onSelect={setLocation} />
       </View>
-      <Text style={{ marginBottom: 8 }}>Localisation de la douleur : {painLocation}</Text>
+      <Text style={{ marginBottom: 5 }}>Localisation de la douleur : {painLocation}</Text>
 
       <Text>Souhaitez vous decrire la douleur ?</Text>
       <TextInput
@@ -83,7 +80,7 @@ export default function RegisterHealthScreen() {
       />
 
       <Button title="Envoyer" onPress={submit} />
-    </View>
+    </ScrollView>
   );
 }
 

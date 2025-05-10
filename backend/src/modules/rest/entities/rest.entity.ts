@@ -12,6 +12,17 @@ export class Rest {
     contentDescription: String;
 
     @Column()
-    content: String;
+    duration: Number;
 
+    @Column()
+    position: String;
+
+    @Column()
+    calories: Number;
+
+    @Column()
+    image: String;  
+
+    @Column()
+    category: String;
 }

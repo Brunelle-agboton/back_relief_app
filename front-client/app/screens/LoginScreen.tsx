@@ -3,6 +3,7 @@ import { View, TextInput, Button, Text, StyleSheet } from 'react-native';
 import api from '../../services/api';
 import { saveToken } from '../../utils/storage';
 import {useNavigation, NavigationProp } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 
 type RootStackParamList = {
   'screens/RegisterHealthScreen': undefined;
@@ -11,7 +12,7 @@ type RootStackParamList = {
 
 export default function LoginScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -26,7 +27,7 @@ export default function LoginScreen() {
   
       // Stocke le token pour les prochains appels API
       await saveToken(token);   
-      navigation.navigate('screens/RegisterHealthScreen');
+      router.push('/pauseActive');
       console.log('Navigation vers RegisterHealthScreen réussie');
     } catch (e) {
       setError('Identifiants invalides');

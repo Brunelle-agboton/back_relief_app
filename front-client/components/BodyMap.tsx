@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import Svg, { Image as SImage, Circle, RadialGradient, Stop, Defs } from 'react-native-svg';
 
-const bodyImage = require('../assets/images/body-silhouette.png');
+const bodyImage = require('../assets/images/assis.png');
 type Props = {
     onSelect: (zone: string) => void;
   };
@@ -15,7 +15,7 @@ export default function BodyMap({ onSelect }: Props) {
     };
   
     return (
-      <Svg width="100%" height="50%" viewBox="0 0 200 400">
+      <Svg width="100%" height="70%" viewBox="0 0 200 560">
         {/* Image du corps */}
         <SImage
           href={bodyImage}
@@ -35,9 +35,9 @@ export default function BodyMap({ onSelect }: Props) {
         {/* Cercle pour la tête */}
         {selectedZone === 'Tête' && (
           <Circle
-            cx={50}
+            cx={60}
             cy={170}
-            r={15}
+            r={20}
             fill="url(#redGradient)" // Applique le dégradé
           />
         )}
@@ -53,14 +53,14 @@ export default function BodyMap({ onSelect }: Props) {
         {selectedZone === 'Bas du dos' && (
           <Circle
             cx={50}
-            cy={280}
+            cy={375}
             r={20}
             fill="url(#redGradient)" // Applique le dégradé
           />
         )}
         <Circle
           cx={50}
-          cy={280}
+          cy={375}
           r={20}
           fill="transparent"
           onPress={() => handleSelect('Bas du dos')}
@@ -70,14 +70,14 @@ export default function BodyMap({ onSelect }: Props) {
         {selectedZone === 'Milieu du dos' && (
           <Circle
             cx={50}
-            cy={230}
+            cy={310}
             r={20}
             fill="url(#redGradient)" // Applique le dégradé
           />
         )}
         <Circle
           cx={50}
-          cy={230}
+          cy={310}
           r={20}
           fill="transparent"
           onPress={() => handleSelect('Milieu du dos')}

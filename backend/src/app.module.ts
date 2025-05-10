@@ -14,8 +14,11 @@ import { UserController } from './modules/user/user.controller';
 import { HealthController } from './modules/health/health.controller';
 import { RestController } from './modules/rest/rest.controller';
 import { NotificationController } from './modules/notification/notification.controller';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
-
+const imagesPath = join(__dirname, '..', '..', 'front-client', 'assets', 'images');
+console.log('→ Serving images from:', imagesPath);
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -28,6 +31,11 @@ import { NotificationController } from './modules/notification/notification.cont
     AuthModule,
     RestModule,
     NotificationModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..','..', 'front-client','assets', 'images'),
+      serveRoot: '/images',
+      exclude: ['/api*'],
+    }),
     // Other modules can be imported here
   ],
   controllers: [AppController, UserController, HealthController, AuthController, RestController, NotificationController],
@@ -35,5 +43,6 @@ import { NotificationController } from './modules/notification/notification.cont
 })
 export class AppModule {
   constructor(private dataSource: DataSource) {
+    
   }
 }
