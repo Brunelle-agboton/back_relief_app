@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet } from 'react-native';
+import { View, TextInput, Button, Text, StyleSheet, Image } from 'react-native';
 import { useNavigation,NavigationProp } from '@react-navigation/native';
 
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -27,6 +27,10 @@ export default function RegisterStep1Screen() {
 
   return (
     <View style={styles.container}>
+      <Image
+        source={require('../../assets/images/BF.png')}
+        style={styles.logo}
+      />
     <Text style={styles.title}>Créer un compte</Text>
     <View>
       <Text style={{ marginBottom: 8 }}>Username</Text>
@@ -92,5 +96,13 @@ error: {
   color: 'red',
   marginBottom: 16,
   textAlign: 'center',
+},
+logo: {
+  width: 90,
+  height: 90,
+  resizeMode: 'contain',
+  alignSelf: 'center',
+  marginBottom: 8,
+  marginTop: 16,
 },
 });

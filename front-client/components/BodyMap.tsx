@@ -15,7 +15,7 @@ export default function BodyMap({ onSelect }: Props) {
     };
   
     return (
-      <Svg width="100%" height="70%" viewBox="0 0 200 560">
+      <Svg width="90%" height="90%" viewBox="0 0 200 600" >
         {/* Image du corps */}
         <SImage
           href={bodyImage}

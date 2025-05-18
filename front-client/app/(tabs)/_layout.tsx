@@ -1,34 +1,36 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
-
-import { HapticTab } from '@/components/HapticTab';
+import { Platform, TouchableOpacity, Image } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
 
+export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
+        headerLeft: () => (
+        <Image source={require('../../assets/images/BF.png')} style={{ width: 40, height: 40, marginLeft: 8 }} />
+          ),
+          headerRight: () => (
+            <TouchableOpacity style={{ marginRight: 16 }}>
+              <Ionicons name="menu" size={28} color="#222" />
+            </TouchableOpacity>
+          ),
+        headerTitleAlign: 'center',
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: '#32CD32',
           borderTopWidth: Platform.OS === 'ios' ? 0.2 : 0,
           borderTopColor: '#e5e5e5',
-          height: Platform.OS === 'ios' ? 85 : 65,
+          height: Platform.OS === 'ios' ? 85 : 75,
           paddingTop: 12,
           paddingBottom: Platform.OS === 'ios' ? 28 : 12,
           elevation: 0,
           shadowOpacity: 0,
         },
-        tabBarActiveTintColor: '#32CD32',
+        tabBarActiveTintColor: '#fff',
         tabBarInactiveTintColor: '#666',
         tabBarLabelStyle: {
           fontSize: 12,
@@ -45,7 +47,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: 'Accueil',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
@@ -53,28 +55,28 @@ export default function TabLayout() {
       <Tabs.Screen
         name='RegisterHealthScreen'
         options={{
-          title: 'Register Health',
+          title: 'Douleur',
           tabBarIcon: ({ color }) => <Feather name="activity" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="pauseActive"
         options={{
-          title: 'Santé',
+          title: 'Exercices',
           tabBarIcon: ({ color }) => <FontAwesome6 name="person-walking" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="statsChart"
         options={{
-          title: 'Progress',
+          title: 'Progression',
           tabBarIcon: ({ color }) => <AntDesign name="linechart" size={24} color="black" />,
         }}
       />
       <Tabs.Screen
       name='mine'
       options={{
-        title: 'Mon Compte',
+        title: 'Profil',
         tabBarIcon: ({ color }) => <FontAwesome6 name="user" size={24} color={color} />,
       }}
       />

@@ -32,11 +32,10 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="screens/LoginScreen" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/RegisterHealthScreen" options={{ headerShown: false }} />
+        {/*<Stack.Screen name="screens/RegisterHealthScreen" options={{ headerShown: false }} />*/}
         <Stack.Screen name="screens/RegisterStep1Screen" options={{ headerShown: false }} />
         <Stack.Screen name="screens/RegisterStep2Screen" options={{ headerShown: false }} />
         <Stack.Screen name="screens/RegisterStep3Screen" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/PauseDetailScreen" options={{ title: 'Détails de la pause' }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

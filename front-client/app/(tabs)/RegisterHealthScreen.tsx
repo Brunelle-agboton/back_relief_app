@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, TextInput, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Button, TextInput, StyleSheet, ScrollView,TouchableOpacity } from 'react-native';
 import Slider from '@react-native-community/slider';
 import BodyMap from '../../components/BodyMap';
 import { getUserId } from '../../utils/storage';
 import { useRouter } from 'expo-router';
 import api from '../../services/api';
-import {useNavigation, NavigationProp } from '@react-navigation/native';
-
-type RootStackParamList = {
-  'pauseActive': undefined;
-}
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 export default function RegisterHealthScreen() {
   const router = useRouter();
@@ -39,7 +35,7 @@ export default function RegisterHealthScreen() {
 
     const response = await api.post('/health/pain', { userId, painLocation, painLevel, description });
     if (response.data) {
-      router.push('/pauseActive');
+      router.push('/(tabs)/pauseActive/pauseActive');
     } else {
       alert('Erreur lors de l\'envoi des données');
     }
@@ -51,24 +47,23 @@ export default function RegisterHealthScreen() {
 
   return (
     <ScrollView>
-      <Text>Où avez-vous mal ?</Text>
-
-      <View style={{ height: 450, marginBottom: 6 }}>
+      <Text style={styles.subtitle}>Où avez-vous mal ?</Text>
+      <View style={{width:'100%', height: 330, marginBottom: 0 }}>
         <BodyMap onSelect={setLocation} />
       </View>
-      <Text style={{ marginBottom: 5 }}>Localisation de la douleur : {painLocation}</Text>
+      <Text style={[{ marginBottom: 5 }, styles.enterText]}>Localisation de la douleur : {painLocation}</Text>
 
-      <Text>Souhaitez vous decrire la douleur ?</Text>
+      <Text style={styles.enterText}>Souhaitez vous decrire la douleur ?</Text>
       <TextInput
         placeholder="Décrivez la douleur"
         multiline
         numberOfLines={4}
         onChangeText={setDescription}
         value={description}
-        style={{ borderWidth: 1, borderColor: '#ccc', padding: 8, marginBottom: 16 }}
+        style={{ borderWidth: 1, borderColor: '#ccc', padding: 8, marginBottom: 5 }}
       />
       
-      <Text>Quelle est l’intensité de cette douleur ?{painLevel} / 10</Text>
+      <Text style={styles.enterText}>Quelle est l’intensité de cette douleur ?{painLevel} / 10</Text>
       <Slider
         minimumValue={1}
         maximumValue={10}
@@ -78,8 +73,14 @@ export default function RegisterHealthScreen() {
         minimumTrackTintColor={getColor(painLevel)} // Change la couleur de la piste
         thumbTintColor={getColor(painLevel)} // Change la couleur du curseur
       />
+      <TouchableOpacity
+        onPress={submit}
+        style={styles.button}>
+      <Text style={styles.buttonText}>Envoyer et Accéder aux exercices </Text>
+      <MaterialCommunityIcons name="chevron-triple-right" size={24} style={styles.icon}/>
 
-      <Button title="Envoyer" onPress={submit} />
+        </TouchableOpacity>
+      
     </ScrollView>
   );
 }
@@ -95,17 +96,38 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
   },
-  bodyMapContainer: {
-    height: 300,
-    marginBottom: 16,
-  },
   selectedText: {
     marginBottom: 8,
     fontSize: 16,
+  },
+  subtitle: {
+    fontFamily: 'Regular',
+    fontSize: 16,
+    textAlign: 'center',
+    paddingTop: 8,
+  },
+   enterText: {
+    fontFamily: 'Regular',
+    fontSize: 16,
+    paddingTop: 8,
   },
   intensityText: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 16,
+  },
+  button: {
+  flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+    marginHorizontal: 10, padding: 10, borderRadius: 30,
+  backgroundColor: '#ED6A5E' },
+  buttonText: {
+    color: '#fff',
+    fontSize: 15,
+  },
+  icon: {
+    marginLeft: 8,
+    width: 84,
+    color: '#fff',
+
   },
 });

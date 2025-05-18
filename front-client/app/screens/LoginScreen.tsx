@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet } from 'react-native';
+import { View, TextInput, Button, Text, StyleSheet, Image } from 'react-native';
 import api from '../../services/api';
 import { saveToken } from '../../utils/storage';
 import {useNavigation, NavigationProp } from '@react-navigation/native';
@@ -27,7 +27,7 @@ export default function LoginScreen() {
   
       // Stocke le token pour les prochains appels API
       await saveToken(token);   
-      router.push('/pauseActive');
+      router.push('/(tabs)/pauseActive/pauseActive');
       console.log('Navigation vers RegisterHealthScreen réussie');
     } catch (e) {
       setError('Identifiants invalides');
@@ -36,6 +36,10 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
+      <Image
+        source={require('../../assets/images/BF.png')}
+        style={styles.logo}
+      />
       <Text style={{ fontSize: 28,fontWeight: 'bold', marginBottom: 16 }}>Se connecter</Text>
 
       <View style={{ marginBottom: 16 }}>
@@ -89,4 +93,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  logo: {
+    width: 90,
+    height: 90,
+    resizeMode: 'contain',
+    alignSelf: 'center',
+    marginBottom: 8,
+    marginTop: 16,
+},
 });

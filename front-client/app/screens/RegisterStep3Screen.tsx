@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text } from 'react-native';
+import { View, TextInput, Button, Text, Image } from 'react-native';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation, NavigationProp, useRoute, RouteProp } from '@react-navigation/native';
 import api from '../../services/api';
@@ -54,6 +54,10 @@ export default function RegisterStep3Screen() {
 
   return (
     <View style={styles.container}>
+        <Image
+        source={require('../../assets/images/BF.png')}
+        style={styles.logo}
+      />
         <Text style={styles.label}>En moyenne, vous êtes assis :</Text>
         <View style={styles.row}>
         {[8, 9, 10, 12, 14].map((hours) => (
@@ -198,4 +202,12 @@ const styles = StyleSheet.create({
       color: 'red',
       marginTop: 10,
     },
+    logo: {
+    width: 90,
+    height: 90,
+    resizeMode: 'contain',
+    alignSelf: 'center',
+    marginBottom: 8,
+    marginTop: 16,
+  },
 });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TextInput, Button, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useNavigation, NavigationProp, RouteProp, useRoute } from '@react-navigation/native';
 
 type RootStackParamList = {
@@ -22,6 +22,10 @@ export default function RegisterStep2Screen() {
 
   return (
     <View style={styles.container}>
+      <Image
+  source={require('../../assets/images/BF.png')}
+  style={styles.logo}
+/>
     <Text style={styles.description}>
       Personnalisez votre expérience pour des recommandations ciblées, un suivi intelligent de vos douleurs, et des pauses actives sur mesure
     </Text>
@@ -148,4 +152,12 @@ const styles = StyleSheet.create({
     color: '#000',
     marginLeft: 8,
   },
+  logo: {
+  width: 90,
+  height: 90,
+  resizeMode: 'contain',
+  alignSelf: 'center',
+  marginBottom: 8,
+  marginTop: 16,
+},
 });
