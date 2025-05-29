@@ -2,8 +2,10 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DataSource } from 'typeorm';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { seedRest } from './modules/rest/seeds/rest.seed';
-import { Rest } from './modules/rest/entities/rest.entity';
+import { seedRestExercise } from './seed';
+import { Exercise } from './modules/exercise/entities/exercise.entity';
+import { Program } from './modules/program/entities/program.entity';
+import { ProgramLine } from './modules/program-line/entities/program-line.entity';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,11 +19,14 @@ async function bootstrap() {
   const dataSource = app.get(DataSource);
   try {
      // Vérification si les données ont déjà été seed
-    const restRepository = dataSource.getRepository(Rest);
-    const existingData = await restRepository.count();
+     const ExerciseRepository = dataSource.getRepository(Exercise);
+    const ProgramRepository = dataSource.getRepository(Program);
+    const ProgramLineRepository = dataSource.getRepository(ProgramLine);
+
+    const existingData = await ExerciseRepository.count();
     if (existingData === 0) {
       console.log('Seeding database...');
-      await seedRest(dataSource);
+      await seedRestExercise(dataSource);
       console.log('Seeding completed.');
     } else {
       console.log('Database already seeded. Skipping seed.');

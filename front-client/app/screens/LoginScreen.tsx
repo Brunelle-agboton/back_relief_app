@@ -28,7 +28,7 @@ export default function LoginScreen() {
       // Stocke le token pour les prochains appels API
       await saveToken(token);   
       router.push('/(tabs)/pauseActive/pauseActive');
-      console.log('Navigation vers RegisterHealthScreen réussie');
+      //console.log('Navigation vers RegisterHealthScreen réussie');
     } catch (e) {
       setError('Identifiants invalides');
     }

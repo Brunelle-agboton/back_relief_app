@@ -82,3 +82,7 @@ jobs:
     - name: Lint frontend code
       working-directory: ./front-client
       run: npm run lint || echo "Linting failed"
+
+    - name: Run frontend tests
+      working-directory: ./front-client
+      run: npm test

@@ -23,26 +23,30 @@ export default function RegisterStep2Screen() {
   return (
     <View style={styles.container}>
       <Image
-  source={require('../../assets/images/BF.png')}
-  style={styles.logo}
-/>
+        source={require('../../assets/images/BF.png')}
+        style={styles.logo}
+        testID="logo-image"
+      />
     <Text style={styles.description}>
       Personnalisez votre expérience pour des recommandations ciblées, un suivi intelligent de vos douleurs, et des pauses actives sur mesure
     </Text>
 
     <View style={styles.row}>
       <TouchableOpacity
+        testID="radio-homme"
         style={[styles.radioButton, sexe === 'Homme' && styles.selectedRadioButton]}
         onPress={() => setSexe('Homme')}
       />
         <Text style={styles.radioText}>Homme</Text>
       <TouchableOpacity
+        testID="radio-femme"
         style={[styles.radioButton, sexe === 'Femme' && styles.selectedRadioButton]}
         onPress={() => setSexe('Femme')}
       />
         <Text style={styles.radioText}>Femme</Text>
 
       <TouchableOpacity
+        testID="radio-nonbinaire"
         style={[styles.radioButton, sexe === 'Non-binaire' && styles.selectedRadioButton]}
         onPress={() => setSexe('Non-binaire')}
       />

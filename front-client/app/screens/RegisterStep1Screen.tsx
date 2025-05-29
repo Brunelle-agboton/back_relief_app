@@ -30,6 +30,7 @@ export default function RegisterStep1Screen() {
       <Image
         source={require('../../assets/images/BF.png')}
         style={styles.logo}
+        testID="logo-image"
       />
     <Text style={styles.title}>Créer un compte</Text>
     <View>

@@ -16,7 +16,7 @@ export class Notification {
     date: Date;
 
     @ManyToOne(() => User, (user) => user.notification)
-  user: User;
+    user: User;
 
     @Column({ default: false })
     isRead: boolean;

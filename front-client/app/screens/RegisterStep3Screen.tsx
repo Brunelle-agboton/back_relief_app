@@ -75,11 +75,13 @@ export default function RegisterStep3Screen() {
         <Text style={styles.label}>Activité physique régulière ?</Text>
         <View style={styles.row}>
             <TouchableOpacity
+            testID="exercise-yes"
                 style={[styles.option, isExercise === true ? styles.selectedOption : null]}
                 onPress={() => setIsExercise(true)}
             />
             <Text >Oui</Text>
             <TouchableOpacity
+            testID="exercise-no"
                 style={[styles.option, isExercise === false && styles.selectedOption]}
                 onPress={() => setIsExercise(false)}
             />
@@ -93,6 +95,7 @@ export default function RegisterStep3Screen() {
             {[1, 2, 3, 4].map((times) => (
                 <TouchableOpacity
                 key={times}
+                testID={`training-${times}`}
                 style={[styles.option, parseInt(numberTraining, 10) === times && styles.selectedOption]}
                 onPress={() => setNumberTraining(times.toString())}
                 >
@@ -109,11 +112,13 @@ export default function RegisterStep3Screen() {
             <View style={styles.radioGroup}>
             <View style={styles.radioOption}>
               <TouchableOpacity
+              testID='reset-yes'
               style={[styles.option, restReminder === true && styles.selectedRadioButton]}
               onPress={() => setRestReminder(true)}
               />
                 <Text style={styles.radioText}>Oui</Text>
             <TouchableOpacity
+              testID='reset-no'
               style={[styles.option, restReminder === false && styles.selectedRadioButton]}
               onPress={() => setRestReminder(false)}
             />
@@ -128,11 +133,13 @@ export default function RegisterStep3Screen() {
             <View style={styles.radioOption}>
 
               <TouchableOpacity
+                testID='drink-yes'
                 style={[styles.option, drinkReminder === true && styles.selectedRadioButton]}
                 onPress={() => setDrinkReminder(true)}
               />
                 <Text style={styles.radioText}>Oui</Text>
               <TouchableOpacity
+                testID='drink-no'
                 style={[styles.option, drinkReminder === false && styles.selectedRadioButton]}
                 onPress={() => setDrinkReminder(false)}
               />
