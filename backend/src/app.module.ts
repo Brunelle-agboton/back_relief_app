@@ -38,9 +38,16 @@ console.log('→ Serving images from:', imagesPath);
     ProgramModule,
     ProgramLineModule,
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..','..', 'front-client','assets', 'images'),
+      rootPath: join(__dirname,'..', '..', 'front-client', 'assets', 'images'),
       serveRoot: '/images',
       exclude: ['/api*'],
+
+       serveStaticOptions: {
+        setHeaders: (res, path) => {
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD');
+        }
+      }
     }),
 
     // Other modules can be imported here

@@ -6,6 +6,7 @@ import api from '../../../services/api';
 import { Program, ProgramLine } from '../../../interfaces/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { setProgramLines } from '../../../utils/ProgramStore';
+import { baseURL } from '../../../services/api';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -37,7 +38,7 @@ export default function ProgramDetailScreen() {
   return (
     <ScrollView style={styles.container}>
       <Image
-        source={{ uri: `http://localhost:3000/images/${encodeURIComponent(program.image)}` }}
+        source={{ uri: `${baseURL}images/${encodeURIComponent(program.image)}` }}
         style={styles.fullImage}
         resizeMode="contain"
       />
@@ -96,6 +97,7 @@ const styles = StyleSheet.create({
   borderColor: '#FFAE00', // jaune/orangé
   alignItems: 'center',
   justifyContent: 'center',
+  
   shadowColor: '#000',
   shadowOffset: { width: 0, height: 2 },
   shadowOpacity: 0.15,

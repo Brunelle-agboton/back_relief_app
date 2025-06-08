@@ -6,8 +6,7 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 export default function PauseActiveLayout() {
   return (
     <Stack>
-    <Stack.Screen
-        name="pauseActive" options={{headerShown:false}}/>      
+    <Stack.Screen name="index" options={{headerShown:false}}/>      
       <Stack.Screen name="ProgramDetailScreen" options={{headerShown:false}}/>
       <Stack.Screen name="ProgramLineScreen" options={{headerShown:false}}/>
     </Stack>

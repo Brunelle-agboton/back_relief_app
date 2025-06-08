@@ -13,8 +13,9 @@ async function bootstrap() {
   app.enableCors({
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Authorization, X-Requested-With',
     preflightContinue: false,
-  });
+    optionsSuccessStatus: 204  });
 
   const dataSource = app.get(DataSource);
   try {

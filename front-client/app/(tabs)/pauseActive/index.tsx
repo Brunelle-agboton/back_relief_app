@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Platform  } from 'react-native';
+import { View, TextInput, Button, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform  } from 'react-native';
 import { useNavigation, NavigationProp,useRoute } from '@react-navigation/native';
 import api from '../../../services/api';
 import Foundation from '@expo/vector-icons/Foundation';
@@ -7,6 +7,11 @@ import Feather from '@expo/vector-icons/Feather';
 import { ProgramLine, Program, CategorizedPrograms } from '../../../interfaces/types';
 import { useRouter } from 'expo-router';
 import { setProgramLines } from '../../../utils/ProgramStore';
+import { baseURL } from '../../../services/api';
+
+export const options = {
+  headerShown: false,
+};
 
 export default function PauseActiveScreen() {
   const router = useRouter();
@@ -116,7 +121,7 @@ export default function PauseActiveScreen() {
                 style={styles.exerciseCard}
               
               >
-            <Image source={{ uri: `http://localhost:3000/images/${encodeURIComponent(line.exercise.image)}` }} style={styles.cardImage} />
+            <Image source={{ uri: `${baseURL}images/${encodeURIComponent(line.exercise.image)}` }} style={styles.cardImage} />
                 <View style={styles.pausetats}>
                   <View style={styles.statItem}>
                       <Foundation name="clock" size={16} color="#666" {...iconProps} />
@@ -165,7 +170,7 @@ export default function PauseActiveScreen() {
               })
             }
           >
-            <Image source={{ uri: `http://localhost:3000/images/${encodeURIComponent(program.image)}` }} style={styles.programImage} />
+            <Image source={{ uri: `${baseURL}images/${encodeURIComponent(program.image)}` }} style={styles.programImage} />
             <Feather name="play" size={16} color="#ED6A5E" {...iconProps} style={styles.playIcon} />
               
           </TouchableOpacity>

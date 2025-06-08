@@ -3,6 +3,7 @@ import { View, Image, StyleSheet, Dimensions, Text, Button, ScrollView, Touchabl
 import {useNavigation, NavigationProp, RouteProp, useRoute } from '@react-navigation/native';
 import { CountdownCircleTimer } from 'react-native-countdown-circle-timer';
 import api from '../../../services/api';
+import { baseURL } from '../../../services/api';
 import { Program, ProgramLine } from '../../../interfaces/types';
 import { useLocalSearchParams } from 'expo-router';
 import { getProgramLines, clearProgramLines } from '../../../utils/ProgramStore';
@@ -39,7 +40,7 @@ export default function ProgramLineScreen() {
       <Text style={styles.title}>{currentLine.exercise.category}</Text>
 
       <Image
-        source={{ uri: `http://localhost:3000/images/${encodeURIComponent(currentLine.exercise.image)}` }}
+        source={{ uri: `${baseURL}images/${encodeURIComponent(currentLine.exercise.image)}` }}
         style={styles.image}
         resizeMode="contain"
       />

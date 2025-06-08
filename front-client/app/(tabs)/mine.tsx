@@ -1,8 +1,9 @@
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useRouter } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Entypo from '@expo/vector-icons/Entypo';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+
 const userProfile = {
   name: 'Back RELIEF',
   username: '@backrelief',
@@ -22,14 +23,18 @@ const userProfile = {
 
 export default function UserProfileScreen() {
   const params = useLocalSearchParams();
-
+  const router = useRouter();
+  
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Entypo name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.settingsButton}>
+        <TouchableOpacity 
+          style={styles.settingsButton}
+          onPress={() =>{ router.push('/settings/ReminderSettingsScreen')}}
+        >
           <MaterialIcons name="settings" size={24} color="black" />
         </TouchableOpacity>
       </View>

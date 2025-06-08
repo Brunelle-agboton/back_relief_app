@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, TextInput, StyleSheet, ScrollView,TouchableOpacity } from 'react-native';
-import Slider from '@react-native-community/slider';
+import {Slider} from 'react-native-elements'
 import BodyMap from '../../components/BodyMap';
 import { getUserId } from '../../utils/storage';
 import { useRouter } from 'expo-router';
@@ -35,7 +35,7 @@ export default function RegisterHealthScreen() {
 
     const response = await api.post('/health/pain', { userId, painLocation, painLevel, description });
     if (response.data) {
-      router.push('/(tabs)/pauseActive/pauseActive');
+      router.push('/(tabs)/pauseActive');
     } else {
       alert('Erreur lors de l\'envoi des données');
     }
@@ -51,7 +51,9 @@ export default function RegisterHealthScreen() {
       <View style={{width:'100%', height: 330, marginBottom: 0 }}>
         <BodyMap onSelect={setLocation} />
       </View>
-      <Text style={[{ marginBottom: 5 }, styles.enterText]}>Localisation de la douleur : {painLocation}</Text>
+
+      <View style={styles.container}>
+        <Text style={[{ marginBottom: 4 }, styles.enterText]}>Localisation de la douleur : {painLocation}</Text>
 
       <Text style={styles.enterText}>Souhaitez vous decrire la douleur ?</Text>
       <TextInput
@@ -71,25 +73,30 @@ export default function RegisterHealthScreen() {
         value={painLevel}
         onValueChange={setLevel}
         minimumTrackTintColor={getColor(painLevel)} // Change la couleur de la piste
-        thumbTintColor={getColor(painLevel)} // Change la couleur du curseur
+        thumbTintColor={getColor(painLevel)} // Change la couleur du 
+        trackStyle={styles.track}
+        thumbStyle={styles.thumb}
+         style={styles.slider}
+
       />
       <TouchableOpacity
         onPress={submit}
         style={styles.button}>
       <Text style={styles.buttonText}>Envoyer et Accéder aux exercices </Text>
       <MaterialCommunityIcons name="chevron-triple-right" size={24} style={styles.icon}/>
-
         </TouchableOpacity>
+        </View>
       
     </ScrollView>
   );
 }
 
+const TRACK_HEIGHT = 8;
+const THUMB_SIZE = 29
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff',
   },
   title: {
     fontSize: 18,
@@ -104,12 +111,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Regular',
     fontSize: 16,
     textAlign: 'center',
-    paddingTop: 8,
+    paddingTop: 10,
   },
    enterText: {
     fontFamily: 'Regular',
     fontSize: 16,
-    paddingTop: 8,
+    paddingTop: 4,
+    paddingBottom: 6,
   },
   intensityText: {
     fontSize: 16,
@@ -118,16 +126,31 @@ const styles = StyleSheet.create({
   },
   button: {
   flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
-    marginHorizontal: 10, padding: 10, borderRadius: 30,
+    marginHorizontal: 5, padding: 10, borderRadius: 30,
   backgroundColor: '#ED6A5E' },
   buttonText: {
     color: '#fff',
-    fontSize: 15,
+    fontWeight: 'bold',
+    fontSize: 19,
   },
   icon: {
-    marginLeft: 8,
-    width: 84,
+    marginLeft: 5,
+    width: 34,
     color: '#fff',
 
+  },
+  slider: {
+    height: 35, // Use a fixed height or adjust as needed
+    borderRadius: 20, 
+  },
+  track: {
+    height: TRACK_HEIGHT, borderRadius: TRACK_HEIGHT / 2,
+  },
+  thumb: {
+    width: THUMB_SIZE, height: THUMB_SIZE,
+    borderRadius: THUMB_SIZE/2, backgroundColor: '#fff',
+    borderWidth: 2, borderColor: '#fff',
+    shadowColor: '#000', shadowOpacity: 0.2,
+    shadowRadius: 2, shadowOffset: { width: 0, height: 1 },
   },
 });

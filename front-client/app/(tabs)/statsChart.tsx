@@ -70,9 +70,7 @@ export default function ProgressScreen() {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={styles.title}>Progress</Text>
-        <TouchableOpacity onPress={handleSettingsPress} style={styles.settingsButton}>
-            <AntDesign name="setting" size={24} color="black" />
-        </TouchableOpacity>
+        
       </View>
 
       <View style={styles.timeRangeContainer}>

@@ -51,6 +51,10 @@ export default function RegisterStep3Screen() {
       setError('Erreur lors de l\'inscription');
     }
   };
+  
+  const handleBack = () => {
+    navigation.goBack();
+  };
 
   return (
     <View style={styles.container}>
@@ -147,7 +151,14 @@ export default function RegisterStep3Screen() {
               </View>
             </View>
           </View>  
-            <Button title="Valider" onPress={handleRegister} />
+           <View style={styles.buttonRow}>
+      <TouchableOpacity style={[styles.button, styles.backButton]}>
+        <Text style={styles.buttonText}  onPress={handleBack}>Precedent</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={[styles.button, styles.nextButton]}>
+        <Text style={styles.buttonText} onPress={handleRegister}>Valider</Text>
+      </TouchableOpacity>
+    </View>
             {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
   );
@@ -156,6 +167,8 @@ const styles = StyleSheet.create({
     container: {
       flex: 1,
       padding: 20,
+      marginTop:60,
+
       backgroundColor: '#fff',
     },
     label: {
@@ -217,4 +230,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 16,
   },
+  buttonRow: { flexDirection: 'row', marginTop: 32 },
+  button: { flex: 1, marginHorizontal: 10, padding: 16, borderRadius: 14, alignItems: 'center'},
+  nextButton:{
+    backgroundColor: '#237ef3'
+  },
+  backButton:{
+    backgroundColor: '#FFAE00'
+  },
+    buttonText: { color: '#ffff', fontWeight: 'bold', fontSize: 18 },
+
 });

@@ -20,6 +20,10 @@ export default function RegisterStep2Screen() {
     navigation.navigate('screens/RegisterStep3Screen', { email, password, userName, age, sexe, poids, taille });
   };
 
+  const handleBack = () => {
+    navigation.goBack();
+  };
+
   return (
     <View style={styles.container}>
       <Image
@@ -53,41 +57,51 @@ export default function RegisterStep2Screen() {
         <Text style={styles.radioText}>Non-binaire</Text>
     </View>
 
-    <View>
-      <Text style={{ marginBottom: 8 }}>Âge</Text>
+    <View style={styles.rrow}>
+      <Text  style={styles.label}>Âge</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input,styles.smallInput]}
         placeholder="Âge"
         keyboardType="numeric"
         onChangeText={setAge}
         value={age}
       />
+      <Text style={styles.unit}>ans</Text>
+
     </View>
 
-      <View style={styles.rrow}>
-        <Text style={styles.label}>Taille</Text>
-        <TextInput
-          style={[styles.input,styles.smallInput]}
-          placeholder="Taille"
-          keyboardType="numeric"
-          onChangeText={setTaille}
-          value={taille}
-        />
-        <Text style={styles.unit}>m</Text>
-      </View>
+    <View style={styles.rrow}>
+      <Text style={styles.label}>Taille</Text>
+      <TextInput
+        style={[styles.input,styles.smallInput]}
+        placeholder="Taille"
+        keyboardType="numeric"
+        onChangeText={setTaille}
+        value={taille}
+      />
+      <Text style={styles.unit}>m</Text>
+    </View>
 
-      <View style={styles.rrow}>
-        <Text style={styles.label}>Poids</Text>
-        <TextInput
-          style={[styles.input, styles.smallInput]}
-          placeholder="Poids"
-          keyboardType="numeric"
-          onChangeText={setPoids}
-          value={poids}
-        />
-        <Text style={styles.unit}>kg</Text>
-      </View>
-    <Button title="Suivant" onPress={handleNext} />
+    <View style={styles.rrow}>
+      <Text style={styles.label}>Poids</Text>
+      <TextInput
+        style={[styles.input, styles.smallInput]}
+        placeholder="Poids"
+        keyboardType="numeric"
+        onChangeText={setPoids}
+        value={poids}
+      />
+      <Text style={styles.unit}>kg</Text>
+    </View>
+    
+    <View style={styles.buttonRow}>
+      <TouchableOpacity style={[styles.button, styles.backButton]}>
+        <Text style={styles.buttonText}  onPress={handleBack}>Precedent</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={[styles.button, styles.nextButton]}>
+        <Text style={styles.buttonText} onPress={handleNext}>Suivant</Text>
+      </TouchableOpacity>
+    </View>
   </View>
   );
 }
@@ -95,6 +109,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    marginTop:10,
     justifyContent: 'center',
     backgroundColor: '#fff',
   },
@@ -164,4 +179,14 @@ const styles = StyleSheet.create({
   marginBottom: 8,
   marginTop: 16,
 },
+  buttonRow: { flexDirection: 'row', marginTop: 32 },
+  button: { flex: 1, marginHorizontal: 10, padding: 16, borderRadius: 14, alignItems: 'center'},
+  nextButton:{
+    backgroundColor: '#237ef3'
+  },
+  backButton:{
+    backgroundColor: '#FFAE00'
+  },
+    buttonText: { color: '#ffff', fontWeight: 'bold', fontSize: 18 },
+
 });

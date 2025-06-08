@@ -1,8 +1,11 @@
 import axios from 'axios';
 import { getToken } from '../utils/storage';
 
+ export const baseURL = 'https://6f92-46-193-66-32.ngrok-free.app/';
+
 const api = axios.create({
-  baseURL: 'http://localhost:3000/', 
+  //baseURL: 'http://localhost:3000/', 
+  baseURL: baseURL,
   timeout: 5000,
 });
 
@@ -17,5 +20,5 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-
+//U6xKeW6nJsKp.zW
 export default api;
