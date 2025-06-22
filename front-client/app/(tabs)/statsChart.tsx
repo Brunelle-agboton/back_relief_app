@@ -1,78 +1,189 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Modal, TextInput } from 'react-native';
-import { router } from 'expo-router';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import Entypo from '@expo/vector-icons/Entypo';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import AntDesign from '@expo/vector-icons/AntDesign';
-
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions, Image } from 'react-native';
+import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
+import BodyMap from '../../components/BodyMap';
+import { LineChart } from 'react-native-chart-kit';
+import api from '../../services/api';
+import { Notification, HealthEntry  } from '../../interfaces/types';
+import { getUserId } from '../../utils/storage';
+import { useRouter } from 'expo-router';
 const { width } = Dimensions.get('window');
 
-const timeRanges: Array<keyof typeof chartData> = ['Daily', 'Weekly', 'Monthly', 'Yearly'];
-const activityLevels = ['Sedentary', 'Inactive', 'Active', 'SuperActive'];
+const SummaryScreen = () => {
+    const router = useRouter();
+  const [selectedRange, setSelectedRange] = useState<TimeRange>('Semaine');
+  const [healthHistory, setHealthHistory] = useState<HealthEntry[]>([]);
+  const [exercises, setExercises] = useState<Array<{ id: number; name: string; duration: string; calories: number; date: string }>>([]);  
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [painLocation, setLocation] = useState('');
+  
+  // Plages temporelles disponibles
+  const timeRanges = ['Semaine', 'Mois','Année'] as const;
+  type TimeRange = typeof timeRanges[number];
+  // Helpers en haut de ton fichier
+  const WEEK_DAYS = ['lun','mar','mer','jeu','ven','sam','dim'] as const;
+  const MONTHS   = ['jan','fév','mar','avr','mai','juin','juil','aoû','sep','oct','nov','déc'] as const;
 
-const chartData = {
-  Daily: {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [{ data: [65, 75, 80, 70, 85, 90, 88] }]
-  },
-  Weekly: {
-    labels: ['W1', 'W2', 'W3', 'W4'],
-    datasets: [{ data: [75, 82, 88, 92] }]
-  },
-  Monthly: {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [{ data: [70, 75, 80, 85, 88, 92] }]
-  },
-  Yearly: {
-    labels: ['2021', '2022', '2023', '2024'],
-    datasets: [{ data: [65, 75, 85, 90] }]
-  }
-};
+  // Fonction pour obtenir la couleur en fonction de l'intensité
+  const getColor = (value: any) => {
+    const red = Math.round((10 - value) * 25.5);
+    const green = Math.round(value * 25.5);
+    return `rgb(${red}, ${green}, 0)`;
+  };
+  
+  // Charger les données (simulation)
+  useEffect(() => {
+    (async () => {
+       const userId = await getUserId(); // Récupérez l'ID de l'utilisateur
+          if (!userId) {
+            alert('Utilisateur non connecté');
+            return;
+          }
 
-const goals = {
-  Daily: { current: 85, target: 100 },
-  Weekly: { current: 82, target: 95 },
-  Monthly: { current: 88, target: 98 },
-  Yearly: { current: 90, target: 100 }
-};
+        try {
+          console.log(userId);
+          const { data } = await api.get('/summary');
+        setHealthHistory(data.healthHistory);
+        setExercises(data.exercises);
+        setNotifications(data.notifications);
 
-export default function ProgressScreen() {
-  const [selectedRange, setSelectedRange] = useState<keyof typeof chartData>('Daily');
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [goalForm, setGoalForm] = useState({
-    type: 'Daily',
-    weight: '',
-    height: '',
-    age: '',
-    activityLevel: 'Active'
+        } catch (error: any) {
+            console.error('Failed to fetch summary:', {
+                status: error.response?.status,
+                data:   error.response?.data,
+          });
+        }
+      })();
+    }, [selectedRange]);
+    
+
+   // Helper pour agréger selon la plage
+  const buildChartData = (entries: HealthEntry[], range: TimeRange) => {
+  const now = new Date();
+
+  // 1️⃣ filtrage
+  let filtered = entries.filter(e => {
+    const d = new Date(e.timestamp);
+    if (range === 'Semaine') {
+      const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 6);
+      return d >= weekAgo;
+    }
+    if (range === 'Mois') {
+      const monthAgo = new Date(now); monthAgo.setMonth(now.getMonth() - 3);
+      return d >= monthAgo;
+    }
+    // Année
+    const yearAgo = new Date(now); yearAgo.setFullYear(now.getFullYear() - 1);
+    return d >= yearAgo;
   });
 
-  const handleSettingsPress = () => {
-    //router.push('settings');
+  // 2️⃣ init des buckets
+  let labels: string[] = [];
+  if (range === 'Semaine') {
+    labels = WEEK_DAYS as unknown as string[];
+  } else if (range === 'Mois') {
+    labels = ['S1','S2','S3','S4'];
+  } else {
+    labels = MONTHS as unknown as string[];
+  }
+
+  const buckets: Record<string,{ sum:number; count:number }> = {};
+  labels.forEach(lbl => { buckets[lbl] = { sum:0, count:0 }; });
+
+  // 3️⃣ remplissage
+  filtered.forEach(({ level, timestamp }) => {
+    const d = new Date(timestamp);
+    let key: string;
+    if (range === 'Semaine') {
+      const wd = d.toLocaleDateString('fr-FR',{weekday:'short'});
+      key = wd.toLowerCase().slice(0,3); // 'lun','mar',...
+    } else if (range === 'Mois') {
+      // numéro de semaine dans le mois de 1 à 4
+      const w = Math.min(3, Math.ceil(d.getDate()/7));
+      key = `S${w+1}`; // S1 à S4
+    } else {
+      const m = d.getMonth(); // 0..11
+      key = MONTHS[m];
+    }
+    if (buckets[key]) {
+      buckets[key].sum   += level;
+      buckets[key].count += 1;
+    }
+  });
+
+  // 4️⃣ construction du data[] sans NaN/Infinity
+  const data = labels.map(lbl => {
+    const { sum, count } = buckets[lbl];
+    return count > 0 ? Math.round((sum/count)*10)/10 : 0;
+  });
+
+  return { labels, datasets: [{ data }] };
   };
 
-  const handleCreateGoal = () => {
-    // Here you would typically save the goal to your backend/state management
-    console.log('Creating goal:', goalForm);
-    setIsModalVisible(false);
-    // Reset form
-    setGoalForm({
-      type: 'Daily',
-      weight: '',
-      height: '',
-      age: '',
-      activityLevel: 'Active'
-    });
+  const filteredEntries = painLocation === 'Toutes'
+  ? healthHistory
+  : healthHistory.filter(e => e.location === painLocation);
+
+  // Pré-calculer chartData
+  const chartData = buildChartData(filteredEntries, selectedRange);
+
+  //Indicatteurs
+  const values = chartData.datasets[0].data;
+  const avg = (values.reduce((a,b) => a+b, 0)/values.length) || 0;
+  const mx  = Math.max(...values, 0);
+  const mn  = Math.min(...values, 0);
+
+    const handleAddPain = () => {
+    // Navigation vers l'écran d'ajout de douleur
+      router.push('/(tabs)/RegisterHealthScreen');
   };
+  
+  const toggleNotification = (id: any) => {
+    setNotifications(notifications.map(notif => 
+      notif.id === id ? {...notif, active: !notif.active} : notif
+    ));
+  };
+
+  // Composant SummaryCard
+  function SummaryCardVertical({
+    label,
+    value,
+    color,
+  }: {
+    label: string;
+    value: string;
+    color: string;
+  }) {
+    return (
+      <View style={[styles.verticalCard, { backgroundColor: color + '33' }]}>
+        <Text style={[styles.verticalValue, { color }]}>{value}</Text>
+        <Text style={[styles.verticalLabel, { color: color + 'AA' }]}>{label}</Text>
+      </View>
+    );
+  }
+
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* En-tête */}
       <View style={styles.header}>
-        <Text style={styles.title}>Progress</Text>
-        
+        <Text style={styles.title}>Aujourd’hui</Text>
       </View>
-
+            <Text style={styles.hintText}>
+        Touchez la zone douloureuse pour voir le détail
+      </Text>
+      <View style={[styles.chartSection, { height: 350 }]}>
+      <View style={styles.statsContainer}>
+        <SummaryCardVertical label="Moyenne" value={avg.toFixed(1)} color="#4ADE80" />
+        <SummaryCardVertical label="Maximum" value={mx.toString()} color="#F59E0B" />
+        <SummaryCardVertical label="Minimum" value={mn.toString()} color="#EF4444" />
+      </View>
+        <View style={styles.mapContainer}>
+        <BodyMap onSelect={setLocation} />
+      </View>
+    </View>
+            
+      {/* Sélecteur de période */}
       <View style={styles.timeRangeContainer}>
         {timeRanges.map((range) => (
           <TouchableOpacity
@@ -94,380 +205,370 @@ export default function ProgressScreen() {
           </TouchableOpacity>
         ))}
       </View>
-
-      <View style={styles.chartContainer}>
-        <AntDesign name="barchart"
-          data={chartData[selectedRange]}
-          width={width - 40}
-          height={220}
-          yAxisLabel=""
-          chartConfig={{
-            backgroundColor: '#fff',
-            backgroundGradientFrom: '#fff',
-            backgroundGradientTo: '#fff',
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`,
-            labelColor: () => '#666',
-            style: {
-              borderRadius: 16,
-            },
-            propsForBackgroundLines: {
-              strokeDasharray: '',
-              stroke: '#e3e3e3',
-            },
-          }}
-          style={styles.chart}
-          showValuesOnTopOfBars={true}
-        />
-      </View>
-
-      <View style={styles.goalsContainer}>
-        <View style={styles.goalsHeader}>
-          <Text style={styles.goalsTitle}>Notification</Text>
+      
+    {/* Graphique d'historique des douleurs */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Douleurs</Text>
           <TouchableOpacity 
-            style={styles.createGoalButton}
-            onPress={() => setIsModalVisible(true)}
+            style={styles.addButton}
+            onPress={handleAddPain}
           >
-            <AntDesign name="pluscircleo" size={24} color="black" />
-            <Text style={styles.createGoalText}>Créer Notification</Text>
+            <AntDesign name="plus" size={18} color="white" />
+            <Text style={styles.addButtonText}>Ajouter</Text>
           </TouchableOpacity>
         </View>
+        
+      <LineChart
+        data={chartData}
+        width={width - 32}
+        height={220}
+        yAxisSuffix="/10"
+        chartConfig={{
+          backgroundColor: '#ffffff',
+          backgroundGradientFrom: '#fff',
+          backgroundGradientTo: '#fff',
+          decimalPlaces: 1,
+          color: (opacity = 1) => `rgba(76,175,80,${opacity})`,
+          labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+          style: { borderRadius: 16 },
+        }}
+        bezier
+        style={styles.chart}
+      />
+    </View>
 
-        <View style={styles.goalCard}>
-          <View style={styles.goalInfo}>
-            <Text style={styles.goalLabel}>{selectedRange} Notification</Text>
-            <Text style={styles.goalProgress}>
-              {goals[selectedRange].current}/{goals[selectedRange].target}
-            </Text>
-          </View>
-          <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill,
-                { width: `${(goals[selectedRange].current / goals[selectedRange].target) * 100}%` }
-              ]} 
-            />
-          </View>
+{/* Section Exercices réalisés */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Exercices réalisés</Text>
+          <TouchableOpacity style={styles.viewAllButton}>
+            <Text style={styles.viewAllText}>Tout voir</Text>
+          </TouchableOpacity>
         </View>
-      </View>
-
-      <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        transparent={true}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create New Notification</Text>
+        
+        {exercises?.slice(0, 3).map((exercise) => (
+          <View key={exercise.id} style={styles.exerciseCard}>
+            <View style={styles.exerciseIcon}>
+              <MaterialCommunityIcons name="run" size={24} color="#32CD32" />
+            </View>
             
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Notification Type</Text>
-              <View style={styles.timeRangeContainer}>
-                {timeRanges.map((range) => (
-                  <TouchableOpacity
-                    key={range}
-                    style={[
-                      styles.timeRangeButton,
-                      goalForm.type === range && styles.timeRangeButtonActive
-                    ]}
-                    onPress={() => setGoalForm({...goalForm, type: range})}
-                  >
-                    <Text
-                      style={[
-                        styles.timeRangeText,
-                        goalForm.type === range && styles.timeRangeTextActive
-                      ]}
-                    >
-                      {range}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+            <View style={styles.exerciseInfo}>
+              <Text style={styles.exerciseName}>{exercise.name}</Text>
+              <View style={styles.exerciseDetails}>
+                <Text style={styles.exerciseDetail}>{exercise.duration}</Text>
+                <Text style={styles.exerciseDetail}>{exercise.calories} calories</Text>
               </View>
             </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Weight (kg)</Text>
-              <TextInput
-                style={styles.input}
-                value={goalForm.weight}
-                onChangeText={(text) => setGoalForm({...goalForm, weight: text})}
-                keyboardType="numeric"
-                placeholder="Enter your weight"
-              />
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Height (cm)</Text>
-              <TextInput
-                style={styles.input}
-                value={goalForm.height}
-                onChangeText={(text) => setGoalForm({...goalForm, height: text})}
-                keyboardType="numeric"
-                placeholder="Enter your height"
-              />
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Age</Text>
-              <TextInput
-                style={styles.input}
-                value={goalForm.age}
-                onChangeText={(text) => setGoalForm({...goalForm, age: text})}
-                keyboardType="numeric"
-                placeholder="Enter your age"
-              />
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Activity Level</Text>
-              <View style={styles.activityLevelsContainer}>
-                {activityLevels.map((level) => (
-                  <TouchableOpacity
-                    key={level}
-                    style={[
-                      styles.activityButton,
-                      goalForm.activityLevel === level && styles.activityButtonActive
-                    ]}
-                    onPress={() => setGoalForm({...goalForm, activityLevel: level})}
-                  >
-                    <Text
-                      style={[
-                        styles.activityText,
-                        goalForm.activityLevel === level && styles.activityTextActive
-                      ]}
-                    >
-                      {level}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={styles.cancelButton}
-                onPress={() => setIsModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.createButton}
-                onPress={handleCreateGoal}
-              >
-                <Text style={styles.createButtonText}>Créer Notification</Text>
-              </TouchableOpacity>
-            </View>
+            
+            <Text style={styles.exerciseDate}>{exercise.date}</Text>
           </View>
-        </View>
-      </Modal>
+        ))}
+      </View>
+      
+      {/* Section Notifications */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Mes notifications</Text>
+        
+        {notifications?.map((notification) => (
+          <View key={notification.id} style={styles.notificationCard}>
+            <View style={styles.notificationTime}>
+              <Text style={styles.notificationTimeText}>{notification.time}</Text>
+            </View>
+            
+            <View style={styles.notificationInfo}>
+              <Text style={styles.notificationTitle}>{notification.title}</Text>
+              <View style={styles.notificationStatus}>
+                <View 
+                  style={[
+                    styles.statusIndicator, 
+                    notification.active ? styles.active : styles.inactive
+                  ]}
+                />
+                <Text style={styles.statusText}>
+                  {notification.active ? 'Active' : 'Inactive'}
+                </Text>
+              </View>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.notificationAction}
+              onPress={() => toggleNotification(notification.id)}
+            >
+              <MaterialCommunityIcons 
+                name={notification.active ? "bell" : "bell-off"} 
+                size={24} 
+                color="#666" 
+              />
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+      
     </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    padding: 20,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    marginBottom: 20,
   },
   title: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 32,
-    color: '#000',
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2c3e50',
   },
-  settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
+  subtitle: {
+    fontSize: 16,
+    color: '#7f8c8d',
+    marginTop: 5,
   },
   timeRangeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
     marginBottom: 20,
+    backgroundColor: '#FFAE00',
+    borderRadius: 20,
   },
   timeRangeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+    padding: 10,
+    borderRadius: 15,
+    backgroundColor: 'transparent',
+    flex: 1,
+    alignItems: 'center',
   },
   timeRangeButtonActive: {
-    backgroundColor: '#32CD32',
+    backgroundColor: '#ED6A5E',
   },
   timeRangeText: {
-    fontFamily: 'Inter-SemiBold',
+    color: '#000',
     fontSize: 14,
-    color: '#666',
+    fontWeight: '500',
   },
   timeRangeTextActive: {
-    color: '#fff',
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  section: {
+    marginBottom: 25,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    backgroundColor: '#32CD32',
+    borderRadius: 20,
+  },
+  addButtonText: {
+    color: 'white',
+    marginLeft: 5,
+    fontWeight: '500',
+  },
+  viewAllButton: {
+    padding: 8,
+  },
+  viewAllText: {
+    color: '#32CD32',
+    fontWeight: '500',
   },
   chartContainer: {
-    padding: 20,
-    alignItems: 'center',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 10,
   },
   chart: {
-    marginVertical: 8,
-    borderRadius: 16,
-  },
-  goalsContainer: {
-    padding: 20,
-  },
-  goalsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  goalsTitle: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 24,
-    color: '#000',
-  },
-  createGoalButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#32CD32',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 8,
-  },
-  createGoalText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: '#fff',
-  },
-  goalCard: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 16,
-    padding: 20,
-  },
-  goalInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  goalLabel: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: '#000',
-  },
-  goalProgress: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 16,
-    color: '#32CD32',
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#32CD32',
-    borderRadius: 4,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    width: '90%',
-    maxWidth: 500,
-    maxHeight: '90%',
-  },
-  modalTitle: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 24,
-    color: '#000',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  formGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: '#000',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#f5f5f5',
     borderRadius: 12,
-    padding: 12,
-    fontSize: 16,
-    fontFamily: 'Inter-Regular',
   },
-  activityLevelsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  activityButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  activityButtonActive: {
-    backgroundColor: '#32CD32',
-  },
-  activityText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: '#666',
-  },
-  activityTextActive: {
-    color: '#fff',
-  },
-  modalButtons: {
+  painSummary: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
     marginTop: 20,
   },
-  cancelButton: {
-    flex: 1,
-    padding: 16,
+  summaryCard: {
+    backgroundColor: '#f8f9fa',
     borderRadius: 12,
-    backgroundColor: '#f5f5f5',
+    padding: 15,
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  summaryValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3498db',
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginTop: 5,
+  },
+  exerciseCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 12,
+  },
+  exerciseIcon: {
+    backgroundColor: '#f8bb54',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 15,
+  },
+  exerciseInfo: {
+    flex: 1,
+  },
+  exerciseName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    color: '#2c3e50',
+  },
+  exerciseDetails: {
+    flexDirection: 'row',
+  },
+  exerciseDetail: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginRight: 15,
+  },
+  exerciseDate: {
+    fontSize: 12,
+    color: '#95a5a6',
+    fontWeight: '500',
+  },
+  notificationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 12,
+  },
+  notificationTime: {
+    backgroundColor: '#e8f4ff',
+    padding: 10,
+    borderRadius: 10,
+    marginRight: 15,
+  },
+  notificationTimeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#3498db',
+  },
+  notificationInfo: {
+    flex: 1,
+  },
+  notificationTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    color: '#2c3e50',
+  },
+  notificationStatus: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  cancelButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: '#666',
+  statusIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 5,
   },
-  createButton: {
-    flex: 1,
+  active: {
+    backgroundColor: '#2ecc71',
+  },
+  inactive: {
+    backgroundColor: '#e74c3c',
+  },
+  statusText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+  },
+  notificationAction: {
+    padding: 8,
+  },
+   painDisplay: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    marginVertical: 30,
+    //backgroundColor: '#3283fc'
+  },
+  hintText: {
+  fontSize: 14,
+  color: '#666',
+  marginBottom: 8,
+  textAlign: 'center',
+  },
+  chartSection: {
+    width: '100%',
+    flexDirection: 'row',
     padding: 16,
+    backgroundColor: '#fff',
     borderRadius: 12,
-    backgroundColor: '#32CD32',
-    alignItems: 'center',
+    elevation: 3,            // ombre Android
+    shadowColor: '#000',     // ombre iOS
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    marginBottom: 16,
   },
-  createButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: '#fff',
+  mapContainer: {
+    flex: 2,
+    marginRight: 12,
+  },
+  statsContainer: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+
+  // Carte verticale
+  verticalCard: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    paddingVertical: 12,
+    marginVertical: 4,
+  },
+  verticalValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  verticalLabel: {
+    fontSize: 12,
+    marginTop: 4,
   },
 });
+
+export default SummaryScreen;

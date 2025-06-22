@@ -140,14 +140,14 @@ export async function seedRestExercise(dataSource: DataSource) {
         description: '',
         category: Category.SIT,
         position: Position.LEGS,
-        image: '2-min-Vitalité-2.jpg',
+        image: '2-min-Vitalite-2.jpg',
     },
     {
         title: 'Vitalité assis 2',
         description: 'good',
         category: Category.SIT,
         position: Position.BRAS,
-        image: '2-min-Vitalité-3.jpg',
+        image: '2-min-Vitalite-3.jpg',
     },
     {
         title: 'Vitalité assis 3',
@@ -175,7 +175,7 @@ export async function seedRestExercise(dataSource: DataSource) {
         description: '',
         category: Category.STAND_UP,
         position: Position.DOS,
-        image: 'Pause-Vitalité-3.jpg',
+        image: 'Pause-Vitalite-3.jpg',
     },
     ];
 
@@ -193,7 +193,7 @@ export async function seedRestExercise(dataSource: DataSource) {
     {
         title: "Pause Active",
         description: 'Un petit mouvement pour un grand bien‑être',
-        image: '2-min-Vitalité.jpg',
+        image: '2-min-Vitalite.jpg',
         lines: [
         { exIndex: 20, order: 1, repetitions: 10, duration: 25, calories: 80 },
         { exIndex: 18, order: 2, repetitions: 10, duration: 30, calories: 120 },

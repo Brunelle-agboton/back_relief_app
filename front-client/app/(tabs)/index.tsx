@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useRouter }             from 'expo-router';
+import { getToken }              from '../../utils/storage';
 
 type RootStackParamList = {
   'screens/RegisterStep1Screen': undefined;
@@ -8,6 +10,18 @@ type RootStackParamList = {
 };
 
 export default function HomeScreen() {
+  const router = useRouter();
+
+  useEffect(() => {
+    (async () => {
+      const token = await getToken();
+      if (token) {
+        // Si connecté, on remplace la navigation vers la tab PauseActive
+        router.replace('/(tabs)/pauseActive');
+      }
+    })();
+  }, []);
+  
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   return (
     <View style={styles.container}>
@@ -18,7 +32,7 @@ export default function HomeScreen() {
       </Text>
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={styles.button}
+          style={styles.SignupButton}
           onPress={() => navigation.navigate('screens/RegisterStep1Screen')} // Redirection vers la page d'inscription
         >
           <Text style={styles.buttonText}>S'inscrire</Text>
@@ -65,10 +79,24 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   button: {
+    width: '50%',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#f8bb54',
     backgroundColor: '#fff',
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 28,
+  },
+  SignupButton: {
+    width: '50%',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ED6A5E',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 28,
   },
   buttonText: {
     color: '#32CD32',

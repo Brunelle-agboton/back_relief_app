@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Image } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image } from 'react-native';
+import { Link } from 'expo-router';
 import api from '../../services/api';
 import { saveToken } from '../../utils/storage';
 import {useNavigation, NavigationProp } from '@react-navigation/native';
@@ -16,6 +17,8 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   const handleLogin = async () => {
     try {
@@ -33,30 +36,73 @@ export default function LoginScreen() {
       setError('Identifiants invalides');
     }
   };
-
-  return (
+ return (
     <View style={styles.container}>
       <Image
         source={require('../../assets/images/BF.png')}
         style={styles.logo}
       />
-      <Text style={{ fontSize: 28,fontWeight: 'bold', marginBottom: 16 }}>Se connecter</Text>
+      <Text style={styles.title}>Se connecter</Text>
 
-      <View style={{ marginBottom: 16 }}>
-          <Text style={{ marginBottom: 8 }}>Email</Text>
-        <TextInput style={styles.input} placeholder="Email" onChangeText={setEmail} value={email} />
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Email</Text>
+        <View style={[
+          styles.inputWrapper,
+          emailFocused && styles.inputFocused
+        ]}>
+          <TextInput 
+            style={styles.input} 
+            placeholder="Email" 
+            placeholderTextColor="#999"
+            onChangeText={setEmail} 
+            value={email}
+            onFocus={() => setEmailFocused(true)}
+            onBlur={() => setEmailFocused(false)}
+          />
+        </View>
       </View>
 
-      <View style={{ marginBottom: 16 }}>
-          <Text style={{ marginBottom: 8 }}>Mot de passe</Text>
-          <TextInput style={styles.input} placeholder="Mot de passe" secureTextEntry onChangeText={setPassword} value={password} />
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Mot de passe</Text>
+        <View style={[
+          styles.inputWrapper,
+          passwordFocused && styles.inputFocused
+        ]}>
+          <TextInput 
+            style={styles.input} 
+            placeholder="Mot de passe" 
+            placeholderTextColor="#999"
+            secureTextEntry 
+            onChangeText={setPassword} 
+            value={password}
+            onFocus={() => setPasswordFocused(true)}
+            onBlur={() => setPasswordFocused(false)}
+          />
+        </View>
       </View>
 
-      <View style={styles.buttonContainer}>
-      <Button title="Se connecter" onPress={handleLogin} />
-      <Button title="S'inscrire" onPress={() => navigation.navigate('screens/RegisterStep1Screen')} />
-      </View>
-      {error ? <Text>{error}</Text> : null}
+      <Link href="/screens/ForgotPasswordScreen" style={styles.forgotPassword}>
+        <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
+      </Link>
+
+      <TouchableOpacity 
+        style={styles.loginButton} 
+        onPress={handleLogin}
+      >
+        <Text style={styles.loginButtonText}>Se connecter</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.signupText}>
+        Pas encore inscrit ?{' '}
+        <Text 
+          style={styles.signupLink} 
+          onPress={() => navigation.navigate('screens/RegisterStep1Screen')}
+        >
+          Créer un compte
+        </Text>
+      </Text>
+      
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   );
 }
@@ -64,41 +110,87 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     justifyContent: 'center',
+    padding: 24,
     backgroundColor: '#fff',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    display: 'flex',
-    flexDirection: 'row',
-    padding: 10,
-    marginBottom: 16,
-    backgroundColor: '#f9f9f9',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  button: {
-    backgroundColor: '#fff',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: '#32CD32',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   logo: {
-    width: 90,
-    height: 90,
-    resizeMode: 'contain',
+    width: 120,
+    height: 120,
     alignSelf: 'center',
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 32,
+    color: '#333',
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  label: {
     marginBottom: 8,
+    fontSize: 16,
+    color: '#555',
+  },
+  inputWrapper: {
+    borderRadius: 30,
+    backgroundColor: '#f9f9f9',
+    overflow: 'hidden', // Empêche le débordement du fond
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  input: {
+    padding: 15,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    color: '#333',
+  },
+  inputFocused: {
+    borderColor: '#FFAE00',
+    backgroundColor: '#fffdf6',
+    shadowColor: '#FFAE00',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  forgotPassword: {
+    marginBottom: 24,
+    alignSelf: 'flex-start',
+  },
+  forgotPasswordText: {
+    color: '#32CD32',
+    fontSize: 16,
+  },
+  loginButton: {
+    backgroundColor: '#32CD32',
+    borderRadius: 29,
+    padding: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  signupText: {
     marginTop: 16,
-},
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#555',
+  },
+  signupLink: {
+    color: '#32CD32',
+    fontWeight: 'bold',
+  },
+  errorText: {
+    color: 'red',
+    marginTop: 16,
+    textAlign: 'center',
+  },
 });

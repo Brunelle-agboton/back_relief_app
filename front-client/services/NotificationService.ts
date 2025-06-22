@@ -6,7 +6,7 @@ const STORAGE_KEY = '@reminder_settings';
 const MESSAGES = {
   pause: [
     {
-      title: "⏰ Une pause active maintenant = plus de focus après",
+      title: "Une pause active maintenant = plus de focus après",
       body:  "Sélectionne une pause dans ton appli !",
     },
     {
@@ -32,7 +32,7 @@ const MESSAGES = {
 
 export type ReminderSettings = {
   enabled: boolean;
-  intervalHours: number;  // par ex. 1 ou 2
+  intervalHours: number;  
   type: 'pause' | 'water';
 };
 
@@ -50,7 +50,7 @@ export default class NotificationService {
 
     if (!settings.enabled) return;
     //3600
-    const seconds = settings.intervalHours * 10;
+    const seconds = settings.intervalHours * 3600;
     
     // tirage aléatoire du message
     const pool = MESSAGES[settings.type];
@@ -60,8 +60,8 @@ export default class NotificationService {
     await Notifications.scheduleNotificationAsync({
       content: { title, body },
       trigger: {
-        type:    'timeInterval',  // <-- on force timeInterval
-      seconds,                  // e.g. 3600 pour 1h
+        type:    'timeInterval',  
+      seconds,
       repeats: true,
     } as Notifications.TimeIntervalTriggerInput,
     });

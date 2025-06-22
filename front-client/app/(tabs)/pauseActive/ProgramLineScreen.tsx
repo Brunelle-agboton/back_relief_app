@@ -4,10 +4,8 @@ import {useNavigation, NavigationProp, RouteProp, useRoute } from '@react-naviga
 import { CountdownCircleTimer } from 'react-native-countdown-circle-timer';
 import api from '../../../services/api';
 import { baseURL } from '../../../services/api';
-import { Program, ProgramLine } from '../../../interfaces/types';
 import { useLocalSearchParams } from 'expo-router';
 import { getProgramLines, clearProgramLines } from '../../../utils/ProgramStore';
-
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -21,6 +19,7 @@ export default function ProgramLineScreen() {
   const [stepState, setStep] = useState(step);
   const programLines = getProgramLines();
   const currentLine = programLines[stepState];
+  let userId: string|null;
 
   const goToNextStep = () => {
     setIsStarted(false);
@@ -70,19 +69,44 @@ export default function ProgramLineScreen() {
             styles.start,
             isStarted && { backgroundColor: '#FFAE00' }
           ]}
-          onPress={() => setIsStarted(true)}
+          onPress={async () => {
+            setIsStarted(true);
+            // Log "pause_started"
+            try {
+              const response = await api.post('/activity', {
+                type: 'pause_started',
+                metadata: {
+                  exerciceId: currentLine.exercise.id,
+                  lineOrder: currentLine.order,
+                },
+              });
+            } catch (error) {
+              console.error("Failed to log activity:", error);
+            }
+          }}
           disabled={isStarted} // désactive si déjà démarré
         >
           <Text style={[
             styles.buttonText,
             { color: isStarted ? '#fff' : '#FFAE00' }
-          ]}>
+          ]}
+          >
             Commencer
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, styles.end]}
-          onPress={goToNextStep}
+          onPress={async () => {
+            goToNextStep();
+          // Log "pause_completed"
+          await api.post('/activity', {
+            type: 'pause_completed',
+            metadata: JSON.stringify({
+              exerciceId: Number(currentLine.exercise.id),
+              lineOrder: Number(currentLine.order),
+            }),
+          });
+        }}
         >
           <Text style={styles.buttonText}>Terminer</Text>
         </TouchableOpacity>

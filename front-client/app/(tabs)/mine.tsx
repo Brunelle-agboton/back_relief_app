@@ -8,12 +8,7 @@ const userProfile = {
   name: 'Back RELIEF',
   username: '@backrelief',
   avatar: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d',
-  bio: 'Fitness enthusiast | Personal Trainer 💪\nHelping others achieve their fitness goals',
-  stats: {
-    followers: '2.5k',
-    following: 468,
-    workouts: 156
-  },
+  
   achievements: [
     { id: '1', title: '30 jours actifs', icon: FontAwesome5, name: "calendar-alt" },
     { id: '2', title: 'Top Hydratation', icon: FontAwesome5, name: "trophy" },
@@ -28,7 +23,7 @@ export default function UserProfileScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/pauseActive')} style={styles.backButton}>
           <Entypo name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity 
@@ -48,7 +43,8 @@ export default function UserProfileScreen() {
 
       <View style={styles.actionButtons}>
         <TouchableOpacity style={styles.followButton}>
-          <Text style={styles.followButtonText}>Voir plus</Text>
+          <Text style={styles.followButtonText}
+           onPress={() =>{ router.push('/screens/ActivityLogScreen')}}>Voir plus</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.messageButton}>
           <Text style={styles.messageButtonText}>Message</Text>

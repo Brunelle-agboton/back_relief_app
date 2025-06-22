@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     },
     selectedOption: {
       backgroundColor: '#007BFF',
-      borderColor: '#007BFF',
+      borderColor: '#FFAE00',
     },
     optionText: {
       color: '#000',
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     },
     selectedRadioButton: {
       backgroundColor: '#007BFF',
-      borderColor: '#007BFF',
+      borderColor: '#FFAE00',
     },
     radioText: {
       marginLeft: 5,
@@ -231,9 +231,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   buttonRow: { flexDirection: 'row', marginTop: 32 },
-  button: { flex: 1, marginHorizontal: 10, padding: 16, borderRadius: 14, alignItems: 'center'},
+  button: { flex: 1, marginHorizontal: 10, padding: 16, borderRadius: 28, alignItems: 'center'},
   nextButton:{
-    backgroundColor: '#237ef3'
+    backgroundColor: '#32CD32'
   },
   backButton:{
     backgroundColor: '#FFAE00'

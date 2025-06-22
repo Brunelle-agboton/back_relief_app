@@ -116,6 +116,7 @@ const styles = StyleSheet.create({
   description: {
     textAlign: 'center',
     color: '#FF8C00',
+    padding: 10,
     fontSize: 16,
     marginBottom: 20,
   },
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 8,
+    borderRadius: 28,
     padding: 10,
     marginBottom: 8,
     width: '100%',
@@ -180,9 +181,9 @@ const styles = StyleSheet.create({
   marginTop: 16,
 },
   buttonRow: { flexDirection: 'row', marginTop: 32 },
-  button: { flex: 1, marginHorizontal: 10, padding: 16, borderRadius: 14, alignItems: 'center'},
+  button: { flex: 1, marginHorizontal: 10, padding: 16, borderRadius: 28, alignItems: 'center'},
   nextButton:{
-    backgroundColor: '#237ef3'
+    backgroundColor: '#ED6A5E'
   },
   backButton:{
     backgroundColor: '#FFAE00'

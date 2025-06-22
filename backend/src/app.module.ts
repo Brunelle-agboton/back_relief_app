@@ -14,12 +14,16 @@ import { HealthController } from './modules/health/health.controller';
 import { NotificationController } from './modules/notification/notification.controller';
 import { ExerciseController } from './modules/exercise/exercise.controller';
 import { ProgramController } from './modules/program/program.controller';
-import { ProgramLineController } from './modules/program-line/program-line.controller'
+import { ProgramLineController } from './modules/program-line/program-line.controller';
+import { ActivityController} from './modules/activity/activity.controller'
+import { SummaryController } from './modules/summary/summary.controller';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { ExerciseModule } from './modules/exercise/exercise.module';
 import { ProgramModule } from './modules/program/program.module';
 import { ProgramLineModule } from './modules/program-line/program-line.module';
+import { ActivityModule } from './modules/activity/activity.module';
+import { SummaryModule } from './modules/summary/summary.module';
 
 const imagesPath = join(__dirname, '..', '..', 'front-client', 'assets', 'images');
 console.log('→ Serving images from:', imagesPath);
@@ -37,6 +41,8 @@ console.log('→ Serving images from:', imagesPath);
     ExerciseModule,
     ProgramModule,
     ProgramLineModule,
+    ActivityModule,
+    SummaryModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname,'..', '..', 'front-client', 'assets', 'images'),
       serveRoot: '/images',
@@ -49,10 +55,12 @@ console.log('→ Serving images from:', imagesPath);
         }
       }
     }),
+    ActivityModule,
 
     // Other modules can be imported here
   ],
-  controllers: [AppController, UserController, HealthController, AuthController, NotificationController, ExerciseController, ProgramController, ProgramLineController],
+  controllers: [AppController, UserController, HealthController, AuthController, NotificationController, 
+    ExerciseController, ProgramController, ProgramLineController, ActivityController, SummaryController],
   providers: [AppService],
 })
 export class AppModule {

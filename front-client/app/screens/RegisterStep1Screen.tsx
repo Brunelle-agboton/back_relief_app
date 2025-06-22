@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Image } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image } from 'react-native';
 import { useNavigation,NavigationProp } from '@react-navigation/native';
 
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -15,6 +15,8 @@ export default function RegisterStep1Screen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   const handleNext = () => {
     if (!userName || !email || !password) {
@@ -33,41 +35,64 @@ export default function RegisterStep1Screen() {
         testID="logo-image"
       />
     <Text style={styles.title}>Créer un compte</Text>
-    <View>
-      <Text style={{ marginBottom: 8 }}>Username</Text>
-      <TextInput
+
+    <View style={styles.inputContainer}>
+      <Text style={styles.label}>Username</Text>
+     <View style={[
+              styles.inputWrapper,
+              emailFocused && styles.inputFocused
+            ]}>
+ <TextInput
       style={styles.input}
       placeholder="Nom d'utilisateur"
       onChangeText={setUserName}
       value={userName}
     />
+</View>
     </View>
 
-    <View>
-    <Text style={{ marginBottom: 8 }}>Email</Text>
-    <TextInput
-      style={styles.input}
-      placeholder="Email"
-      keyboardType="email-address"
-      onChangeText={setEmail}
-      value={email}
-    />
-    </View>
-
-    <View>
-    <Text style={{ marginBottom: 8 }}>Mot de passe</Text>
-    <TextInput
-      style={styles.input}
-      placeholder="Mot de passe"
-      secureTextEntry
-      onChangeText={setPassword}
-      value={password}
-    />
-    </View>
+    <View style={styles.inputContainer}>
+            <Text style={styles.label}>Email</Text>
+            <View style={[
+              styles.inputWrapper,
+              emailFocused && styles.inputFocused
+            ]}>
+              <TextInput 
+                style={styles.input} 
+                placeholder="Email" 
+                placeholderTextColor="#999"
+                onChangeText={setEmail} 
+                value={email}
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
+              />
+            </View>
+          </View>
+    
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Mot de passe</Text>
+            <View style={[
+              styles.inputWrapper,
+              passwordFocused && styles.inputFocused
+            ]}>
+              <TextInput 
+                style={styles.input} 
+                placeholder="Mot de passe" 
+                placeholderTextColor="#999"
+                secureTextEntry 
+                onChangeText={setPassword} 
+                value={password}
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
+              />
+            </View>
+          </View>
     
     {error ? <Text style={styles.error}>{error}</Text> : null}
-    <Button title="Suivant" onPress={handleNext} />
-  </View>
+ <TouchableOpacity style={styles.button}>
+        <Text style={styles.buttonText} onPress={handleNext}>Suivant</Text>
+      </TouchableOpacity> 
+        </View>
 );
 }
 
@@ -85,14 +110,36 @@ title: {
   marginBottom: 20,
   color: '#333',
 },
-input: {
-  borderWidth: 1,
-  borderColor: '#ccc',
-  borderRadius: 8,
-  padding: 10,
-  marginBottom: 16,
-  backgroundColor: '#f9f9f9',
-},
+  inputContainer: {
+    marginBottom: 16,
+  },
+  label: {
+    marginBottom: 8,
+    fontSize: 16,
+    color: '#555',
+  },
+  inputWrapper: {
+    borderRadius: 30,
+    backgroundColor: '#f9f9f9',
+    overflow: 'hidden', // Empêche le débordement du fond
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  input: {
+    padding: 15,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    color: '#333',
+  },
+  inputFocused: {
+    borderColor: '#FFAE00',
+    backgroundColor: '#fffdf6',
+    shadowColor: '#FFAE00',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
 error: {
   color: 'red',
   marginBottom: 16,
@@ -106,4 +153,11 @@ logo: {
   marginBottom: 8,
   marginTop: 16,
 },
+ button: { 
+  marginTop: 20,
+  padding: 16, 
+  alignItems: 'center',
+  borderRadius: 28, 
+  backgroundColor: '#ED6A5E'},
+ buttonText: { color: '#ffff', fontWeight: 'bold', fontSize: 18 },
 });
