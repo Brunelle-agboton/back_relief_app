@@ -98,21 +98,21 @@ export async function seedRestExercise(dataSource: DataSource) {
         description: '',
         category: Category.SIT,
         position: Position.ÉPAULES,
-        image: 'Flexi_Siège-1.jpg',
+        image: 'Flexi_Siege-1.jpg',
     },
     {
         title: 'Flexi_Siège sit',
         description: '',
         category: Category.SIT,
         position: Position.ÉPAULES,
-        image: 'Flexi_Siège-2.jpg',
+        image: 'Flexi_Siege-2.jpg',
     },
     {
         title: 'Flexi_Siège sit',
         description: '',
         category: Category.SIT,
         position: Position.ÉPAULES,
-        image: 'Flexi_Siège-3.jpg',
+        image: 'Flexi_Siege-3.jpg',
     },
     {
         title: 'Posture bras',
@@ -154,21 +154,21 @@ export async function seedRestExercise(dataSource: DataSource) {
         description: '',
         category: Category.SIT,
         position: Position.COU,
-        image: '2-min-Vitalité-1.jpg',
+        image: '2-min-Vitalite-1.jpg',
     },
     {
         title: 'Pause Vitalité assis',
         description: '',
         category: Category.SIT,
         position: Position.COU,
-        image: 'Pause-Vitalité-1.jpg',
+        image: 'Pause-Vitalite-1.jpg',
     },
     {
         title: 'Pause Vitalité debout',
         description: '',
         category: Category.STAND_UP,
         position: Position.LOMBAIRES,
-        image: 'Pause-Vitalité-2.jpg',
+        image: 'Pause-Vitalite-2.jpg',
     },
     {
         title: 'Pause Vitalité debout 2',
@@ -223,7 +223,7 @@ export async function seedRestExercise(dataSource: DataSource) {
     {
         title: "Pause Active",
         description: 'Un petit mouvement pour un grand bien‑être',
-        image: 'PauseVitalité.jpg',
+        image: 'PauseVitalite.jpg',
         lines: [
         { exIndex: 21, order: 1, repetitions: 10, duration: 15, calories: 80 },
         { exIndex: 22, order: 2, repetitions: 10, duration: 30, calories: 120 },
@@ -244,7 +244,7 @@ export async function seedRestExercise(dataSource: DataSource) {
     {
         title: "Pause Active",
         description: 'Un petit mouvement pour un grand bien‑être',
-        image: 'FlexiSiège.jpg',
+        image: 'FlexiSiege.jpg',
         lines: [
         { exIndex: 12, order: 1, repetitions: 10, duration: 20, calories: 80 },
         { exIndex: 13, order: 2, repetitions: 10, duration: 30, calories: 120 },

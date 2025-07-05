@@ -87,4 +87,47 @@ export class SummaryService {
       notifications: notifSettings,
     };
   }
+
+  async getUserHealth(user: User) {
+    // 1️⃣ Douleurs
+  const healths = await this.healthRepo.find({
+    where: { user: { id: user.id } },
+    order: { recordedAt: 'DESC' },
+    take: 10,
+  });
+
+  // Dernier niveau de douleur
+  const painLevel = healths.length > 0 ? healths[0].painLevel : null;
+
+  // 2️⃣ Exercices réalisés
+  const completed = await this.actRepo.find({
+    where: { user: { id: user.id }, type: ActivityType.PAUSE_COMPLETED },
+    order: { createdAt: 'DESC' },
+    take: 1000, // pour le streak, on prend large
+  });
+
+  // Nombre total d'exercices réalisés
+  const nbExercises = completed.length;
+
+  // Calcul du streak (jours consécutifs)
+  const daysSet = new Set(
+    completed.map(act => act.createdAt.toISOString().split('T')[0])
+  );
+  const days = Array.from(daysSet).sort().reverse(); // du plus récent au plus ancien
+
+  let streakDays = 0;
+  let current = days[0] ? new Date(days[0]) : null;
+  while (current && days.includes(current.toISOString().split('T')[0])) {
+    streakDays++;
+    current.setDate(current.getDate() - 1);
+  }
+
+  // ... (le reste de ton code)
+
+  return {
+    painLevel,
+    nbExercises,
+    streakDays    
+  };
+  }
 }

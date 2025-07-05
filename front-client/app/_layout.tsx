@@ -1,4 +1,14 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { 
+  Platform, 
+  TouchableOpacity, 
+  Image, 
+  Modal, 
+  View, 
+  Text, 
+  StyleSheet,
+  Pressable
+} from 'react-native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -6,11 +16,11 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import NotificationBanner from '../components/NotificationBanner';
 import NotificationService from '../services/NotificationService';
 import { useState } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -92,6 +102,7 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="screens/LoginScreen" options={{ headerShown: false }} />
+        <Stack.Screen name="screens/_home/index" options={{ headerShown: false }} />
         <Stack.Screen name="screens/LogoutScreen" options={{ headerShown: false }} />
         <Stack.Screen name="screens/ActivityLogScreen" options={{ headerShown: false }} />
         <Stack.Screen name="screens/RegisterStep1Screen" options={{ headerShown: false }} />

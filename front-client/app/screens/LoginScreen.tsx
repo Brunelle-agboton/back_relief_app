@@ -30,7 +30,7 @@ export default function LoginScreen() {
   
       // Stocke le token pour les prochains appels API
       await saveToken(token);   
-      router.push('/(tabs)/pauseActive');
+        router.push('/(tabs)');
       //console.log('Navigation vers RegisterHealthScreen réussie');
     } catch (e) {
       setError('Identifiants invalides');

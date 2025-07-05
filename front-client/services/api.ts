@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getToken } from '../utils/storage';
 
- export const baseURL = 'https://9b97-46-193-66-32.ngrok-free.app/';
+ export const baseURL = 'https://c2a3-46-193-66-32.ngrok-free.app/';
 
 const api = axios.create({
   //baseURL: 'http://localhost:3000/', 

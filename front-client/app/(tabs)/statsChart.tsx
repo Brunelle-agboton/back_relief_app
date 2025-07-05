@@ -31,12 +31,12 @@ const SummaryScreen = () => {
     return `rgb(${red}, ${green}, 0)`;
   };
   
-  // Charger les données (simulation)
+  // Charger les données
   useEffect(() => {
     (async () => {
        const userId = await getUserId(); // Récupérez l'ID de l'utilisateur
           if (!userId) {
-            alert('Utilisateur non connecté');
+            router.replace('/screens/LoginScreen');
             return;
           }
 

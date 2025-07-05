@@ -21,4 +21,19 @@ export class SummaryController {
     const result = await this.summaryService.getSummaryForUser(user);
     return result;
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("details")
+  async getUserHealthDetails(@Req() req) {
+    const userId = req.user.userId; 
+    
+    const user = await this.userService.findOne(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const result = await this.summaryService.getUserHealth(user);
+    return result;
+
+  }
 }

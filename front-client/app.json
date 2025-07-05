@@ -9,13 +9,19 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "back.relief.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff",
-        "permissions": ["NOTIFICATIONS"]
+        "permissions": [
+          "NOTIFICATIONS"
+        ]
       },
       "package": "back.relief.app"
     },
@@ -51,7 +57,6 @@
           "enableBackgroundRemoteNotifications": false
         }
       ]
-    
     ],
     "experiments": {
       "typedRoutes": true

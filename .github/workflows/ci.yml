@@ -77,11 +77,11 @@ jobs:
 
     - name: Install frontend dependencies
       working-directory: ./front-client
-      run: npm install
+      run: npm ci
 
     - name: Lint frontend code
       working-directory: ./front-client
-      run: npm run lint || echo "Linting failed"
+      run: npm run lint
 
     - name: Run frontend tests
       working-directory: ./front-client

@@ -18,11 +18,12 @@ import Feather from '@expo/vector-icons/Feather';
 
 // Liste des tabs avec leurs informations
 const TAB_ITEMS = [
-  { name: 'index', title: 'Accueil', icon: 'house.fill' },
-  { name: 'RegisterHealthScreen', title: 'Douleur', icon: 'activity' },
-  { name: 'pauseActive', title: 'Exercices', icon: 'person-walking' },
-  { name: 'statsChart', title: 'Progression', icon: 'linechart' },
-  { name: 'mine', title: 'Profile', icon: 'user' }
+  { name: 'index', title: 'Accueil', icon: 'house.fill', path: '/(tabs)/index' },
+  { name: 'RegisterHealthScreen', title: 'Douleur', icon: 'activity', path: '/(tabs)/RegisterHealthScreen' },
+  { name: 'pauseActive', title: 'Exercices', icon: 'person-walking', path: '/(tabs)/pauseActive' },
+  { name: 'statsChart', title: 'Progression', icon: 'linechart', path: '/(tabs)/statsChart'  },
+  { name: 'mine', title: 'Profile', icon: 'user',  path: '/(tabs)/mine' },
+
 ];
 
 export default function TabLayout() {
@@ -97,7 +98,7 @@ const EXTRA_ITEMS = [
                   return <FontAwesome6 name={tab.icon} size={24} color={color} />;
                 } else if (tab.icon === 'linechart') {
                   return <AntDesign name={tab.icon} size={24} color={color} />;
-                } else {
+                } else if (tab.icon === 'user') {
                   return <FontAwesome6 name={tab.icon} size={24} color={color} />;
                 }
               },

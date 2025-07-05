@@ -114,12 +114,17 @@ export default function PauseActiveScreen() {
           <ScrollView 
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 22 }} >
+            style={{ marginBottom: 12 }} >
               {(exercises[selectedCategory] || []).map((line) => (
               <TouchableOpacity
                 key={line.exercise.id}
                 style={styles.exerciseCard}
-              
+              onPress={() => {
+              setProgramLines([line]);
+              router.push({
+                pathname: '/(tabs)/pauseActive/ProgramLineScreen', 
+                params: { currentStep: 0 }})
+            }}
               >
             <Image source={{ uri: `${baseURL}images/${encodeURIComponent(line.exercise.image)}` }} style={styles.cardImage} />
                 <View style={styles.pausetats}>
@@ -135,19 +140,6 @@ export default function PauseActiveScreen() {
                 )}
          
             </View>
-             <TouchableOpacity 
-            style={styles.startButton}
-             onPress={() => {
-              setProgramLines([line]);
-              router.push({
-                pathname: '/(tabs)/pauseActive/ProgramLineScreen', 
-                params: { currentStep: 0 }})
-            }}>
-            <View style={styles.startButton}>
-            <Feather name="play" size={16} color="#fff" {...iconProps} />
-            <Text style={styles.startButtonText}>Commencer</Text>
-          </View>
-            </TouchableOpacity>
       </TouchableOpacity>
     ))}
       </ScrollView>
@@ -207,22 +199,24 @@ export default function PauseActiveScreen() {
     paddingTop: 8,
   },
    exerciseCard: {
-     width: 300,
+    width: 300,
     height: 200,
-     marginRight: 12,
-    borderRadius: 12,
+    marginRight: 12,
+    marginBottom: 8,
+    borderTopColor: '#fff',
+    borderRadius: 15,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#eee',
-    boxShadow: '0 4px 4px rgba(16, 15, 15, 0.1)',
-    shadowColor: '#000',
+    boxShadow: '0 4px 0 8px rgba(3, 3, 3, 0.1)',
+    shadowColor: '#00000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
     backgroundColor: '#fff',
-    elevation: 2,
+    elevation: 5,
   },
   cardImage:{ width: '100%', height: 150, resizeMode: 'contain', },
   programImage:{ width: '100%', height: 172, resizeMode: 'cover' },
@@ -256,16 +250,18 @@ export default function PauseActiveScreen() {
     width: 100,
     height: 175,
     borderRadius: 16,
-     marginRight: 12,
+    marginRight: 12,
+    marginBottom: 12,
     overflow: 'hidden',
     shadowColor: '#000',
+    boxShadow: '10px 4px 0 8px rgba(3, 3, 3, 0.98)',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowRadius: 5,
+    elevation: 6,
   },
   cardContent: {
     padding: 6,
@@ -296,7 +292,6 @@ export default function PauseActiveScreen() {
     fontSize: 14,
     color: '#32CD32',
     paddingLeft: 6,
-
   },
   startButton: {
     backgroundColor: '#ED6A5E',
