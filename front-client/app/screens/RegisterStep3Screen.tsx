@@ -59,7 +59,7 @@ export default function RegisterStep3Screen() {
   return (
     <View style={styles.container}>
         <Image
-        source={require('../../assets/images/BF.png')}
+        source={require('../../assets/images/icon.png')}
         style={styles.logo}
       />
         <Text style={styles.label}>En moyenne, vous êtes assis :</Text>

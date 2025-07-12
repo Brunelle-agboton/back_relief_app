@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { Button , View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { router, useLocalSearchParams, useRouter } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Entypo from '@expo/vector-icons/Entypo';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { useAuth } from '../../context/AuthContext';
 
 const userProfile = {
   name: 'Back RELIEF',
@@ -19,6 +20,8 @@ const userProfile = {
 export default function UserProfileScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
+    const { logout } = useAuth();
+
   
   return (
     <ScrollView style={styles.container}>
@@ -64,6 +67,8 @@ export default function UserProfileScreen() {
           ))}
         </View>
       </View>
+
+      <Button title="Déconnexion" onPress={logout} />
     </ScrollView>
   );
 }

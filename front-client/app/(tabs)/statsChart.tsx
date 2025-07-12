@@ -5,7 +5,7 @@ import BodyMap from '../../components/BodyMap';
 import { LineChart } from 'react-native-chart-kit';
 import api from '../../services/api';
 import { Notification, HealthEntry  } from '../../interfaces/types';
-import { getUserId } from '../../utils/storage';
+import { getUserId } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
 const { width } = Dimensions.get('window');
 

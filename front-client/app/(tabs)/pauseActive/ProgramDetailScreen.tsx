@@ -55,7 +55,7 @@ export default function ProgramDetailScreen() {
   return (
     <ScrollView style={styles.container}>
       <Image
-        source={{ uri: `${baseURL}images/${encodeURIComponent(program.image)}` }}
+        source={{ uri: `${baseURL}images/pausesActives/${encodeURIComponent(program.image)}` }}
         style={styles.fullImage}
         resizeMode="contain"
       />

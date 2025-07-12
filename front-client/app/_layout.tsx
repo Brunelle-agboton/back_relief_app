@@ -10,7 +10,8 @@ import {
   Pressable
 } from 'react-native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, Slot } from 'expo-router';
+import { AuthProvider } from '../context/AuthContext';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -21,8 +22,6 @@ import NotificationBanner from '../components/NotificationBanner';
 import NotificationService from '../services/NotificationService';
 import { useState } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
-
-
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -99,24 +98,27 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={ DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/LoginScreen" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/_home/index" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/LogoutScreen" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/ActivityLogScreen" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/RegisterStep1Screen" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/RegisterStep2Screen" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/RegisterStep3Screen" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/ForgotPasswordScreen" options={{headerShown: false }}/>
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-          {/* {lastNotification && (
-        <NotificationBanner
-          message={lastNotification.request.content.body || ''}
-        />
-      )} */}
+      <AuthProvider>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="screens/LoginScreen" options={{ headerShown: false }} />
+          <Stack.Screen name="_home/index" options={{ headerShown: false }} />
+          <Stack.Screen name="screens/LogoutScreen" options={{ headerShown: false }} />
+          <Stack.Screen name="screens/ActivityLogScreen" options={{ headerShown: false }} />
+          <Stack.Screen name="screens/RegisterStep1Screen" options={{ headerShown: false }} />
+          <Stack.Screen name="screens/RegisterStep2Screen" options={{ headerShown: false }} />
+          <Stack.Screen name="screens/RegisterStep3Screen" options={{ headerShown: false }} />
+          <Stack.Screen name="screens/ForgotPasswordScreen" options={{headerShown: false }}/>
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="auto" />
+            {/* {lastNotification && (
+          <NotificationBanner
+            message={lastNotification.request.content.body || ''}
+          />
+        )} */}
+      </AuthProvider>
+
     </ThemeProvider>
   );
 }

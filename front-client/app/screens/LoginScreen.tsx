@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { saveToken } from '../../utils/storage';
 import {useNavigation, NavigationProp } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
+import { useAuth } from '../../context/AuthContext';
 
 type RootStackParamList = {
   'screens/RegisterHealthScreen': undefined;
@@ -19,6 +20,7 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     try {
@@ -29,8 +31,9 @@ export default function LoginScreen() {
       }
   
       // Stocke le token pour les prochains appels API
+      login(token);
       await saveToken(token);   
-        router.push('/(tabs)');
+        router.replace('/(tabs)');
       //console.log('Navigation vers RegisterHealthScreen réussie');
     } catch (e) {
       setError('Identifiants invalides');
@@ -39,7 +42,7 @@ export default function LoginScreen() {
  return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/images/BF.png')}
+        source={require('../../assets/images/icon.png')}
         style={styles.logo}
       />
       <Text style={styles.title}>Se connecter</Text>

@@ -76,7 +76,7 @@ export default function ProgramLineScreen() {
       <View style={styles.card}>
 
       <Image
-        source={{ uri: `${baseURL}images/${encodeURIComponent(currentLine.exercise.image)}` }}
+        source={{ uri: `${baseURL}images/pausesActives/${encodeURIComponent(currentLine.exercise.image)}` }}
         style={styles.image}
         resizeMode="contain"
       />

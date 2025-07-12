@@ -1,5 +1,4 @@
 import * as Notifications from 'expo-notifications';
-import * as Permissions   from 'expo-permissions';
 import AsyncStorage       from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = '@reminder_settings';
@@ -38,7 +37,13 @@ export type ReminderSettings = {
 
 export default class NotificationService {
   static async requestPermissions() {
-    const { status } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+    const { status } = await Notifications.requestPermissionsAsync({
+      ios: {
+        allowAlert: true,
+        allowSound: true,
+        allowBadge: true,
+      },
+    });
     if (status !== 'granted') {
       throw new Error('Notification permissions not granted');
     }

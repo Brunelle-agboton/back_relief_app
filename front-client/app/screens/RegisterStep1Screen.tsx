@@ -30,7 +30,7 @@ export default function RegisterStep1Screen() {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/images/BF.png')}
+        source={require('../../assets/images/icon.png')}
         style={styles.logo}
         testID="logo-image"
       />

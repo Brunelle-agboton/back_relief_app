@@ -46,7 +46,7 @@ const EXTRA_ITEMS = [
         screenOptions={{
           headerLeft: () => (
             <Image 
-              source={require('../../assets/images/BF.png')} 
+              source={require('../../assets/images/icon.png')} 
               style={{ width: 40, height: 40, marginLeft: 8 }} 
             />
           ),

@@ -126,7 +126,7 @@ export default function PauseActiveScreen() {
                 params: { currentStep: 0 }})
             }}
               >
-            <Image source={{ uri: `${baseURL}images/${encodeURIComponent(line.exercise.image)}` }} style={styles.cardImage} />
+            <Image source={{ uri: `${baseURL}images/pausesActives/${encodeURIComponent(line.exercise.image)}` }} style={styles.cardImage} />
                 <View style={styles.pausetats}>
                   <View style={styles.statItem}>
                       <Foundation name="clock" size={16} color="#666" {...iconProps} />
@@ -162,7 +162,7 @@ export default function PauseActiveScreen() {
               })
             }
           >
-            <Image source={{ uri: `${baseURL}images/${encodeURIComponent(program.image)}` }} style={styles.programImage} />
+            <Image source={{ uri: `${baseURL}images/pausesActives/${encodeURIComponent(program.image)}` }} style={styles.programImage} />
             <Feather name="play" size={16} color="#ED6A5E" {...iconProps} style={styles.playIcon} />
               
           </TouchableOpacity>

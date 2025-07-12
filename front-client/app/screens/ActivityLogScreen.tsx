@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, SectionList, StyleSheet } from 'react-native';
 import api from '../../services/api';
-import { getUserId } from '../../utils/storage';
+import { getUserId } from '../../context/AuthContext';
 
 type Activity = {
   id: number;

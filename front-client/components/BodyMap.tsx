@@ -1,12 +1,13 @@
 import React, {useState} from 'react';
-import Svg, { Image as SImage, Circle, RadialGradient, Stop, Defs } from 'react-native-svg';
+import Svg, { Image as SImage, Circle, RadialGradient, Stop, Defs, Path } from 'react-native-svg';
 
 const bodyImage = require('../assets/images/assis.png');
-type Props = {
+type BodyMapProps = {
     onSelect: (zone: string) => void;
+    pains?: Record<string, { level: number }>;
   };
 
-export default function BodyMap({ onSelect }: Props) {
+export default function BodyMap({ onSelect, pains = {} }: BodyMapProps ) {
     const [selectedZone, setSelectedZone] = useState<string | null>(null);
 
     const handleSelect = (zone: string) => {
@@ -14,6 +15,12 @@ export default function BodyMap({ onSelect }: Props) {
       onSelect(zone);
     };
   
+    // convertir niveau en couleur
+  const getColor = (v: number) => {
+    const r = Math.round((10 - v) * 25.5);
+    const g = Math.round(v * 25.5);
+    return `rgb(${r},${g},0)`;
+  };
     return (
       <Svg width="90%" height="90%" viewBox="0 0 200 620" >
         {/* Image du corps */}
@@ -26,7 +33,7 @@ export default function BodyMap({ onSelect }: Props) {
   
         <Defs>
           {/* Dégradé radial rouge */}
-          <RadialGradient id="redGradient" cx="50%" cy="50%" r="80%">
+          <RadialGradient id="redGradient" cx="50%" cy="50%" r="50%">
             <Stop offset="0%" stopColor="red" stopOpacity="1" />
             <Stop offset="100%" stopColor="red" stopOpacity="0" />
           </RadialGradient>
@@ -50,7 +57,7 @@ export default function BodyMap({ onSelect }: Props) {
         />
   
         {/* Cercle pour le bas du dos */}
-        {selectedZone === 'Bas du dos' && (
+        {selectedZone === 'GaucheDuDos' && (
           <Circle
             cx={50}
             cy={375}
@@ -63,11 +70,11 @@ export default function BodyMap({ onSelect }: Props) {
           cy={375}
           r={20}
           fill="transparent"
-          onPress={() => handleSelect('Bas du dos')}
+          onPress={() => handleSelect('GaucheDuDos')}
         />
 
-        {/* Cercle pour le Milieu du dos*/}
-        {selectedZone === 'Milieu du dos' && (
+        {/* Cercle pour le Droit du dos*/}
+        {selectedZone === 'DroitDuDos' && (
           <Circle
             cx={50}
             cy={310}
@@ -80,7 +87,7 @@ export default function BodyMap({ onSelect }: Props) {
           cy={310}
           r={20}
           fill="transparent"
-          onPress={() => handleSelect('Milieu du dos')}
+          onPress={() => handleSelect('DroitDuDos')}
         />
       </Svg>
     );

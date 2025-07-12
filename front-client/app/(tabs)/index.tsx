@@ -8,12 +8,12 @@ import {
   Dimensions,
   useAnimatedValue
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-
+import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { getUserId } from '../../utils/storage';
+import { getUserId } from '../../context/AuthContext';
 import { getToken }              from '../../utils/storage';
 
 const { width } = Dimensions.get('window');
@@ -28,7 +28,8 @@ const characters = {
 
 export default function HomeScreen() {
   const router = useRouter();
-
+  const { isAuthenticated } = useAuth();
+  
   // Ces valeurs viendront de votre API ou storage
   const [painLevel, setPainLevel] = useState<number>();
   const [nbExercises, setNbExercises] = useState<number>();
@@ -37,19 +38,18 @@ export default function HomeScreen() {
 
   // Cette fonction fetch les données
   const loadStats = useCallback(async () => {
-    const token = await getToken();
-    if (!token) {
-            router.replace('/screens/_home');
-      return;
+    if (isAuthenticated) {
+      return <Redirect href="/_home" />;
     }
-    try {
-      const { data } = await api.get('/summary/details');
-      setPainLevel(data.painLevel);
-      setNbExercises(data.nbExercises);
-      setStreakDays(data.streakDays);
-    } catch (err) {
-      console.error(err);
-    }
+    try 
+      {
+        const { data } = await api.get('/summary/details');
+        setPainLevel(data.painLevel);
+        setNbExercises(data.nbExercises);
+        setStreakDays(data.streakDays);
+      } catch (err) {
+        console.error(err);
+      }
   }, []);
 
   // useFocusEffect appelle loadStats à chaque fois que l'écran gagne le focus
@@ -112,10 +112,6 @@ export default function HomeScreen() {
           <Text style={styles.statLabel}>exercices</Text>
         </View>
         <View style={[styles.statCard, { borderColor:'#FFAE00',}]}>
-          <Text style={styles.statValue}>{avgExercises}</Text>
-          <Text style={styles.statLabel}>moyenne</Text>
-        </View>
-        <View style={[styles.statCard, { borderColor:'#EEE',}]}>
           <Text style={[styles.statValue, { color: '#ccc' }]}>
             {streakDays}
           </Text>
