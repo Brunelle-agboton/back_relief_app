@@ -7,89 +7,97 @@ import {
   StyleSheet, 
   ScrollView,
   TouchableOpacity,   
-  Modal,
+  FlatList,
+  Image,
   Platform,
 } from 'react-native';
-import Slider from '@react-native-community/slider';
-import BodyMap from '../../components/BodyMap';
+import { AntDesign } from '@expo/vector-icons';
+import BodyMapBack from '../../components/BodyMapBack';
+import BodyMapFront from '../../components/BodyMapFront';
 import { getUserId } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
 import api from '../../services/api';
 import { PainModal } from '@/components/PainModal';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { MuscleSVGs, MuscleNames } from '@/utils/musclesData';
+import { baseURL } from '../../services/api';
+
+type CompletedExercise = {
+  id: number;
+  title: string;
+  image: string;
+};
 
 export default function RegisterHealthScreen() {
   const router = useRouter();
   const [options, setOptions] = useState<string[]>([]);
-  const [painLocation, setLocation] = useState('');
-  const [painLevel, setLevel] = useState(5);
+  const [exercises, setExercises] = useState<CompletedExercise[]>([]);
+  const [painLocation, setPainLocation] = useState<string | null>(null);
+  const [painLevel, setPainLevel] = useState(5);
   const [description, setDescription] = useState('');
-
   const [painByZone, setPainByZone] = useState<
     Record<string, { level: number; desc: string }>
   >({});
-  const [modalZone, setModalZone] = useState<string | null>(null);
-  const [tempLevel, setTempLevel] = useState(5);
-  const [tempDesc, setTempDesc] = useState('');
+  const [viewSide, setViewSide] = useState<'front'|'back'>('back');
 
-
-  const MuscleSVGs: Record<string, any> = {
-    'Tête': require('../../assets/images/muscles/head.svg'), 
-    'DroitDuDos': require('../../assets/images/muscles/Grand-dorsal-droit.svg'), 
-    'GaucheDuDos': require('../../assets/images/muscles/head.svg'), 
-    // 'Épaule gauche': require('../../assets/images/muscles/head.svg'), 
-    // 'Épaule droit': require('../../assets/images/muscles/head.svg'), 
-
-    // … etc.
-  }; 
-
+  const swapSide = (direction: 'next'|'prev') => {
+    setViewSide(s =>
+      direction === 'next'
+        ? s === 'front' ? 'back'  : 'front'
+        : s === 'front' ? 'back'  : 'front'
+    );
+  };
   useEffect(() => {
     api.get('/health/pain-options').then(res => setOptions(res.data));
-  }, []);
 
-   // Fonction pour interpoler la couleur
-   const getColor = (value: number) => {
-    const red = Math.round((10 - value) * 25.5); // Diminue le rouge
-    const green = Math.round(value * 25.5); // Augmente le vert
-    return `rgb(${red}, ${green}, 0)`; // Couleur entre rouge et vert
-  };
-
-  const submit = async () => {
-    try {
-    const userId = await getUserId(); // Récupérez l'ID de l'utilisateur
-    if (!userId) {
-      alert('Utilisateur non connecté');
-      return;
-    }
-
-    const response = await api.post('/health/pain', { userId, painLocation, painLevel, description });
-    if (response.data) {
-      router.push('/(tabs)/pauseActive');
-    } else {
-      alert('Erreur lors de l\'envoi des données');
-    }
-    } catch(err) {
+    const healthHistory = async () => {
+      try {
+        const {data} = await api.get(`/health/pains-latest`);
+        console.log(data.exercises);
+        setPainByZone(data.lastPainByLocation);
+        setExercises(data.exercises);
+      }  catch (err) {
         console.error(err);
-        alert('Erreur lors de l\'envoi des données');
       }
-  };
-  
+    };
 
+    healthHistory();
+  }, []);
+  
   // ouvre le modal au clic d’une zone
   const handleSelect = (zone: string) => {
     const existing = painByZone[zone] || { level: 5, desc: '' };
-    setTempLevel(existing.level);
-    setTempDesc(existing.desc);
-    setModalZone(zone);
+    setPainLevel(existing.level);
+    setDescription(existing.desc);
+    setPainLocation(zone);
   };
 
-  const saveZone = () => {
-    if (modalZone) {
+  const saveZone =  async () => {
+    if (painLocation) {
       setPainByZone(z => ({
         ...z,
-        [modalZone]: { level: tempLevel, desc: tempDesc },
+        [painLocation]: { level: painLevel, desc: description },
       }));
-      setModalZone(null);
+
+      try {
+        const userId = await getUserId(); // Récupérez l'ID de l'utilisateur
+        if (!userId) {
+          alert('Utilisateur non connecté');
+          return;
+        }
+
+        const response = await api.post('/health/pain', { userId, painLocation, painLevel, description });
+        if (response.data) {
+          router.push('/(tabs)/pauseActive');
+        } else {
+          alert('Erreur lors de l\'envoi des données');
+        }
+        } catch(err) {
+            console.error(err);
+            alert('Erreur lors de l\'envoi des données');
+      }
+
+      setPainLocation(null);
     }
   };
 
@@ -130,35 +138,60 @@ export default function RegisterHealthScreen() {
           </ScrollView>
     */}
 
-      <Text style={styles.subtitle}>Où avez-vous mal ?</Text>
-      
+      <Text style={styles.title}>Douleur</Text>      
       <View style={styles.bodyMapContainer}>        
-        <BodyMap 
-        onSelect={handleSelect} 
-        pains={painByZone}
-        />
+        <TouchableOpacity
+          style={[{marginRight: 29}, styles.arrowButton]}
+          onPress={() => swapSide('prev')}
+        >
+          <AntDesign name="left" size={52} style={styles.arrowStyle} />
+        </TouchableOpacity>
+
+        {viewSide === 'front' ? (
+          <BodyMapFront onSelect={handleSelect} pains={painByZone} />
+        ) : (
+          <BodyMapBack  onSelect={handleSelect} pains={painByZone} />
+        )}
+
+        <TouchableOpacity
+          style={styles.arrowButton}
+          onPress={() => swapSide('next')}
+        >
+          <AntDesign name="right" size={52} style={styles.arrowStyle}/>
+        </TouchableOpacity>
       </View>
+
       {/* Modal de saisie EVA + description */}
+      {painLocation && MuscleSVGs[painLocation] && (
       <PainModal
-        visible={modalZone !== null}
-        zone={modalZone!}
-        SvgPreview={MuscleSVGs[modalZone!]}
-        level={tempLevel}
-        desc={tempDesc}
-        onChangeLevel={() => setTempLevel}
-        onChangeDesc={() => setTempDesc}
-        onClose={() => setModalZone(null)}
+        visible={painLocation !== null}
+        zone={painLocation!}
+        SvgPreview={MuscleSVGs[painLocation!]}
+        level={painLevel}
+        desc={description}
+        onChangeLevel={setPainLevel}
+        onChangeDesc={setDescription}
+        onClose={() => setPainLocation(null)}
         onSave={saveZone}
-      /* … etc … */
       />
-      {/* Affichage résumé */}
-      <View style={styles.summary}>
-        {Object.entries(painByZone).map(([zone, { level }]) => (
-          <Text key={zone}>
-            {zone} — {level}/10
-          </Text>
-        ))}
-      </View>
+     )}
+
+     <Text style={styles.sectionTitle}>Exercices réalisés</Text>
+      <FlatList
+        data={exercises}
+        keyExtractor={(item) => item.id.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.exList}
+        renderItem={({ item }) => (
+          <View style={styles.exCard}>
+            <Image
+              source={{ uri: `${baseURL}images/pausesActives/${encodeURIComponent(item.image)}` }}
+              style={styles.exImage}
+            />
+          </View>
+        )}
+      />
     </ScrollView>
   );
 }
@@ -168,14 +201,25 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   bodyMapContainer: {
-    width: '100%',
-    height: 400,
-    marginBottom: 0,
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 20,
   },
-  formContainer: {
-    flex: 1,
+  arrowButton: {
     padding: 16,
+  },
+  arrowStyle: {
+    width: 52,
+    color: '#abababff',
+    borderRadius: 30,
+
+  },
+  title: {
+    fontFamily: 'Blod',
+    fontSize: 30,
+    paddingTop: 4,
+    paddingHorizontal: 12,
   },
   subtitle: {
     fontFamily: 'Regular',
@@ -183,26 +227,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingTop: 4,
     paddingHorizontal: 16,
-  },
-  locationText: {
-    fontFamily: 'Regular',
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  enterText: {
-    fontFamily: 'Regular',
-    fontSize: 16,
-    paddingTop: 4,
-    paddingBottom: 6,
-  },
-  descriptionInput: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    textAlignVertical: 'top',
-    minHeight: 100,
   },
   sliderContainer: {
     marginBottom: 20,
@@ -237,64 +261,48 @@ const styles = StyleSheet.create({
     width: 40,
     color: '#fff',
   },
-  painDisplay: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    marginVertical: 30,
-    width: 100,
-  },
-  painLevel: {
-    fontSize: 86,
-    fontWeight: '700',
-    lineHeight: 78,
-  },
-  painMax: {
-    fontSize: 24,
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: '600',
-    color: '#666',
-    marginLeft: 4,
     marginBottom: 12,
   },
-   modalBackdrop: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center', alignItems: 'center',
+  exList: {
+    paddingLeft: 0,
+    paddingRight: 20,
   },
-  musclePreview: {
-    width: '100%',
-    alignItems: 'center',
-    marginVertical: 12,
-    backgroundColor: '#f5f5f5',  // optionnel : fond léger
-    padding: 8,
-    borderRadius: 8,
-  },
-modalContent: {
-    width: '80%', backgroundColor: '#fff',
-    borderRadius: 12, padding: 20,
-  },
-  modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  modalLabel: {
-    fontSize: 16,
-    marginTop: 10,
-    marginBottom: 4,
-  },
-  modalInput: {
+  exCard: {
+    width: 300,
+    height: 160,
+    marginRight: 12,
+    marginBottom: 8,
+    borderTopColor: '#fff',
+    borderRadius: 15,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 8,
-    marginVertical: 8,
+    borderColor: '#eee',
+    shadowColor: '#00000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    backgroundColor: '#fff',
+    elevation: 5,
   },
-  modalButton: {
-    backgroundColor: '#4CAF50',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 12,
+  exImage: {
+    width: '100%',
+    height: 150,
+    resizeMode: 'contain',
   },
-  modalButtonText: {
-    color: '#fff',
+  exName: {
+    fontSize: 14,
     fontWeight: '600',
+    margin: 8,
   },
-    summary: { marginTop: 20 },
-
+  exDetail: {
+    fontSize: 12,
+    color: '#555',
+    marginHorizontal: 8,
+    marginBottom: 8,
+  },
 });

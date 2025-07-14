@@ -93,7 +93,6 @@ const styles = StyleSheet.create({
     width: screenWidth, 
     height: screenWidth * 1.4, 
     marginBottom: 30,borderRadius: 9,
-    boxShadow: '10px 4px 0 8px rgba(3, 3, 3, 0.98)',
     shadowColor: '#00000',
     shadowOffset: {
       width: 2,

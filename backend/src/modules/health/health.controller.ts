@@ -28,6 +28,18 @@ export class HealthController {
     return this.healthService.submitPain({...dto, user});
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('pains-latest')
+    async getPainsLatest(@Request() req) {
+        const userId = req.user.userId; 
+        
+        const user = await this.userService.findOne(userId);
+        if (!user) {
+          throw new Error('User not found');
+        }
+        return await this.healthService.getPainsLatest(user);
+  }
+
   @Get()
   findAll() {
     return this.healthService.findAll();

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions, Image } from 'react-native';
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
-import BodyMap from '../../components/BodyMap';
+import BodyMapBack from '../../components/BodyMapBack';
 import { LineChart } from 'react-native-chart-kit';
 import api from '../../services/api';
 import { Notification, HealthEntry  } from '../../interfaces/types';
@@ -41,7 +41,6 @@ const SummaryScreen = () => {
           }
 
         try {
-          console.log(userId);
           const { data } = await api.get('/summary');
         setHealthHistory(data.healthHistory);
         setExercises(data.exercises);
@@ -179,7 +178,7 @@ const SummaryScreen = () => {
         <SummaryCardVertical label="Minimum" value={mn.toString()} color="#EF4444" />
       </View>
         <View style={styles.mapContainer}>
-        <BodyMap onSelect={setLocation} />
+        <BodyMapBack onSelect={setLocation} />
       </View>
     </View>
             

@@ -78,6 +78,7 @@ yarn-error.*
 *.tsbuildinfo
 
 #platform
-#android/
+android/local.properties
+ios/
 
 # @end expo-cli

@@ -1,9 +1,10 @@
 import { IsString, IsIn, IsInt, Min, Max, IsDate } from 'class-validator';
 import { User } from 'src/modules/user/entities/user.entity';
+import { painLocations } from 'src/utils/painLocations';
 
 export class PainInputDto {
   @IsString()
-  @IsIn(['Haut du dos', 'Milieu du dos', 'Bas du dos'])
+  @IsIn(painLocations)
   painLocation: string;
 
   @IsInt()

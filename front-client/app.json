@@ -13,7 +13,8 @@
       "bundleIdentifier": "back.relief.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "sounds": ["local/assets/notification_sound.wav"]
     },
     "android": {
       "adaptiveIcon": {

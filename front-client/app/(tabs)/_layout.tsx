@@ -47,7 +47,7 @@ const EXTRA_ITEMS = [
           headerLeft: () => (
             <Image 
               source={require('../../assets/images/icon.png')} 
-              style={{ width: 40, height: 40, marginLeft: 8 }} 
+              style={{ width: 50, height: 45, marginLeft: 5 }} 
             />
           ),
           headerRight: () => (
@@ -59,6 +59,9 @@ const EXTRA_ITEMS = [
             </TouchableOpacity>
           ),
           headerTitleAlign: 'center',
+          headerBackground: () => (
+            <View style={{ flex: 1, backgroundColor: "#CDFBE2" }} />
+          ),
           tabBarStyle: {
             backgroundColor: '#32CD32',
             borderTopWidth: Platform.OS === 'ios' ? 0.2 : 0,

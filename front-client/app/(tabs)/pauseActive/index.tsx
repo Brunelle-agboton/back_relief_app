@@ -163,7 +163,6 @@ export default function PauseActiveScreen() {
             }
           >
             <Image source={{ uri: `${baseURL}images/pausesActives/${encodeURIComponent(program.image)}` }} style={styles.programImage} />
-            <Feather name="play" size={16} color="#ED6A5E" {...iconProps} style={styles.playIcon} />
               
           </TouchableOpacity>
         ))}
@@ -177,7 +176,6 @@ export default function PauseActiveScreen() {
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    
   },
   viewContainer: {
     backgroundColor: '#fff',
@@ -208,7 +206,6 @@ export default function PauseActiveScreen() {
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#eee',
-    boxShadow: '0 4px 0 8px rgba(3, 3, 3, 0.1)',
     shadowColor: '#00000',
     shadowOffset: {
       width: 0,
@@ -219,7 +216,7 @@ export default function PauseActiveScreen() {
     elevation: 5,
   },
   cardImage:{ width: '100%', height: 150, resizeMode: 'contain', },
-  programImage:{ width: '100%', height: 172, resizeMode: 'cover' },
+  programImage:{ width: '100%', height: 172, resizeMode: 'contain' },
   categoriesContainer: {
     marginVertical: 20,
   },
@@ -248,19 +245,19 @@ export default function PauseActiveScreen() {
   },
   card: {
     width: 100,
-    height: 175,
+    height: 160,
     borderRadius: 16,
+    marginTop: 1,
     marginRight: 12,
-    marginBottom: 12,
+    marginBottom: 8,
     overflow: 'hidden',
     shadowColor: '#000',
-    boxShadow: '10px 4px 0 8px rgba(3, 3, 3, 0.98)',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 5,
+    backgroundColor: '#fff',
     elevation: 6,
   },
   cardContent: {

@@ -4,7 +4,7 @@ import {useNavigation, NavigationProp, RouteProp, useRoute } from '@react-naviga
 import { CountdownCircleTimer } from 'react-native-countdown-circle-timer';
 import api from '../../../services/api';
 import { baseURL } from '../../../services/api';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getProgramLines, clearProgramLines } from '../../../utils/ProgramStore';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -12,6 +12,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 export default function ProgramLineScreen() {
   const params = useLocalSearchParams();
   const navigation = useNavigation<NavigationProp<any>>();
+    const router = useRouter();
   const { currentStep } = params;
   const [isStarted, setIsStarted] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
@@ -43,7 +44,7 @@ export default function ProgramLineScreen() {
       setStep(stepState + 1);
     } else {
       clearProgramLines(); // Effacer les lignes de programme après la dernière étape
-      navigation.goBack(); // ou navigation.navigate('EcranDeFin')
+      router.replace('/(tabs)/RegisterHealthScreen'); // ou navigation.navigate('EcranDeFin')
     }
   };
 
@@ -111,6 +112,7 @@ export default function ProgramLineScreen() {
           </Text>}
       </CountdownCircleTimer>
          <View style={styles.buttonRow}>
+          
          {/* PLAY BUTTON */}
       {!isStarted && (
         <TouchableOpacity
@@ -127,7 +129,7 @@ export default function ProgramLineScreen() {
           style={[styles.actionButton, styles.finishButton]}
           onPress={finishExercise}
         >
-          <Text style={styles.actionText}>Terminer</Text>
+          <Text style={styles.actionText}>Terminer l'exercice</Text>
         </TouchableOpacity>
       )}
       </View>
@@ -158,7 +160,6 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     borderWidth: 1,
     borderColor: '#eee',
-    boxShadow: '10px 4px 0 8px rgba(3, 3, 3, 0.1)',
     shadowColor: '#00000',
     shadowOffset: {
       width: 0,
@@ -214,10 +215,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   finishButton: {
-    backgroundColor: '#333',
+    backgroundColor: '#CDFBE2',
   },
   actionText: {
-    color: '#fff',
+    color: '#000',
     fontSize: 16,
     fontWeight: '600',
   },

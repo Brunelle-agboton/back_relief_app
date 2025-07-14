@@ -33,7 +33,6 @@ export default function HomeScreen() {
   // Ces valeurs viendront de votre API ou storage
   const [painLevel, setPainLevel] = useState<number>();
   const [nbExercises, setNbExercises] = useState<number>();
-  const [avgExercises, setAvgExercises] = useState<number>(9);
   const [streakDays, setStreakDays] = useState<number>();
 
   // Cette fonction fetch les données
