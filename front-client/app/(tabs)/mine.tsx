@@ -68,7 +68,7 @@ export default function UserProfileScreen() {
         </View>
       </View>
 
-      <Button title="Déconnexion" onPress={logout} />
+      <Button title="Déconnexion" onPress={() => logout()} />
     </ScrollView>
   );
 }
@@ -77,6 +77,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+    section: {
+    marginBottom: 25,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
   },
   header: {
     flexDirection: 'row',
@@ -188,15 +210,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: '#000',
     fontSize: 16,
-  },
-  section: {
-    padding: 20,
-  },
-  sectionTitle: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 18,
-    color: '#000',
-    marginBottom: 16,
   },
   achievementsContainer: {
     flexDirection: 'row',

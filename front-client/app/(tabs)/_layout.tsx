@@ -15,6 +15,7 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
+import { useAuth } from '../../context/AuthContext';
 
 // Liste des tabs avec leurs informations
 const TAB_ITEMS = [
@@ -29,11 +30,7 @@ const TAB_ITEMS = [
 export default function TabLayout() {
   const router = useRouter();           // ← utilise useRouter
   const [menuVisible, setMenuVisible] = useState(false);
-  
-// Option de menu hors-tabs
-const EXTRA_ITEMS = [
-  { title: 'Déconnexion', path: '/screens/LogoutScreen' },
-];
+  const { logout } = useAuth();
   // Fonction pour naviguer vers une tab spécifique
   const navigateToTab = (tabName: string) => {
     router.push(`/(tabs)/${tabName}`);
@@ -135,17 +132,16 @@ const EXTRA_ITEMS = [
             {/* Séparateur */}
             <View style={styles.separator} />
             {/* Déconnexion */}
-            {EXTRA_ITEMS.map(item => (
-              <Pressable
-                key={item.title}
+              <TouchableOpacity
                 style={styles.menuItem}
-                onPress={() => router.push(item.path)}
+                onPress={ () => {logout(); 
+                  setMenuVisible(false); // ferme le modal 
+                }}
               >
                 <Text style={[styles.menuText, styles.logoutText]}>
-                  {item.title}
+                 Déconnexion
                 </Text>
-              </Pressable>
-            ))}
+              </TouchableOpacity>
           </View>          
         </Pressable>
 

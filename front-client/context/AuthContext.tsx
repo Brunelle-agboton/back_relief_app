@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import {jwtDecode}  from 'jwt-decode';
+import LogoutScreen from '../app/screens/LogoutScreen';
+import { useRouter } from 'expo-router';
 
 const AuthContext = createContext<{
   isAuthenticated: boolean;
@@ -17,6 +19,7 @@ const AuthContext = createContext<{
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -36,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     SecureStore.deleteItemAsync('auth_token');
     setIsAuthenticated(false);
+    router.replace('/screens/LogoutScreen');
   };
 
   return (

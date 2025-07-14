@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { 
   View, 
   Text, 
@@ -21,6 +22,7 @@ import { PainModal } from '@/components/PainModal';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { MuscleSVGs, MuscleNames } from '@/utils/musclesData';
 import { baseURL } from '../../services/api';
+import HydrationSelector from '@/components/HydrationBar';
 
 type CompletedExercise = {
   id: number;
@@ -30,7 +32,6 @@ type CompletedExercise = {
 
 export default function RegisterHealthScreen() {
   const router = useRouter();
-  const [options, setOptions] = useState<string[]>([]);
   const [exercises, setExercises] = useState<CompletedExercise[]>([]);
   const [painLocation, setPainLocation] = useState<string | null>(null);
   const [painLevel, setPainLevel] = useState(5);
@@ -39,6 +40,8 @@ export default function RegisterHealthScreen() {
     Record<string, { level: number; desc: string }>
   >({});
   const [viewSide, setViewSide] = useState<'front'|'back'>('back');
+  const [selectedBottle, setSelectedBottle] = useState<string | null>(null);
+  const [hydrationHistory, setHydrationHistory] = useState<string>();
 
   const swapSide = (direction: 'next'|'prev') => {
     setViewSide(s =>
@@ -47,22 +50,27 @@ export default function RegisterHealthScreen() {
         : s === 'front' ? 'back'  : 'front'
     );
   };
-  useEffect(() => {
-    api.get('/health/pain-options').then(res => setOptions(res.data));
 
-    const healthHistory = async () => {
-      try {
-        const {data} = await api.get(`/health/pains-latest`);
-        console.log(data.exercises);
-        setPainByZone(data.lastPainByLocation);
-        setExercises(data.exercises);
-      }  catch (err) {
-        console.error(err);
-      }
-    };
+ const loadHealthData = async () => {
+    try {
+      const [{ data: painData }, { data: hydraData }] = await Promise.all([
+        api.get('/health/pains-latest'),
+        api.get<{ history: string }>('/health/hydration-latest'),
+      ]);
+      setPainByZone(painData.lastPainByLocation);
+      setExercises(painData.exercises);
+      setHydrationHistory(hydraData.history);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-    healthHistory();
-  }, []);
+  // au focus de l'écran, relance le fetch
+  useFocusEffect(
+    useCallback(() => {
+      loadHealthData();
+    }, [])
+  );
   
   // ouvre le modal au clic d’une zone
   const handleSelect = (zone: string) => {
@@ -70,6 +78,19 @@ export default function RegisterHealthScreen() {
     setPainLevel(existing.level);
     setDescription(existing.desc);
     setPainLocation(zone);
+  };
+
+   const handleSelectHydration = async (sizeId: string) => {
+    setSelectedBottle(sizeId);
+    // on stocke localement pour l'affichage
+    setHydrationHistory(sizeId);
+
+    // on appelle l'API pour sauvegarde
+    try {
+      await api.post('/health/hydration', { size: sizeId });
+    } catch (err) {
+      console.error('Erreur sauvegarde hydration', err);
+    }
   };
 
   const saveZone =  async () => {
@@ -101,45 +122,33 @@ export default function RegisterHealthScreen() {
     }
   };
 
+    // Calculer une liste unique d’exercices par id
+  const uniqueExercises = useMemo(() => {
+    const seen = new Set<number>();
+    return exercises.filter(ex => {
+      if (seen.has(ex.id)) return false;
+      seen.add(ex.id);
+      return true;
+    });
+  }, [exercises]);
+
   return (
   <ScrollView contentContainerStyle={styles.scrollContainer}>
-    {/* 
-    <ScrollView 
+     {/* Hydratation */}
+<Text style={[styles.title, {marginBottom: 25}]}>Hydratation</Text>
+   <ScrollView 
       horizontal
       showsHorizontalScrollIndicator={false}
+       contentContainerStyle={styles.exList}
       style={{ marginBottom: 12 }} >
-        {(exercises[selectedCategory] || []).map((line) => (
-        <TouchableOpacity
-          key={line.exercise.id}
-          style={styles.exerciseCard}
-        onPress={() => {
-        setProgramLines([line]);
-        router.push({
-          pathname: '/(tabs)/pauseActive/ProgramLineScreen', 
-          params: { currentStep: 0 }})
-      }}
-        >
-      <Image source={{ uri: `${baseURL}images/pausesActives/${encodeURIComponent(line.exercise.image)}` }} style={styles.cardImage} />
-          <View style={styles.pausetats}>
-            <View style={styles.statItem}>
-                <Foundation name="clock" size={16} color="#666" {...iconProps} />
-                <Text style={styles.statText}>{line.duration} seconds</Text>
-            </View>
-            {line.calories && (
-              <View style={styles.statItem}>
-              <Feather name="zap" size={16} color="#666" {...iconProps} />
-              <Text style={styles.statText}>{line.calories} kcal</Text>
-              </View>
-          )}
-    
-      </View>
-</TouchableOpacity>
-        ))}
+          <HydrationSelector 
+        selectedId={selectedBottle || undefined}
+        onSelect={handleSelectHydration} 
+    />
           </ScrollView>
-    */}
-
       <Text style={styles.title}>Douleur</Text>      
       <View style={styles.bodyMapContainer}>        
+        <MaterialCommunityIcons name="ellipse" size={79} color="#D9D9D9" style={styles.ellipse} />        
         <TouchableOpacity
           style={[{marginRight: 29}, styles.arrowButton]}
           onPress={() => swapSide('prev')}
@@ -178,7 +187,7 @@ export default function RegisterHealthScreen() {
 
      <Text style={styles.sectionTitle}>Exercices réalisés</Text>
       <FlatList
-        data={exercises}
+        data={uniqueExercises}
         keyExtractor={(item) => item.id.toString()}
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -198,6 +207,7 @@ export default function RegisterHealthScreen() {
 
 const styles = StyleSheet.create({
   scrollContainer: {
+    backgroundColor: '#fff',
     paddingBottom: 30,
   },
   bodyMapContainer: {
@@ -215,10 +225,18 @@ const styles = StyleSheet.create({
     borderRadius: 30,
 
   },
+   ellipse: {
+    position: 'absolute',
+    bottom: -8,                // décalé vers le bas
+    left: '48%',
+    width: 100,
+    height: 67,
+    transform: [{ scaleX: 4 }, { scaleY: 0.8 }],
+  },
   title: {
     fontFamily: 'Blod',
     fontSize: 30,
-    paddingTop: 4,
+    paddingTop: 14,
     paddingHorizontal: 12,
   },
   subtitle: {

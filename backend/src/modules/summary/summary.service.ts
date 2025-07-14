@@ -1,7 +1,7 @@
 import { Injectable }               from '@nestjs/common';
 import { InjectRepository }         from '@nestjs/typeorm';
 import { Repository }               from 'typeorm';
-import { Health }                     from '../health/entities/health.entity';
+import {  PainRecord, HydrationRecord  }                     from '../health/entities/health.entity';
 import { Activity, ActivityType }   from '../activity/entities/activity.entity';
 import { User }                     from '../user/entities/user.entity';
 import { ProgramLine }        from '../program-line/entities/program-line.entity';
@@ -9,8 +9,8 @@ import { ProgramLine }        from '../program-line/entities/program-line.entity
 @Injectable()
 export class SummaryService {
   constructor(
-    @InjectRepository(Health)
-    private healthRepo: Repository<Health>,
+    @InjectRepository(PainRecord)
+    private healthRepo: Repository<PainRecord>,
 
     @InjectRepository(Activity)
     private actRepo: Repository<Activity>,
@@ -95,7 +95,6 @@ export class SummaryService {
     order: { recordedAt: 'DESC' },
     take: 10,
   });
-
   // Dernier niveau de douleur
   const painLevel = healths.length > 0 ? healths[0].painLevel : null;
 

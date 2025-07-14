@@ -1,5 +1,4 @@
-import React, {useState} from 'react';
-import Svg, { Image as SImage, Circle, RadialGradient, Stop, Defs, G, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 type BodyMapProps = {
     onSelect: (zone: string) => void;
@@ -7,7 +6,7 @@ type BodyMapProps = {
   };
 
 export default function BodyMapBack({ onSelect, pains = {} }: BodyMapProps ) {  
-    // convertir niveau en couleur
+  // convertir niveau en couleur
   const getColor = (v: number) => {
     const r = Math.round((10 - v) * 25.5);
     const g = Math.round(v * 25.5);
@@ -32,7 +31,7 @@ export default function BodyMapBack({ onSelect, pains = {} }: BodyMapProps ) {
       onPress: () => onSelect('Carpe'),
     },
     'deltoide-droit': {
-      fill: pains['Deltoïde Droit'] ? getColor(pains['Deltoïde Droit'].level) : '#E2E2E2',
+      fill: pains['Deltoïde Droit'] ? getColor(pains['Deltoïde Droit'].level) : '#B4B4B4',
       onPress: () => onSelect('Deltoïde Droit'),
     },
     'fessier-gauche': {
@@ -126,13 +125,11 @@ export default function BodyMapBack({ onSelect, pains = {} }: BodyMapProps ) {
   };
 
    return (
-      
       <Svg 
         width="184" 
         height="346" 
         viewBox="0 0 184 346" 
         fill="none" 
-        {...bodyPartProps}
         > 
         <Path 
             id="pied-gauche"
@@ -147,17 +144,17 @@ export default function BodyMapBack({ onSelect, pains = {} }: BodyMapProps ) {
              stroke-width="0.5"
             {...bodyPartProps['ischio-jambier']}/>
         <Path 
-            id="grand-rond-droit"
+            id="deltoide-droit"
              d="M90.4405 78.2883L64.5759 83.2149C66.2181 87.3204 72.2742 95.9628 77.7135 99.2263C83.8717 102.921 86.7455 104.153 94.1354 114.006C93.9986 111.68 99.4725 102.006 99.4725 92.247C99.4725 85.6782 91.2616 78.4252 90.4405 78.2883Z" 
              stroke="white" 
              stroke-width="0.5"
-            {...bodyPartProps['grand-rond-droit']}/>
+            {...bodyPartProps['deltoide-droit']}/>
         <Path 
-            id="deltoide-droit"
+            id="grand-rond-droit"
              d="M74.0186 97.1719C74.0186 97.1719 72.3022 111.922 73.4274 115.921C71.4584 117.106 65.3606 118.767 57.5967 118.056C49.8328 117.345 46.7102 113.881 45.3037 111.66C47.8354 107.661 63.6351 85.7031 64.479 84.8145C64.479 84.8145 65.377 87.5789 70.0185 92.9107L74.0186 97.1719Z" 
              stroke="white" 
              stroke-width="0.5"
-            {...bodyPartProps['deltoide-droit']}/>
+            {...bodyPartProps['grand-rond-droit']}/>
         <Path 
             id="grand-rond-gauche"
              d="M5.84299 93.5139C5.84299 93.5139 3.82892 95.5847 1.7203 103.359C6.02186 106.544 5.95978 108.775 9.50973 109.529C11.8202 110.02 20.6665 108.708 22.7193 107.399C22.1401 103.054 17.546 82.6396 17.1798 81.5638C17.1798 81.5638 15.1539 81.136 13.9591 81.5638L5.84299 93.5139Z" 

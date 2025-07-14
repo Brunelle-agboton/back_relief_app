@@ -4,7 +4,7 @@ import AbdosSVG from '@/assets/images/muscles/Abdos.svg';
 import AvantBrasSVG from '@/assets/images/muscles/Avant-bras.svg';
 import BicepsSVG from '@/assets/images/muscles/Biceps.svg';
 import CarpeSVG from '@/assets/images/muscles/Carpe.svg';
-import DeltoidDroitSVG from '@/assets/images/muscles/deltoid-droit.svg'; // Attention à l'espace dans le nom de fichier
+import DeltoidDroitSVG from '@/assets/images/muscles/deltoid-droit.svg'; 
 import FessierGaucheSVG from '@/assets/images/muscles/fessier-gauche.svg'; // Attention à l'espace
 import FessierDroitSVG from '@/assets/images/muscles/Fessier-Droit.svg';
 import GrandDorsalGaucheSVG from '@/assets/images/muscles/Grand-dorsal-gauche.svg'; // Attention à l'espace
@@ -34,19 +34,30 @@ import AbdosLateralSVG from '@/assets/images/muscles/Abdos-Lateral.svg';
 import MainDroiteSVG from '@/assets/images/muscles/Main-Droite.svg';
 import MainGaucheSVG from '@/assets/images/muscles/Main-Gauche.svg';
 import AvantBrasDroitSVG from '@/assets/images/muscles/Avant-Bras-Droit.svg';
+import AvantBrasGaucheSVG from '@/assets/images/muscles/Avant-Bras-Gauche.svg';
+import PectoralDroitSVG from '@/assets/images/muscles/Pectoral-Droit.svg';
+import PectoralGaucheSVG from '@/assets/images/muscles/Pectoral-Gauche.svg';
+import HeadFaceSVG from '@/assets/images/muscles/Head-Face.svg';
 import TricepsDroitSVG from '@/assets/images/muscles/Triceps-Droit.svg';
 import SupinateurDroitSVG from '@/assets/images/muscles/Supinateur-Droit.svg';
 import SupinateurGaucheSVG from '@/assets/images/muscles/Supinateur-Gauche.svg';
 import TricepsGaucheSVG from '@/assets/images/muscles/Triceps-Gauche.svg';
 import BicepsGaucheSVG from '@/assets/images/muscles/Biceps-Gauche.svg';
 import TibiatGaucheLateralSVG from '@/assets/images/muscles/Tibiat-Gauche-Lateral.svg';
+import TibiatGaucheLateral1SVG from '@/assets/images/muscles/Tibiat-Gauche-Lateral-1.svg';
 import PiedGaucheAnterieurSVG from '@/assets/images/muscles/Pied-Gauche-Anterieur.svg';
 import FessierGaucheLateralSVG from '@/assets/images/muscles/Fessier-Gauche-Lateral.svg';
 import PiedDroitAnterieurSVG from '@/assets/images/muscles/Pied-Droit-Anterieur.svg';
 import TroncSVG from '@/assets/images/muscles/Tronc.svg';
+import BicepsDroitSVG from '@/assets/images/muscles/Biceps-Droit.svg';
+import DeltoidDroitLateralSVG from '@/assets/images/muscles/Deltroid-Droit-Lateral.svg';
+import DeltoidGaucheLateralSVG from '@/assets/images/muscles/Deltroid-Gauche-Lateral.svg';
+import QuadricepsDroitsSVG from '@/assets/images/muscles/Quadriceps-Droits.svg';
+import QuadricepsGaucheSVG from '@/assets/images/muscles/Quadriceps-Gauche.svg';
+import BicepsFemoralDroitSVG from '@/assets/images/muscles/Bicesps-Femoral.svg';
+import BicepsFemoralGaucheSVG from '@/assets/images/muscles/Bicesps-Femoral-Gauche.svg';
 
 //Main-Gauche
-// Type pour les composants SVG (si vous utilisez TypeScript)
 type SVGComponent = React.FC<React.SVGProps<SVGSVGElement>>;
 
 export const MuscleSVGs: Record<string, SVGComponent> = {
@@ -83,17 +94,29 @@ export const MuscleSVGs: Record<string, SVGComponent> = {
   "Abdos Lateral": AbdosLateralSVG,
   "Main Droite": MainDroiteSVG,
   "Main Gauche": MainGaucheSVG,
-  "Avant-Bras-Droit": AvantBrasDroitSVG,
-  "Triceps-Droit": TricepsDroitSVG,
-  "Supinateur-Droit": SupinateurDroitSVG,
-  "Supinateur-Gauche":SupinateurGaucheSVG,
-  "Triceps-Gauche": TricepsGaucheSVG,
-  "Biceps-Gauche": BicepsGaucheSVG,
-  "Tibiat-Gauche-Lateral":TibiatGaucheLateralSVG,
-  "Fessier-Gauche-Lateral":FessierGaucheLateralSVG,
-  "Pied-Droit-Anterieur": PiedDroitAnterieurSVG,
-  "Pied-Gauche-Anterieur": PiedGaucheAnterieurSVG,
-  "Tronc": TroncSVG
+  "Avant Bras Droit": AvantBrasDroitSVG,
+  "Avant Bras Gauche": AvantBrasGaucheSVG,
+  "Triceps Droit": TricepsDroitSVG,
+  "Supinateur Droit": SupinateurDroitSVG,
+  "Supinateur Gauche":SupinateurGaucheSVG,
+  "Triceps Gauche": TricepsGaucheSVG,
+  "Biceps Gauche": BicepsGaucheSVG,
+  "Tibiat Gauche Lateral":TibiatGaucheLateralSVG,
+  "Fessier Gauche Lateral":FessierGaucheLateralSVG,
+  "Pied Droit Anterieur": PiedDroitAnterieurSVG,
+  "Pied Gauche Anterieur": PiedGaucheAnterieurSVG,
+  "Tronc": TroncSVG,
+  "Biceps Droit": BicepsDroitSVG,
+  "Pectoral Gauche": PectoralGaucheSVG,
+  "Pectoral Droit": PectoralDroitSVG,
+  "Tête Face": HeadFaceSVG,
+  "Deltoid Gauche Lateral": DeltoidGaucheLateralSVG,
+  "Deltoid Droit Lateral": DeltoidDroitLateralSVG,
+  "Quadriceps Droit": QuadricepsDroitsSVG,
+  "Quadriceps Gauche": QuadricepsGaucheSVG,
+  "Bicesps Femoral Droit": BicepsFemoralDroitSVG,
+  "Bicesps Femoral Gauche": BicepsFemoralGaucheSVG,
+  "Tibiat Gauche Lateral 1": TibiatGaucheLateral1SVG
 
 };
 

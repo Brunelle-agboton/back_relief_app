@@ -40,6 +40,31 @@ export class HealthController {
         return await this.healthService.getPainsLatest(user);
   }
 
+  
+  @UseGuards(JwtAuthGuard)
+  @Post('hydration')
+  async setHydratation(@Request() req, @Body() size: string) {
+
+    const userId = req.user.userId; 
+    const user = await this.userService.findOne(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return this.healthService.setHydratation(size); 
+  } 
+
+  @UseGuards(JwtAuthGuard)
+  @Get('hydration-latest') 
+  async latestHydratation(@Request() req) {
+     const userId = req.user.userId; 
+    
+    const user = await this.userService.findOne(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return await this.healthService.latestHydratation(user);
+  }
+
   @Get()
   findAll() {
     return this.healthService.findAll();

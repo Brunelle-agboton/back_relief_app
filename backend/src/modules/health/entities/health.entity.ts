@@ -2,11 +2,11 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne } from 'ty
 import { User } from '../../user/entities/user.entity';
 
 @Entity()
-export class Health {
+export class PainRecord  {
     @PrimaryGeneratedColumn()
     id: number;
     
-    @ManyToOne(() => User, (user) => user.health)
+    @ManyToOne(() => User, (user) => user.painRecord )
     user: User;
     
     @Column()
@@ -20,4 +20,17 @@ export class Health {
 
     @Column({type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP'})
     recordedAt: Date;
+}
+
+@Entity()
+export class HydrationRecord {
+  @PrimaryGeneratedColumn() id: number;
+
+  @ManyToOne(() => User, (user) => user.hydrationRecord )
+   user: User;
+
+  @Column() bottleSize: string;
+  
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  recordedAt: Date;
 }

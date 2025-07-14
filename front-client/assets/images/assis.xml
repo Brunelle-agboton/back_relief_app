@@ -32,3 +32,59 @@
 <svg width="55" height="102" viewBox="0 0 55 102" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M40.1834 74.804C19.7299 76.5085 8.96772 94.9127 6.09388 100.797C2.39901 81.912 -3.44225 67.4814 3.53724 21.9655L18.8775 0.659668C19.9723 2.71241 23.7785 6.82066 31.661 7.47754C39.5436 8.13442 45.8007 6.44175 47.8535 5.34696C47.6445 7.5149 48.2796 9.60813 48.7057 10.8865C49.3868 12.9298 49.9841 14.2954 51.2625 17.7044C52.5408 21.1133 53.393 24.5222 54.2453 26.2267C50.5523 30.0617 44.4446 42.4191 43.5923 44.5497C42.7401 46.6803 40.3254 54.3504 38.905 59.0377C36.4417 65.1959 38.5412 71.9302 40.1834 74.804Z" fill="#B4B4B4" stroke="white" stroke-width="0.5"/>
 </svg>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  width="100"
+  height="200"
+  viewBox="0 0 100 200"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Col de la bouteille -->
+  <rect
+    x="35"
+    y="0"
+    width="30"
+    height="40"
+    rx="5"
+    ry="5"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="4"
+  />
+
+  <!-- Corps de la bouteille -->
+  <rect
+    x="20"
+    y="40"
+    width="60"
+    height="120"
+    rx="10"
+    ry="10"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="4"
+  />
+
+  <!-- Fond d'eau -->
+  <rect
+    x="24"
+    y="100"
+    width="52"
+    height="56"
+    rx="8"
+    ry="8"
+    fill="currentColor"
+    fill-opacity="0.3"
+    stroke="none"
+  />
+
+  <!-- Goutte décorative (optionnel) -->
+  <path
+    d="M50 80
+       C45 65, 55 65, 50 80
+       Z"
+    fill="currentColor"
+    stroke="none"
+  />
+</svg>

@@ -37,7 +37,7 @@ export default function HomeScreen() {
 
   // Cette fonction fetch les données
   const loadStats = useCallback(async () => {
-    if (isAuthenticated) {
+    if (!isAuthenticated) {
       return <Redirect href="/_home" />;
     }
     try 
@@ -82,9 +82,7 @@ export default function HomeScreen() {
 
       {/* Personnage + score */}
       <View style={styles.characterContainer}>
-          {/* <View style={{ width: 50, height: 20, backgroundColor: '#000', opacity: 0.5, borderRadius: 25,transform: [{ scaleX: 2 }, { scaleY: 0.5 }], }} /> */}
-        <MaterialCommunityIcons name="ellipse" size={79} color="#D9D9D9" style={styles.ellipse} />
-        
+        <MaterialCommunityIcons name="ellipse" size={79} color="#D9D9D9" style={styles.ellipse} />        
         <Image
           source={pickCharacter(painLevel ?? 0)}
           style={styles.character}
@@ -152,7 +150,7 @@ const styles = StyleSheet.create({
   characterContainer: {
     alignItems: 'center',
     marginTop: 20,
-    marginBottom: 20,
+    marginBottom: 22,
   },
   character: {
     width: width * 0.6,
@@ -167,7 +165,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 57,
     transform: [{ scaleX: 2 }, { scaleY: 0.5 }],
-   
   },
   scoreContainer: {
     position: 'absolute',

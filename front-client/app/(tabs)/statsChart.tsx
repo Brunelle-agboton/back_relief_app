@@ -7,6 +7,9 @@ import api from '../../services/api';
 import { Notification, HealthEntry  } from '../../interfaces/types';
 import { getUserId } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
+import BodyMapFront from '../../components/BodyMapFront';
+import { useAuth } from '../../context/AuthContext';
+
 const { width } = Dimensions.get('window');
 
 const SummaryScreen = () => {
@@ -15,22 +18,27 @@ const SummaryScreen = () => {
   const [healthHistory, setHealthHistory] = useState<HealthEntry[]>([]);
   const [exercises, setExercises] = useState<Array<{ id: number; name: string; duration: string; calories: number; date: string }>>([]);  
   const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [painLocation, setLocation] = useState('');
-  
+  const [painLocation, setLocation] = useState('');
+  const [painByZone, setPainByZone] = useState<
+      Record<string, { level: number; desc: string }>
+    >({});
+  const [viewSide, setViewSide] = useState<'front'|'back'>('back');
+    
   // Plages temporelles disponibles
   const timeRanges = ['Semaine', 'Mois','Année'] as const;
   type TimeRange = typeof timeRanges[number];
   // Helpers en haut de ton fichier
   const WEEK_DAYS = ['lun','mar','mer','jeu','ven','sam','dim'] as const;
   const MONTHS   = ['jan','fév','mar','avr','mai','juin','juil','aoû','sep','oct','nov','déc'] as const;
-
-  // Fonction pour obtenir la couleur en fonction de l'intensité
-  const getColor = (value: any) => {
-    const red = Math.round((10 - value) * 25.5);
-    const green = Math.round(value * 25.5);
-    return `rgb(${red}, ${green}, 0)`;
-  };
   
+  const swapSide = (direction: 'next'|'prev') => {
+    setViewSide(s =>
+      direction === 'next'
+        ? s === 'front' ? 'back'  : 'front'
+        : s === 'front' ? 'back'  : 'front'
+    );
+  };
+
   // Charger les données
   useEffect(() => {
     (async () => {
@@ -45,7 +53,17 @@ const SummaryScreen = () => {
         setHealthHistory(data.healthHistory);
         setExercises(data.exercises);
         setNotifications(data.notifications);
-
+        setPainByZone(data.healthHistory.reduce((acc, p) => {
+          // on crée la clé pour la zone p.location
+          acc[p.location] = {
+            level: p.level,
+            desc:  p.description,
+          };
+          return acc;   // on renvoie toujours l'accumulateur
+        },
+          {} as Record<string, { level: number; desc: string }>
+        ))
+        console.log("Pain", painByZone);
         } catch (error: any) {
             console.error('Failed to fetch summary:', {
                 status: error.response?.status,
@@ -54,7 +72,6 @@ const SummaryScreen = () => {
         }
       })();
     }, [selectedRange]);
-    
 
    // Helper pour agréger selon la plage
   const buildChartData = (entries: HealthEntry[], range: TimeRange) => {
@@ -76,7 +93,7 @@ const SummaryScreen = () => {
     return d >= yearAgo;
   });
 
-  // 2️⃣ init des buckets
+  // 2️- init des buckets
   let labels: string[] = [];
   if (range === 'Semaine') {
     labels = WEEK_DAYS as unknown as string[];
@@ -110,7 +127,7 @@ const SummaryScreen = () => {
     }
   });
 
-  // 4️⃣ construction du data[] sans NaN/Infinity
+  // 4️- construction du data[] sans NaN/Infinity
   const data = labels.map(lbl => {
     const { sum, count } = buckets[lbl];
     return count > 0 ? Math.round((sum/count)*10)/10 : 0;
@@ -161,27 +178,40 @@ const SummaryScreen = () => {
     );
   }
 
-
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* En-tête */}
       <View style={styles.header}>
         <Text style={styles.title}>Aujourd’hui</Text>
       </View>
-            <Text style={styles.hintText}>
-        Touchez la zone douloureuse pour voir le détail
-      </Text>
-      <View style={[styles.chartSection, { height: 350 }]}>
-      <View style={styles.statsContainer}>
+          <Text style={styles.hintText}> Touchez la zone douloureuse pour voir le détail </Text>
+        <View style={styles.mapContainer}>
+          <MaterialCommunityIcons name="ellipse" size={79} color="#D9D9D9" style={styles.ellipse} />        
+           <TouchableOpacity
+                    style={[{marginRight: 29}, styles.arrowButton]}
+                    onPress={() => swapSide('prev')}
+                  >
+                    <AntDesign name="left" size={52} style={styles.arrowStyle} />
+                  </TouchableOpacity>
+          
+            {viewSide === 'front' ? (
+              <BodyMapFront onSelect={setLocation} pains={painByZone} />
+            ) : (
+              <BodyMapBack  onSelect={setLocation} pains={painByZone} />
+            )}
+    
+            <TouchableOpacity
+              style={styles.arrowButton}
+              onPress={() => swapSide('next')}
+            >
+              <AntDesign name="right" size={52} style={styles.arrowStyle}/>
+            </TouchableOpacity>
+    </View>
+      {/* <View style={styles.statsContainer}>
         <SummaryCardVertical label="Moyenne" value={avg.toFixed(1)} color="#4ADE80" />
         <SummaryCardVertical label="Maximum" value={mx.toString()} color="#F59E0B" />
         <SummaryCardVertical label="Minimum" value={mn.toString()} color="#EF4444" />
-      </View>
-        <View style={styles.mapContainer}>
-        <BodyMapBack onSelect={setLocation} />
-      </View>
-    </View>
-            
+      </View> */}
       {/* Sélecteur de période */}
       <View style={styles.timeRangeContainer}>
         {timeRanges.map((range) => (
@@ -220,7 +250,7 @@ const SummaryScreen = () => {
         
       <LineChart
         data={chartData}
-        width={width - 32}
+        width={width - 35}
         height={220}
         yAxisSuffix="/10"
         chartConfig={{
@@ -326,6 +356,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#7f8c8d',
     marginTop: 5,
+  },
+    ellipse: {
+    position: 'absolute',
+    bottom: -8,                // décalé vers le bas
+    left: '48%',
+    width: 100,
+    height: 67,
+    transform: [{ scaleX: 4 }, { scaleY: 0.8 }],
   },
   timeRangeContainer: {
     flexDirection: 'row',
@@ -543,11 +581,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   mapContainer: {
-    flex: 2,
-    marginRight: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 20,
+  },  
+  arrowButton: {
+    padding: 16,
+  },
+  arrowStyle: {
+    width: 52,
+    color: '#abababff',
+    borderRadius: 30,
+
   },
   statsContainer: {
     flex: 1,
+     flexDirection: 'row',
     justifyContent: 'space-between',
   },
 
@@ -559,6 +609,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 12,
     marginVertical: 4,
+    marginRight: 9,
+    marginBottom: 8,
   },
   verticalValue: {
     fontSize: 24,

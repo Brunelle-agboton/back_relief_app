@@ -230,7 +230,6 @@ export async function seedRestExercise(dataSource: DataSource) {
         { exIndex: 23, order: 3, repetitions: 10, duration: 25, calories: 50 },
         ],
     },
-    ,
     {
         title: "Pause Active",
         description: 'Un petit mouvement pour un grand bien‑être',

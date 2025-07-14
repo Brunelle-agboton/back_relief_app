@@ -3,7 +3,7 @@ import { Repository } from 'typeorm';
 import { CreateHealthDto } from './dto/create-health.dto';
 import { PainInputDto } from './dto/pain-input.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Health } from './entities/health.entity';
+import { PainRecord, HydrationRecord } from './entities/health.entity';
 import { painLocations } from 'src/utils/painLocations';
 import { User } from '../user/entities/user.entity';
 import { Activity, ActivityType }   from '../activity/entities/activity.entity';
@@ -12,8 +12,11 @@ import { Exercise }        from '../exercise/entities/exercise.entity';
 @Injectable()
 export class HealthService {
   constructor(
-    @InjectRepository(Health)
-    private healthRepository: Repository<Health>,
+    @InjectRepository(PainRecord)
+    private painRecordRepository: Repository<PainRecord>,
+
+    @InjectRepository(HydrationRecord)
+    private hydrationRecordRepository: Repository<HydrationRecord>,
 
       @InjectRepository(Activity)
       private actRepo: Repository<Activity>,
@@ -27,7 +30,7 @@ export class HealthService {
   }
 
   submitPain(dto: PainInputDto) {
-    return this.healthRepository.save({
+    return this.painRecordRepository.save({
       ...dto,
       recordedAt: new Date(),
     });
@@ -39,7 +42,7 @@ export class HealthService {
 
   async getPainsLatest(user: User) {
         // 1️- Douleurs
-      const healths = await this.healthRepository.find({
+      const healths = await this.painRecordRepository.find({
         where: { user: { id: user.id } },
         order: { recordedAt: 'DESC' },
         take: 10,
@@ -50,11 +53,12 @@ export class HealthService {
       // Dernier niveau de douleur
       if ( healths.length > 0) {
          lastPainByLocation = healths.reduce((acc, pain) => {
-          // on écrase ou on garde le plus récent ? healths est trié desc
-          acc[pain.painLocation] = {
-            level: pain.painLevel,
-            desc:  pain.painDescription
-          };
+          if (pain.painLocation !== undefined) {
+            acc[pain.painLocation] = {
+              level: pain.painLevel,
+              desc:  pain.painDescription ?? ''
+            };
+          }
           return acc;
         }, {} as Record<string, { level: number; desc: string }>);
       }
@@ -89,6 +93,25 @@ export class HealthService {
       lastPainByLocation,
       exercises
     }
+  }
+
+  setHydratation(size: string) {
+    return this.hydrationRecordRepository.save({
+      bottleSize: size,
+      recordedAt: new Date(),
+    })
+  }
+
+  async latestHydratation(user: User) {
+     const healths = await this.hydrationRecordRepository.find({
+        where: { user: { id: user.id } },
+        order: { recordedAt: 'DESC' },
+        take: 2,
+      });
+
+      // Dernier niveau de d'ydrataion
+      const lastBottle = healths.length > 0 ? healths[0].bottleSize : null;
+      return lastBottle;
   }
 
   findAll() {

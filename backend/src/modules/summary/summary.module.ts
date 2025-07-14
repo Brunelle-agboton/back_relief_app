@@ -4,12 +4,12 @@ import { SummaryService } from './summary.service';
 import { SummaryController } from './summary.controller';
 import { UserModule } from '../user/user.module';
 import { ProgramLine }        from '../program-line/entities/program-line.entity';
-import { Health } from '../health/entities/health.entity';
+import {  PainRecord, HydrationRecord  } from '../health/entities/health.entity';
 import { Activity }                 from '../activity/entities/activity.entity';
 
 @Module({
     imports: [
-    TypeOrmModule.forFeature([Health, Activity, ProgramLine]),
+    TypeOrmModule.forFeature([ PainRecord, HydrationRecord , Activity, ProgramLine]),
       forwardRef(() => UserModule), // Import UserModule to use UserService
       ],
   controllers: [SummaryController],

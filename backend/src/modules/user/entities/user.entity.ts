@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { Health } from '../../health/entities/health.entity';
+import { PainRecord, HydrationRecord } from '../../health/entities/health.entity';
 import { Notification } from '../../notification/entities/notification.entity';
 import { Activity } from '../../activity/entities/activity.entity';
 
@@ -47,8 +47,11 @@ export class User {
   @Column()
   drinkReminder: boolean;
 
-  @OneToMany(() => Health, (health) => health.user)
-  health: Health[];
+  @OneToMany(() => PainRecord, (painRecord) => painRecord.user)
+  painRecord: PainRecord[];
+
+  @OneToMany(() => HydrationRecord, (hydrationRecord) => hydrationRecord.user)
+  hydrationRecord: HydrationRecord[];
 
   @OneToMany(() => Notification, (notification) => notification.user)
   notification: Notification[];
