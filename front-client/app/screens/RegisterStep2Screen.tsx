@@ -140,8 +140,8 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   selectedRadioButton: {
-    backgroundColor: '#FF8C00',
-    borderColor: '#FF8C00',
+    backgroundColor: '#39DF87',
+    borderColor: '#39DF87',
   },
   radioText: {
     color: '#000',
@@ -183,10 +183,10 @@ const styles = StyleSheet.create({
   buttonRow: { flexDirection: 'row', marginTop: 32 },
   button: { flex: 1, marginHorizontal: 10, padding: 16, borderRadius: 28, alignItems: 'center'},
   nextButton:{
-    backgroundColor: '#ED6A5E'
+    backgroundColor: '#FF8C00'
   },
   backButton:{
-    backgroundColor: '#FFAE00'
+    backgroundColor: '#cccccc'
   },
     buttonText: { color: '#ffff', fontWeight: 'bold', fontSize: 18 },
 

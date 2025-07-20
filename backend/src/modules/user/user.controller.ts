@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UnauthorizedException,UseGuards } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 
 @Controller('user')
 export class UserController {
@@ -31,6 +32,12 @@ export class UserController {
     return this.userService.findAll();
   }
 
+    @UseGuards(JwtAuthGuard)
+  @Get('me/:id')
+  findById(@Param('id') id: number) {
+    return this.userService.findOne(id);
+  }
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   findByEmail(@Param('email') email: string) {
     return this.userService.findByEmail(email);

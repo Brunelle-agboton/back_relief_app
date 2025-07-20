@@ -43,6 +43,7 @@ const SummaryScreen = () => {
   useEffect(() => {
     (async () => {
        const userId = await getUserId(); // Récupérez l'ID de l'utilisateur
+       console.log("User id", userId);
           if (!userId) {
             router.replace('/screens/LoginScreen');
             return;

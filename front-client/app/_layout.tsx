@@ -21,7 +21,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import NotificationBanner from '../components/NotificationBanner';
 import NotificationService from '../services/NotificationService';
 import { useState } from 'react';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import BackButton from '../components/BackButton';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -109,6 +109,11 @@ export default function RootLayout() {
           <Stack.Screen name="screens/RegisterStep2Screen" options={{ headerShown: false }} />
           <Stack.Screen name="screens/RegisterStep3Screen" options={{ headerShown: false }} />
           <Stack.Screen name="screens/ForgotPasswordScreen" options={{headerShown: false }}/>
+          <Stack.Screen name="screens/mine" options={{ headerLeft:  () => <BackButton />, headerTitle: 'Compte', headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>
+          <Stack.Screen name="screens/UserInfos1" options={{headerTitle: 'Compte', headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' } }}/>
+          <Stack.Screen name="screens/UserInfos2" options={{headerTitle: 'Informations', headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>
+          <Stack.Screen name="screens/ReminderSettingsScreen" options={{headerTitle: 'Notifications', headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>      
+
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />

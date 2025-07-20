@@ -42,13 +42,13 @@ export default function RegisterStep1Screen() {
               styles.inputWrapper,
               emailFocused && styles.inputFocused
             ]}>
- <TextInput
-      style={styles.input}
-      placeholder="Nom d'utilisateur"
-      onChangeText={setUserName}
-      value={userName}
-    />
-</View>
+      <TextInput
+            style={styles.input}
+            placeholder="Nom d'utilisateur"
+            onChangeText={setUserName}
+            value={userName}
+          />
+      </View>
     </View>
 
     <View style={styles.inputContainer}>
@@ -69,24 +69,24 @@ export default function RegisterStep1Screen() {
             </View>
           </View>
     
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Mot de passe</Text>
-            <View style={[
-              styles.inputWrapper,
-              passwordFocused && styles.inputFocused
-            ]}>
-              <TextInput 
-                style={styles.input} 
-                placeholder="Mot de passe" 
-                placeholderTextColor="#999"
-                secureTextEntry 
-                onChangeText={setPassword} 
-                value={password}
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-              />
-            </View>
-          </View>
+    <View style={styles.inputContainer}>
+      <Text style={styles.label}>Mot de passe</Text>
+      <View style={[
+        styles.inputWrapper,
+        passwordFocused && styles.inputFocused
+      ]}>
+        <TextInput 
+          style={styles.input} 
+          placeholder="Mot de passe" 
+          placeholderTextColor="#999"
+          secureTextEntry 
+          onChangeText={setPassword} 
+          value={password}
+          onFocus={() => setPasswordFocused(true)}
+          onBlur={() => setPasswordFocused(false)}
+        />
+      </View>
+    </View>
     
     {error ? <Text style={styles.error}>{error}</Text> : null}
  <TouchableOpacity style={styles.button}>
@@ -158,6 +158,6 @@ logo: {
   padding: 16, 
   alignItems: 'center',
   borderRadius: 28, 
-  backgroundColor: '#ED6A5E'},
+  backgroundColor: '#FF8C00'},
  buttonText: { color: '#ffff', fontWeight: 'bold', fontSize: 18 },
 });

@@ -38,7 +38,8 @@ export default function HomeScreen() {
   // Cette fonction fetch les données
   const loadStats = useCallback(async () => {
     if (!isAuthenticated) {
-      return <Redirect href="/_home" />;
+    console.log(isAuthenticated);
+      router.replace('/_home');
     }
     try 
       {

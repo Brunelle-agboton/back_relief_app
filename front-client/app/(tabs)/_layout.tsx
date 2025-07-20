@@ -13,18 +13,18 @@ import {
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import Fontisto from '@expo/vector-icons/Fontisto';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import Feather from '@expo/vector-icons/Feather';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../context/AuthContext';
 
 // Liste des tabs avec leurs informations
 const TAB_ITEMS = [
   { name: 'index', title: 'Accueil', icon: 'house.fill', path: '/(tabs)/index' },
-  { name: 'RegisterHealthScreen', title: 'Douleur', icon: 'activity', path: '/(tabs)/RegisterHealthScreen' },
-  { name: 'pauseActive', title: 'Exercices', icon: 'person-walking', path: '/(tabs)/pauseActive' },
+  { name: 'pauseActive', title: 'Paus\'active', icon: 'person-walking', path: '/(tabs)/pauseActive' },
+  { name: 'RegisterHealthScreen', title: 'Douleur', icon: 'plus-a', path: '/(tabs)/RegisterHealthScreen' },
   { name: 'statsChart', title: 'Progression', icon: 'linechart', path: '/(tabs)/statsChart'  },
-  { name: 'mine', title: 'Profile', icon: 'user',  path: '/(tabs)/mine' },
-
+  { name: 'contenu', title: 'Contenu', icon: 'folder-sharp',  path: '/(tabs)/contenu' },
 ];
 
 export default function TabLayout() {
@@ -32,55 +32,61 @@ export default function TabLayout() {
   const [menuVisible, setMenuVisible] = useState(false);
   const { logout } = useAuth();
   // Fonction pour naviguer vers une tab spécifique
-  const navigateToTab = (tabName: string) => {
-    router.push(`/(tabs)/${tabName}`);
+  const navigateToTab = (path: string) => {
+    router.push(path);
     setMenuVisible(false);
   };
 
   return (
     <>
       <Tabs
-        screenOptions={{
-          headerLeft: () => (
-            <Image 
-              source={require('../../assets/images/icon.png')} 
-              style={{ width: 50, height: 45, marginLeft: 5 }} 
-            />
-          ),
-          headerRight: () => (
-            <TouchableOpacity 
-              style={{ marginRight: 16 }}
-              onPress={() => setMenuVisible(true)}
-            >
-              <Ionicons name="menu" size={28} color="#222" />
-            </TouchableOpacity>
-          ),
-          headerTitleAlign: 'center',
-          headerBackground: () => (
-            <View style={{ flex: 1, backgroundColor: "#CDFBE2" }} />
-          ),
-          tabBarStyle: {
-            backgroundColor: '#32CD32',
-            borderTopWidth: Platform.OS === 'ios' ? 0.2 : 0,
-            borderTopColor: '#e5e5e5',
-            height: Platform.OS === 'ios' ? 85 : 75,
-            paddingTop: 12,
-            paddingBottom: Platform.OS === 'ios' ? 28 : 12,
-            elevation: 0,
-            shadowOpacity: 0,
-          },
-          tabBarActiveTintColor: '#fff',
-          tabBarInactiveTintColor: '#666',
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontFamily: 'Inter-SemiBold',
-            marginTop: 4,
-          },
-          tabBarIconStyle: {
-            marginBottom: -4,
-          },
-          tabBarHideOnKeyboard: true,
-          freezeOnBlur: true,
+            screenOptions={({ route }) => {
+          const name = route.name as string;
+
+          // headerLeft: logo only on Accueil
+          const headerLeft = () =>
+            name === 'index'
+              ? <Image source={require('../../assets/images/icon.png')} style={styles.logo} />
+              : null;
+
+          // headerTitle: per tab
+          let headerTitle = '';
+          switch (name) {
+            case 'index':             headerTitle = 'Votre état actuel'; break;
+            case 'pauseActive':       headerTitle = 'Exercices';         break;
+            case 'statsChart':        headerTitle = 'Progression';       break;
+            case 'contenu':           headerTitle = 'Contenu';           break;
+            default:                  headerTitle = '';                 break;
+          }
+
+          // headerRight: either profile icon or menu
+          const headerRight = () =>
+            name === 'index'
+              ? (
+                <TouchableOpacity onPress={() => router.push('/screens/mine')}>
+                  <Ionicons name="person-circle-outline" size={34} color="black" style={{ marginRight: 16 }} />
+                </TouchableOpacity>
+              )
+              : (
+                <TouchableOpacity onPress={() => setMenuVisible(true)}>
+                  <Ionicons name="menu" size={28} color="#222" style={{ marginRight: 16 }} />
+                </TouchableOpacity>
+              );
+
+          return {
+            headerLeft,
+            headerTitle,
+            headerTitleAlign: 'center',
+            headerRight,
+            headerBackground: () => <View style={styles.headerBg} />,
+            tabBarStyle: styles.tabBar,
+            tabBarActiveTintColor: '#fff',
+            tabBarInactiveTintColor: '#666',
+            tabBarLabelStyle: styles.tabLabel,
+            tabBarIconStyle: styles.tabIcon,
+            tabBarHideOnKeyboard: true,
+            freezeOnBlur: true,
+          };
         }}>
         
         {TAB_ITEMS.map((tab) => (
@@ -92,16 +98,17 @@ export default function TabLayout() {
               tabBarIcon: ({ color }) => {
                 if (tab.icon === 'house.fill') {
                   return <IconSymbol size={28} name={tab.icon} color={color} />;
-                } else if (tab.icon === 'activity') {
-                  return <Feather name={tab.icon} size={24} color={color} />;
-                } else if (tab.icon === 'person-walking') {
+                }  else if (tab.icon === 'person-walking') {
                   return <FontAwesome6 name={tab.icon} size={24} color={color} />;
-                } else if (tab.icon === 'linechart') {
+                } else if (tab.icon === 'plus-a') {
+                  return <Fontisto name={tab.icon} size={30} color={color} />;
+                }else if (tab.icon === 'linechart') {
                   return <AntDesign name={tab.icon} size={24} color={color} />;
-                } else if (tab.icon === 'user') {
-                  return <FontAwesome6 name={tab.icon} size={24} color={color} />;
+                } else if (tab.icon === 'folder-sharp') {
+                  return <Ionicons name={tab.icon} size={24} color={color} />;
                 }
               },
+              ...(tab.name === 'settings' && { headerShown: false }),
             }}
           />
         ))}
@@ -123,7 +130,7 @@ export default function TabLayout() {
               <Pressable
                 key={tab.name}
                 style={styles.menuItem}
-                onPress={() => navigateToTab(tab.name)}
+                onPress={() => navigateToTab(tab.path)}
               >
                 <Text style={styles.menuText}>{tab.title}</Text>
               </Pressable>
@@ -152,6 +159,28 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+    logo: {
+    width: 50, height: 50, marginLeft: 5
+  },
+  headerBg: {
+    flex: 1, backgroundColor: '#CDFBE2'
+  },
+  tabBar: {
+    backgroundColor: '#32CD32',
+    borderTopWidth: Platform.OS === 'ios' ? 0.2 : 0,
+    borderTopColor: '#e5e5e5',
+    height: Platform.OS === 'ios' ? 85 : 75,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 12,
+  },
+  tabLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
+    marginTop: 4,
+  },
+  tabIcon: {
+    marginBottom: -4,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',

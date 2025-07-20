@@ -34,7 +34,7 @@ export default function LogoutScreen() {
               await removeToken();
               
               // Redirige vers l'écran de login (remplace le stack)
-              router.replace('/screens/LoginScreen');
+              router.replace('/_home');
             } catch (err) {
               console.warn("Erreur lors de la déconnexion", err);
               Alert.alert("Erreur", "Impossible de se déconnecter pour le moment.");

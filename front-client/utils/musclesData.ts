@@ -1,6 +1,4 @@
-import DroitDuDosSVG from '@/assets/images/muscles/Grand-dorsal-droit.svg'; // Renommé pour clarté
-import GaucheDuDosSVG from '@/assets/images/muscles/Grand-dorsal-droit.svg'; // Renommé pour clarté
-import AbdosSVG from '@/assets/images/muscles/Abdos.svg';
+const AbdosSVG= require('@/assets/images/muscles/Abdos.svg');
 import AvantBrasSVG from '@/assets/images/muscles/Avant-bras.svg';
 import BicepsSVG from '@/assets/images/muscles/Biceps.svg';
 import CarpeSVG from '@/assets/images/muscles/Carpe.svg';
