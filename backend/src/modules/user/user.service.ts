@@ -42,6 +42,16 @@ export class UserService {
     return `This action updates a #${id} user`;
   }
 
+  async updateUserSetting(id: number, restReminder: boolean, drinkReminder: boolean): Promise<string> {
+     const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new Error(`User with id ${id} not found`);
+    }
+    user.restReminder = restReminder;
+    user.drinkReminder = drinkReminder;
+
+    return "ok";
+  }
   remove(id: number) {
     return `This action removes a #${id} user`;
   }

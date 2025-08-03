@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  useAnimatedValue
+  Animated 
 } from 'react-native';
 import { useRouter, Redirect } from 'expo-router';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -29,11 +29,18 @@ const characters = {
 export default function HomeScreen() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  
-  // Ces valeurs viendront de votre API ou storage
   const [painLevel, setPainLevel] = useState<number>();
   const [nbExercises, setNbExercises] = useState<number>();
   const [streakDays, setStreakDays] = useState<number>();
+
+   // Crée trois Animated.Value pour piloter l’opacité de chaque chevron
+  const chevrons = [
+    useRef(new Animated.Value(0)).current,
+    useRef(new Animated.Value(0)).current,
+    useRef(new Animated.Value(0)).current,
+  ];
+   // Animated value pour le scale
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   // Cette fonction fetch les données
   const loadStats = useCallback(async () => {
@@ -52,13 +59,43 @@ export default function HomeScreen() {
       }
   }, []);
 
+  // Fonction qui joue l’animation chevronsF
+  const animateChevrons = useCallback(() => {
+    // Réinitialiser
+    chevrons.forEach(c => c.setValue(0));
+
+    // Compose et lance
+    const loops = chevrons.map((value, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 200),
+          Animated.timing(value, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(value, { toValue: 0, duration: 300, useNativeDriver: true }),
+        ]),
+        { resetBeforeIteration: true }  // important pour relancer proprement
+      )
+    );
+    Animated.parallel(loops).start();
+  }, [chevrons]);
+
+  // Fonction qui pop le score
+  const animateScore = useCallback(() => {
+    scaleAnim.setValue(1);
+    Animated.sequence([
+      Animated.timing(scaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1,   duration: 150, useNativeDriver: true }),
+    ]).start();
+  }, [scaleAnim]);
+
   // useFocusEffect appelle loadStats à chaque fois que l'écran gagne le focus
   useFocusEffect(
     useCallback(() => {
       loadStats();
+      animateChevrons();
+      animateScore();
     }, [loadStats])
   );    
-          
+  
   // Choix du perso selon la douleur
   const pickCharacter = (level: number) => {
     if (level <= 3) return characters.low;
@@ -69,8 +106,8 @@ export default function HomeScreen() {
 
   // Couleur du chiffre (rouge→vert)
   const getColor = (value: number) => {
-    const red = Math.round((10 - value) * 25.5);
-    const green = Math.round(value * 25.5);
+    const green = Math.round((10 - value) * 25.5);
+    const red = Math.round(value * 25.5);
     return `rgb(${red}, ${green}, 0)`;
   };
 
@@ -83,18 +120,18 @@ export default function HomeScreen() {
 
       {/* Personnage + score */}
       <View style={styles.characterContainer}>
-        <MaterialCommunityIcons name="ellipse" size={79} color="#D9D9D9" style={styles.ellipse} />        
+        <MaterialCommunityIcons name="ellipse" size={69} color="#D9D9D9" style={styles.ellipse} />        
         <Image
           source={pickCharacter(painLevel ?? 0)}
           style={styles.character}
           resizeMode="contain"
         />
-        <View style={styles.scoreContainer}>
-          <Text style={[styles.score, { color: getColor(painLevel ?? 0) }]}>
-            {painLevel}
-          </Text>
-          <Text style={styles.scoreMax}>/10</Text>
-        </View>
+        <Animated.View style={[styles.scoreContainer, { transform: [{ scale: scaleAnim }] }]}>
+        <Text style={[styles.score, { color: getColor(painLevel ?? 0) }]}>
+          {painLevel}
+        </Text>
+        <Text style={styles.scoreMax}>/10</Text>
+      </Animated.View>
       </View>
 
       {/* Statuts */}
@@ -123,14 +160,16 @@ export default function HomeScreen() {
       <TouchableOpacity
         style={styles.button}
         onPress={() => router.push('/(tabs)/pauseActive')}
+        activeOpacity={0.8}
       >
         <Text style={styles.buttonText}>Accéder aux exercices</Text>
-        <MaterialCommunityIcons 
-            name="chevron-triple-right" 
-            size={32} 
-            style={styles.icon}
-          />
-          
+         <View style={styles.chevronContainer}>
+        {chevrons.map((anim, i) => (
+          <Animated.View key={i} style={{ opacity: anim, marginLeft: i === 0 ? 8 : 0 }}>
+            <MaterialCommunityIcons name="chevron-right" size={36} color="#fff" />
+          </Animated.View>
+        ))}
+      </View>
       </TouchableOpacity>
     </View>
   );
@@ -149,7 +188,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '700', color: '#000' },
 
   characterContainer: {
-    alignItems: 'center',
     marginTop: 20,
     marginBottom: 22,
   },
@@ -226,7 +264,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF6B61',
     borderRadius: 30,
     paddingVertical: 14,
-    paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -234,9 +271,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
-  },  icon: {
-    marginLeft: 5,
-    width: 40,
-    color: '#fff',
+  },
+   chevronContainer: {
+    flexDirection: 'row',
+    marginLeft:    12,
   },
 });

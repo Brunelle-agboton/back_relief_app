@@ -24,7 +24,7 @@ const TAB_ITEMS = [
   { name: 'pauseActive', title: 'Paus\'active', icon: 'person-walking', path: '/(tabs)/pauseActive' },
   { name: 'RegisterHealthScreen', title: 'Douleur', icon: 'plus-a', path: '/(tabs)/RegisterHealthScreen' },
   { name: 'statsChart', title: 'Progression', icon: 'linechart', path: '/(tabs)/statsChart'  },
-  { name: 'contenu', title: 'Contenu', icon: 'folder-sharp',  path: '/(tabs)/contenu' },
+  { name: 'contenu', title: 'Articles', icon: 'folder-sharp',  path: '/(tabs)/contenu' },
 ];
 
 export default function TabLayout() {
@@ -55,7 +55,7 @@ export default function TabLayout() {
             case 'index':             headerTitle = 'Votre état actuel'; break;
             case 'pauseActive':       headerTitle = 'Exercices';         break;
             case 'statsChart':        headerTitle = 'Progression';       break;
-            case 'contenu':           headerTitle = 'Contenu';           break;
+            case 'contenu':           headerTitle = 'Articles';           break;
             default:                  headerTitle = '';                 break;
           }
 
@@ -67,10 +67,7 @@ export default function TabLayout() {
                   <Ionicons name="person-circle-outline" size={34} color="black" style={{ marginRight: 16 }} />
                 </TouchableOpacity>
               )
-              : (
-                <TouchableOpacity onPress={() => setMenuVisible(true)}>
-                  <Ionicons name="menu" size={28} color="#222" style={{ marginRight: 16 }} />
-                </TouchableOpacity>
+              : (<></>
               );
 
           return {
@@ -79,16 +76,45 @@ export default function TabLayout() {
             headerTitleAlign: 'center',
             headerRight,
             headerBackground: () => <View style={styles.headerBg} />,
-            tabBarStyle: styles.tabBar,
-            tabBarActiveTintColor: '#fff',
-            tabBarInactiveTintColor: '#666',
+            tabBarActiveTintColor: '#39DF87',
+            tabBarInactiveTintColor: '#fff',
+           
+             tabBarItemStyle: {
+                    borderRadius: 25,
+          marginVertical: 6,                    
+          padding: 2,                           // padding interne
+        },
+          tabBarActiveBackgroundColor: '#fff',    // fond blanc quand actif
+            tabBarInactiveBackgroundColor: 'transparent',
             tabBarLabelStyle: styles.tabLabel,
             tabBarIconStyle: styles.tabIcon,
             tabBarHideOnKeyboard: true,
+            tabBarStyle: styles.tabBar,
+
             freezeOnBlur: true,
+          
+            // custom button wrapper
+          tabBarButton: props => {
+            const { accessibilityState, style, children, onPress,  delayLongPress, testID } = props;
+            const focused = accessibilityState?.selected ?? false;
+            return (
+              <TouchableOpacity
+                onPress={onPress}
+                testID={testID}
+                activeOpacity={0.7}
+                style={[
+                  styles.tabButton,
+                  style,
+                  focused && styles.tabButtonActive,
+                ]}
+              >
+                {children}
+              </TouchableOpacity>
+            );
+          },
           };
         }}>
-        
+
         {TAB_ITEMS.map((tab) => (
           <Tabs.Screen
             key={tab.name}
@@ -109,6 +135,7 @@ export default function TabLayout() {
                 }
               },
               ...(tab.name === 'settings' && { headerShown: false }),
+              ...(tab.name === 'pauseActive' && { headerShown: false }),
             }}
           />
         ))}
@@ -160,26 +187,37 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
     logo: {
-    width: 50, height: 50, marginLeft: 5
+    width: 60, height: 50, marginLeft: 5
   },
   headerBg: {
     flex: 1, backgroundColor: '#CDFBE2'
   },
   tabBar: {
-    backgroundColor: '#32CD32',
+    backgroundColor: '#39DF87',
     borderTopWidth: Platform.OS === 'ios' ? 0.2 : 0,
-    borderTopColor: '#e5e5e5',
     height: Platform.OS === 'ios' ? 85 : 75,
-    paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 28 : 12,
   },
   tabLabel: {
-    fontSize: 12,
-    fontFamily: 'Inter-SemiBold',
-    marginTop: 4,
+    color: "#fff",
+    fontSize: 10,
+    fontFamily: 'Inter',
+    marginTop: 10,
   },
   tabIcon: {
     marginBottom: -4,
+  },
+    tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 6,
+    marginVertical: 5,
+    padding: 3,
+  },
+  tabButtonActive: {
+    backgroundColor: '#fff',
+    borderRadius: 25,
   },
   modalOverlay: {
     flex: 1,

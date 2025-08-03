@@ -1,14 +1,19 @@
-// filepath: /app/(tabs)/pauseActive/_layout.tsx
+import React, { useState, useEffect } from 'react';
 import { Stack } from 'expo-router';
-import { Tabs } from 'expo-router';
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
 export default function PauseActiveLayout() {
   return (
-    <Stack>
-    <Stack.Screen name="index" options={{headerShown:false}}/>      
-      <Stack.Screen name="ProgramDetailScreen" options={{headerShown:false}}/>
-      <Stack.Screen name="ProgramLineScreen" options={{headerShown:false}}/>
+    <Stack
+      screenOptions={{
+          headerTitleAlign: 'center',
+          headerStyle: { backgroundColor: '#CDFBE2' },
+      }}>
+      <Stack.Screen
+        name="index"
+        options={{ title: 'Exercices' }}
+      />
+      <Stack.Screen name="ProgramDetailScreen" options={{ title: 'Détails du programme' }}/>
+      <Stack.Screen name="ProgramLineScreen" options={{ title: 'Exercice en cours' }}/>
     </Stack>
   );
 }

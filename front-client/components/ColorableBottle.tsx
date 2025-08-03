@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   labelSelected: {
-    color: '#fff',
+    color: '#000',
     fontWeight: '600',
   },
 });

@@ -8,7 +8,7 @@ import {
   TextInput,
   Dimensions,
 } from 'react-native';
-import { Slider } from '@rneui/themed';
+import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: W } = Dimensions.get('window');
@@ -63,11 +63,12 @@ const Preview = SvgPreview;
           <Text style={styles.sliderLabel}>Quel est ton niveau de douleur ?</Text>
           <View style={styles.sliderWrapper}>
             <LinearGradient
-                colors={['#FF3320','#FFAE00', '#39DF87']} // vert à rouge
+                colors={['#39df87','#FFAE00', '#FF3320']} // vert à rouge
                 start={[0, 0.5]}
                 end={[1, 0]}
                 style={styles.gradientTrack}
                 />
+             <Text style={[styles.boundLabel, { left: 0 }]}>1</Text>
             <Slider
               value={level}
               onValueChange={onChangeLevel}
@@ -75,16 +76,11 @@ const Preview = SvgPreview;
               maximumValue={10}
               step={1}
               minimumTrackTintColor="transparent"
-                maximumTrackTintColor="transparent"
-              thumbStyle={styles.thumb}
-              style={styles.sliderAbsolute}
+              maximumTrackTintColor="transparent"
+              thumbTintColor="#fff"
+              style={[styles.sliderAbsolute, {transform: [{ scaleX: 1.2 }, { scaleY: 1.6 }]}]}
             />
-             <View style={styles.sliderLabel}>
-                 <Text style={[styles.boundLabel, { left: 0 }]}>1</Text>
-            <Text style={[styles.boundLabel, { right: 0 }]}>10</Text>
-             </View>
-            {/* <Text style={[styles.boundLabel, { left: 0 }]}>1</Text>
-            <Text style={[styles.boundLabel, { right: 0 }]}>10</Text> */}
+            <Text style={[styles.boundLabelLeft, { right: 0 }]}>10</Text>
           </View>
 
           {/* Description */}
@@ -162,37 +158,31 @@ const styles = StyleSheet.create({
   gradientTrack: {
     height: 20,
     marginLeft: 12,
-    marginRight: 12,
+    marginRight: 18,
     borderRadius: 14,
   },
   sliderAbsolute: {
     position: 'absolute',
-    width: '93%',
+    width: '95%',
     height: SLIDER_H,
-    paddingHorizontal: 9,
-    marginLeft: 12,
-    marginRight: 12,
-  },
-  thumb: {
-    width: 21,
-    height: 21,
-    backgroundColor: '#fff',
-    borderColor: '#333',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.5,
-    elevation: 2,
+    paddingHorizontal: 14,
+    marginLeft: 15,
+    marginRight: 10,
   },
   boundLabel: {
     position: 'absolute',
-    top: -2,
-    fontSize: 12,
-    color: '#333',
+    paddingRight: 12,
+    fontSize: 15,
+    color: '#39df87',
+  },
+    boundLabelLeft: {
+    position: 'absolute',
+    paddingLeft: 7,
+    fontSize: 15,
+    color: 'red',
   },
   textArea: {
-    minHeight: 100,
+    height: "28%",
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,

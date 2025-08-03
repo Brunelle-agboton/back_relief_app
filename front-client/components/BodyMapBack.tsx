@@ -8,8 +8,8 @@ type BodyMapProps = {
 export default function BodyMapBack({ onSelect, pains = {} }: BodyMapProps ) {  
   // convertir niveau en couleur
   const getColor = (v: number) => {
-    const r = Math.round((10 - v) * 25.5);
-    const g = Math.round(v * 25.5);
+    const g = Math.round((10 - v) * 25.5);
+    const r = Math.round(v * 25.5);
     return `rgb(${r},${g},0)`;
   };
 

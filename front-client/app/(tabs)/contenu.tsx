@@ -1,14 +1,24 @@
-// /app/(tabs)/Contenu.tsx
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, ImageBackground,TouchableOpacity } from 'react-native';
 import { ContentCard } from '../../components/ContentCard'; 
+import { useRouter } from 'expo-router';
 
 export default function Contenu() {
+    const router = useRouter();
+  
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.header}>Les bénéfices d’une pause active</Text>
         <View style={[styles.sectionContainer, { marginBottom: 17 }]}>
-          <TouchableOpacity activeOpacity={0.8}>
+          <TouchableOpacity
+          onPress={() =>
+                router.push({
+                  pathname: '/screens/ArticlePauseActive', 
+                  params: { article: 5 } 
+                })
+              }
+               activeOpacity={0.8}
+               >
                 <ImageBackground
                   source={require('../../assets/images/contenus/Rectangle_107.png')}
                   style={styles.background}
@@ -24,12 +34,18 @@ export default function Contenu() {
 
         <View  style={{ marginBottom: 7 }} >
              <Text style={styles.header}>Les dangers de la position assise</Text>
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: 4 }).map((_, i) => (
          <View key={i} style={styles.section}>
             <ContentCard
             key={i}
             title='Le savais-tu ?'
             imageSource={require('../../assets/images/contenus/Rectangle_102.png')}
+            onPress={() =>
+                router.push({
+                  pathname: '/screens/ArticlePauseActive', 
+                  params: { article: i } 
+                })
+              }
           />
           </View>
         ))}
@@ -40,12 +56,24 @@ export default function Contenu() {
             <ContentCard
             title='Quelle quantité boire ?'
             imageSource={require('../../assets/images/contenus/Rectangle_109.png')}
+            onPress={() =>
+                router.push({
+                  pathname: '/screens/ArticleHydratation', 
+                  params: { article: 109 } 
+                })
+              }
           />
         </View>
          <View style={{ marginBottom: 7 }}>
             <ContentCard
             title='A quels moments ? '
             imageSource={require('../../assets/images/contenus/Rectangle_110.png')}
+            onPress={() =>
+                router.push({
+                  pathname: '/screens/ArticleHydratation', 
+                  params: { article: 110 } 
+                })
+              }
           />
         </View>
     </ScrollView>

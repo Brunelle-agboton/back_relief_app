@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   logo: {
-    width: 120,
+    width: 150,
     height: 120,
     alignSelf: 'center',
     marginBottom: 24,

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform  } from 'react-native';
-import { useNavigation, NavigationProp,useRoute } from '@react-navigation/native';
+import { View, TextInput, Button, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
+import { useNavigation, NavigationProp, useRoute } from '@react-navigation/native';
 import api from '../../../services/api';
 import Foundation from '@expo/vector-icons/Foundation';
 import Feather from '@expo/vector-icons/Feather';
@@ -8,91 +8,139 @@ import { ProgramLine, Program, CategorizedPrograms } from '../../../interfaces/t
 import { useRouter } from 'expo-router';
 import { setProgramLines } from '../../../utils/ProgramStore';
 import { baseURL } from '../../../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const options = {
   headerShown: false,
 };
+const FAV_KEY = '@fav_exercises';
+const FAV_PROGRAMS_KEY = '@fav_programs';
 
 export default function PauseActiveScreen() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [programsByCat, setProgramsByCat] = useState<CategorizedPrograms>({});
   const [exercises, setExercises] = useState<{ [key: string]: ProgramLine[] }>({});
-  const [error, setError] = useState<string>('');
-    
-  useEffect(() => {
-  (async () => {
-    try {
-      const { data: programs } = await api.get<Program[]>('/program');
-      // Catégoriser les programmes
-      const categorized = programs.reduce<CategorizedPrograms>((acc, p) => {
-        const lines = p.lines ?? []
-        const cat = lines[0]?.exercise?.category ?? 'all'
-        if (!acc[cat]) acc[cat] = []
-        acc[cat].push(p)
-        
-        if (!acc.all) acc.all = []
-        acc.all.push(p)
-        return acc
-    }, { all: [] } as CategorizedPrograms)
+  const [favIds, setFavIds] = useState<number[]>([]);
+  const [favExercises, setFavExercises] = useState<ProgramLine[]>([]);
+  const [isFavProgram, setIsFavProgram] = useState(false);
 
-      setProgramsByCat(categorized);
-      // Extraire les ProgramLines pour chaque catégorie
-    const linesByCat: { [key: string]: ProgramLine[] } = {};
-      Object.keys(categorized).forEach(cat => {
-        linesByCat[cat] = categorized[cat]
-          .flatMap(p => p.lines)
-          .filter((line, idx, arr) =>
-            arr.findIndex(l => l.exercise.id === line.exercise.id) === idx // éviter les doublons
-          );
-      });
-      setExercises(linesByCat);
-    } catch (e) {
-      console.error(e);
-      setError("Impossible de charger les programmes");
-    }
-  })();
+  const [error, setError] = useState<string>('');
+
+  const [favProgramIds, setFavProgramIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const raw = await AsyncStorage.getItem(FAV_PROGRAMS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      setFavProgramIds(Array.isArray(parsed) ? parsed : []);
+    })();
   }, []);
 
+
+  useEffect(() => {
+    (async () => {
+      // 1️⃣ charger les favoris (juste les IDs)
+      const raw = await AsyncStorage.getItem(FAV_KEY);
+      let list: number[] = [];
+      try {
+        const parsed = raw ? JSON.parse(raw) : [];
+        list = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        list = [];
+      }
+      setFavIds(list);
+    })();
+
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: programs } = await api.get<Program[]>('/program');
+        // Catégoriser les programmes
+        const categorized = programs.reduce<CategorizedPrograms>((acc, p) => {
+          const lines = p.lines ?? []
+          const cat = lines[0]?.exercise?.category ?? 'all'
+          if (!acc[cat]) acc[cat] = []
+          acc[cat].push(p)
+
+          if (!acc.all) acc.all = []
+          acc.all.push(p)
+          return acc
+        }, { all: [] } as CategorizedPrograms)
+
+        setProgramsByCat(categorized);
+        // Extraire les ProgramLines pour chaque catégorie
+        const linesByCat: { [key: string]: ProgramLine[] } = {};
+        Object.keys(categorized).forEach(cat => {
+          linesByCat[cat] = categorized[cat]
+            .flatMap(p => p.lines)
+            .filter((line, idx, arr) =>
+              arr.findIndex(l => l.exercise.id === line.exercise.id) === idx // éviter les doublons
+            );
+        });
+        setExercises(linesByCat);
+
+        // 3) extrait les ProgramLine favorites
+        const allLines = Object.values(exercises).flat();
+        const favLines = allLines.filter(line =>
+          favIds.includes(Number(line.exercise.id))
+        );
+        // Dédupliquer par exercise.id
+        const unique = Array.from(
+          favLines.reduce((map, line) => map.set(line.exercise.id, line), new Map())
+            .values()
+        );
+
+        setFavExercises(unique);
+      } catch (e) {
+        console.error(e);
+        setError("Impossible de charger les programmes");
+      }
+    })();
+  }, [favIds, exercises]);
+
   const categories = [
-      { id: 'all',   name: 'All'   },
-      { id: 'mur',   name: 'Mur'   },
-      { id: 'assis', name: 'Assis' },
-      { id: 'debout',name: 'Debout'},
-   ];
+    { id: 'all', name: 'All' },
+    { id: 'mur', name: 'Mur' },
+    { id: 'assis', name: 'Assis' },
+    { id: 'debout', name: 'Debout' },
+  ];
 
   const filteredPrograms = () => {
-    console.log(programsByCat[selectedCategory]);
+    // console.log(programsByCat[selectedCategory]);
     return programsByCat[selectedCategory] || [];
   };
+  const favPrograms = filteredPrograms().filter(p => favProgramIds.includes(p.id));
 
 
-    const handleCategoryPress = (categoryId: string) => {
-        setSelectedCategory(categoryId);
-    };
+  const handleCategoryPress = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+  };
 
-    const iconProps = Platform.select({
+  const iconProps = Platform.select({
     web: {},
     default: {
       onResponderTerminate: undefined,
       onResponderRelease: undefined,
       onStartShouldSetResponder: undefined
     }
-    });
+  });
 
-    return (
-      <ScrollView 
-        style={styles.container}>
-        <Text style={styles.subtitle}>Soulage ton dos avec les exercices ci-dessous !</Text>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
+  return (
+    <ScrollView
+      style={styles.container}>
+      <Text style={styles.subtitle}>Soulage ton dos avec les exercices ci-dessous !</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
         style={styles.categoriesContainer}
         contentContainerStyle={styles.categoriesContent}
       >
         {categories.map((category) => (
-          <TouchableOpacity 
-            key={category.id} 
+          <TouchableOpacity
+            key={category.id}
             style={[
               styles.categoryButton,
               category.id === selectedCategory && styles.categoryButtonActive
@@ -109,77 +157,151 @@ export default function PauseActiveScreen() {
         ))}
       </ScrollView>
 
+      <View style={styles.viewContainer}>
+        <Text style={styles.title}>Exercices</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginBottom: 12 }} >
+          {(exercises[selectedCategory] || []).map((line) => (
+            <TouchableOpacity
+              key={line.exercise.id}
+              style={styles.exerciseCard}
+              onPress={() => {
+                setProgramLines([line]);
+                router.push({
+                  pathname: '/(tabs)/pauseActive/ProgramLineScreen',
+                  params: { currentStep: 0 }
+                })
+              }}
+            >
+              <Image source={{ uri: `${baseURL}images/pausesActives/${encodeURIComponent(line.exercise.image)}` }} style={styles.cardImage} />
+              <View style={styles.pausetats}>
+                <View style={styles.statItem}>
+                  <Foundation name="clock" size={16} color="#666" {...iconProps} />
+                  <Text style={styles.statText}>{line.duration} seconds</Text>
+                </View>
+                {line.calories && (
+                  <View style={styles.statItem}>
+                    <Feather name="zap" size={16} color="#666" {...iconProps} />
+                    <Text style={styles.statText}>{line.calories} kcal</Text>
+                  </View>
+                )}
+
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      <View style={styles.viewContainer}>
+        <Text style={styles.title}>Programmes</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={[{ marginBottom: 6 }, styles.container]} >
+          {(programsByCat[selectedCategory] || []).map((program) => (
+            <TouchableOpacity
+              key={program.id}
+              style={styles.card}
+              onPress={() =>
+                router.push({
+                  pathname: '/(tabs)/pauseActive/ProgramDetailScreen',
+                  params: { programId: program.id }
+                })
+              }
+            >
+              <Image source={{ uri: `${baseURL}images/pausesActives/${encodeURIComponent(program.image)}` }} style={styles.programImage} />
+
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {favExercises.length > 0 && (
         <View style={styles.viewContainer}>
-          <Text style={styles.title}>Exercices</Text>
-          <ScrollView 
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 12 }} >
-              {(exercises[selectedCategory] || []).map((line) => (
+          <Text style={styles.title}>Exercices favoris</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {favExercises.map(line => (
               <TouchableOpacity
                 key={line.exercise.id}
                 style={styles.exerciseCard}
-              onPress={() => {
-              setProgramLines([line]);
-              router.push({
-                pathname: '/(tabs)/pauseActive/ProgramLineScreen', 
-                params: { currentStep: 0 }})
-            }}
+                onPress={() => {
+                  setProgramLines([line]);
+                  router.push({
+                    pathname: '/(tabs)/pauseActive/ProgramLineScreen',
+                    params: { currentStep: 0 },
+                  });
+                }}
               >
-            <Image source={{ uri: `${baseURL}images/pausesActives/${encodeURIComponent(line.exercise.image)}` }} style={styles.cardImage} />
+                <Image
+                  source={{
+                    uri: `${baseURL}images/pausesActives/${encodeURIComponent(
+                      line.exercise.image
+                    )}`
+                  }}
+                  style={styles.cardImage}
+                />
                 <View style={styles.pausetats}>
                   <View style={styles.statItem}>
-                      <Foundation name="clock" size={16} color="#666" {...iconProps} />
-                      <Text style={styles.statText}>{line.duration} seconds</Text>
+                    <Foundation name="clock" size={16} color="#666" {...iconProps} />
+                    <Text style={styles.statText}>{line.duration} seconds</Text>
                   </View>
                   {line.calories && (
                     <View style={styles.statItem}>
-                    <Feather name="zap" size={16} color="#666" {...iconProps} />
-                    <Text style={styles.statText}>{line.calories} kcal</Text>
+                      <Feather name="zap" size={16} color="#666" {...iconProps} />
+                      <Text style={styles.statText}>{line.calories} kcal</Text>
                     </View>
-                )}
-         
-            </View>
-      </TouchableOpacity>
-    ))}
-      </ScrollView>
-    </View>
+                  )}
 
-    <View style={styles.viewContainer}>
-      <Text style={styles.title}>Programme</Text>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={[{ marginBottom: 6 }, styles.container]} >
-        {(programsByCat[selectedCategory] || []).map((program) => (
-          <TouchableOpacity
-            key={program.id}
-            style={styles.card}
-            onPress={() =>
-              router.push({
-                pathname: '/(tabs)/pauseActive/ProgramDetailScreen',
-                params: { programId: program.id }
-              })
-            }
-          >
-            <Image source={{ uri: `${baseURL}images/pausesActives/${encodeURIComponent(program.image)}` }} style={styles.programImage} />
-              
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      {favPrograms.length > 0 && (
+        <View style={styles.viewContainer}>
+          <Text style={styles.title}>Mes Programmes Favoris</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {favPrograms.map(program => (
+              <TouchableOpacity
+                key={program.id.toString()}
+                style={styles.card}
+                onPress={() =>
+                  router.push({
+                    pathname: '/(tabs)/pauseActive/ProgramDetailScreen',
+                    params: { programId: program.id },
+                  })
+                }
+              >
+                <Image
+                  source={{
+                    uri: `${baseURL}images/pausesActives/${encodeURIComponent(
+                      program.image
+                    )}`,
+                  }}
+                  style={styles.programImage}
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
     </ScrollView>
-    );
-    }
-    
-  const styles = StyleSheet.create({
+  );
+}
+
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
   },
   viewContainer: {
     backgroundColor: '#fff',
-    padding:10,
+    padding: 10,
   },
   header: {
     padding: 20,
@@ -196,7 +318,7 @@ export default function PauseActiveScreen() {
     fontSize: 16,
     paddingTop: 8,
   },
-   exerciseCard: {
+  exerciseCard: {
     width: 300,
     height: 200,
     marginRight: 12,
@@ -215,8 +337,8 @@ export default function PauseActiveScreen() {
     backgroundColor: '#fff',
     elevation: 5,
   },
-  cardImage:{ width: '100%', height: 150, resizeMode: 'contain', },
-  programImage:{ width: '100%', height: 172, resizeMode: 'contain' },
+  cardImage: { width: '100%', height: 150, resizeMode: 'contain', },
+  programImage: { width: '100%', height: 172, resizeMode: 'contain' },
   categoriesContainer: {
     marginVertical: 20,
   },
@@ -314,11 +436,11 @@ export default function PauseActiveScreen() {
   },
   playIcon: {
     position: 'absolute',
-  bottom: 2,
-  right: 2,
-  backgroundColor: '#fff',
-  borderRadius: 16,
-  padding: 4,
-  elevation: 2
+    bottom: 2,
+    right: 2,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 4,
+    elevation: 2
   }
 });

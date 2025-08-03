@@ -32,7 +32,7 @@ export class UserController {
     return this.userService.findAll();
   }
 
-    @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get('me/:id')
   findById(@Param('id') id: number) {
     return this.userService.findOne(id);
@@ -46,6 +46,12 @@ export class UserController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(+id, updateUserDto);
+  }
+  
+  @UseGuards(JwtAuthGuard)
+   @Patch(':id/settings')
+  updateUserSetting(@Param('id') id: string, @Body() {restReminder, drinkReminder}) {
+    return this.userService.updateUserSetting(+id, restReminder, drinkReminder);
   }
 
   @Delete(':id')

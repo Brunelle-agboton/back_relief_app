@@ -110,10 +110,43 @@ export default function RootLayout() {
           <Stack.Screen name="screens/RegisterStep3Screen" options={{ headerShown: false }} />
           <Stack.Screen name="screens/ForgotPasswordScreen" options={{headerShown: false }}/>
           <Stack.Screen name="screens/mine" options={{ headerLeft:  () => <BackButton />, headerTitle: 'Compte', headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>
-          <Stack.Screen name="screens/UserInfos1" options={{headerTitle: 'Compte', headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' } }}/>
-          <Stack.Screen name="screens/UserInfos2" options={{headerTitle: 'Informations', headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>
-          <Stack.Screen name="screens/ReminderSettingsScreen" options={{headerTitle: 'Notifications', headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>      
-
+          <Stack.Screen 
+            name="screens/UserInfos1" 
+            options={{
+              headerLeft: () => <></>,
+              headerTitle: 'Compte', 
+              headerTitleAlign: 'center', 
+              headerStyle: { backgroundColor: '#CDFBE2' } }}/>
+          <Stack.Screen 
+            name="screens/UserInfos2" 
+            options={{
+              headerLeft: () => <></>,
+              headerTitle: 'Informations', 
+              headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>
+          <Stack.Screen name="screens/ReminderSettingsScreen" 
+            options={{ 
+              headerLeft: () => <></>,
+              headerTitle: 'Notifications', 
+              headerTitleAlign: 'center', 
+              headerStyle: { backgroundColor: '#CDFBE2' }}}/>      
+          <Stack.Screen 
+            name="screens/ArticlePauseActive" 
+            options={{ 
+              headerLeft:  () => <BackButton />, 
+              headerTitle: 'Articles', 
+              headerTitleAlign: 'center', 
+              headerStyle: { backgroundColor: '#CDFBE2' }
+              }}
+          />
+          <Stack.Screen 
+            name="screens/ArticleHydratation" 
+            options={{ 
+              headerLeft:  () => <BackButton />, 
+              headerTitle: 'Articles', 
+              headerTitleAlign: 'center', 
+              headerStyle: { backgroundColor: '#CDFBE2' }
+              }}
+          />
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />

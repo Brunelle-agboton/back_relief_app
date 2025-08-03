@@ -17,7 +17,6 @@ const SummaryScreen = () => {
   const [selectedRange, setSelectedRange] = useState<TimeRange>('Semaine');
   const [healthHistory, setHealthHistory] = useState<HealthEntry[]>([]);
   const [exercises, setExercises] = useState<Array<{ id: number; name: string; duration: string; calories: number; date: string }>>([]);  
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [painLocation, setLocation] = useState('');
   const [painByZone, setPainByZone] = useState<
       Record<string, { level: number; desc: string }>
@@ -53,8 +52,7 @@ const SummaryScreen = () => {
           const { data } = await api.get('/summary');
         setHealthHistory(data.healthHistory);
         setExercises(data.exercises);
-        setNotifications(data.notifications);
-        setPainByZone(data.healthHistory.reduce((acc, p) => {
+        setPainByZone(data.healthHistory.reduce((acc: any, p: any) => {
           // on crée la clé pour la zone p.location
           acc[p.location] = {
             level: p.level,
@@ -78,7 +76,7 @@ const SummaryScreen = () => {
   const buildChartData = (entries: HealthEntry[], range: TimeRange) => {
   const now = new Date();
 
-  // 1️⃣ filtrage
+  // 1️ filtrage
   let filtered = entries.filter(e => {
     const d = new Date(e.timestamp);
     if (range === 'Semaine') {
@@ -107,7 +105,7 @@ const SummaryScreen = () => {
   const buckets: Record<string,{ sum:number; count:number }> = {};
   labels.forEach(lbl => { buckets[lbl] = { sum:0, count:0 }; });
 
-  // 3️⃣ remplissage
+  // 3️ remplissage
   filtered.forEach(({ level, timestamp }) => {
     const d = new Date(timestamp);
     let key: string;
@@ -155,12 +153,6 @@ const SummaryScreen = () => {
       router.push('/(tabs)/RegisterHealthScreen');
   };
   
-  const toggleNotification = (id: any) => {
-    setNotifications(notifications.map(notif => 
-      notif.id === id ? {...notif, active: !notif.active} : notif
-    ));
-  };
-
   // Composant SummaryCard
   function SummaryCardVertical({
     label,
@@ -178,6 +170,16 @@ const SummaryScreen = () => {
       </View>
     );
   }
+ //  Données statiques pour l'exemple
+  const chartHydraData = {
+    labels: ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'],
+    datasets: [
+      {
+        data: [0.5, 0.5, 0.5, 2, 2.5, 2.8, 3], // Litres d'eau
+        strokeWidth: 2,
+      },
+    ],
+  };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -213,6 +215,8 @@ const SummaryScreen = () => {
         <SummaryCardVertical label="Maximum" value={mx.toString()} color="#F59E0B" />
         <SummaryCardVertical label="Minimum" value={mn.toString()} color="#EF4444" />
       </View> */}
+        <View style={styles.sectionContainer}><Text style={styles.sectionTitle}>Douleur</Text></View>
+
       {/* Sélecteur de période */}
       <View style={styles.timeRangeContainer}>
         {timeRanges.map((range) => (
@@ -237,9 +241,7 @@ const SummaryScreen = () => {
       </View>
       
     {/* Graphique d'historique des douleurs */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Douleurs</Text>
+        {/* <View style={styles.sectionHeader}>
           <TouchableOpacity 
             style={styles.addButton}
             onPress={handleAddPain}
@@ -247,17 +249,17 @@ const SummaryScreen = () => {
             <AntDesign name="plus" size={18} color="white" />
             <Text style={styles.addButtonText}>Ajouter</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
         
       <LineChart
         data={chartData}
-        width={width - 35}
+        width={width - 25}
         height={220}
         yAxisSuffix="/10"
         chartConfig={{
-          backgroundColor: '#ffffff',
-          backgroundGradientFrom: '#fff',
-          backgroundGradientTo: '#fff',
+          backgroundColor: '#9BD9FF',
+          backgroundGradientFrom: '#CDFBE2',
+          backgroundGradientTo: '#CDFBE2',
           decimalPlaces: 1,
           color: (opacity = 1) => `rgba(76,175,80,${opacity})`,
           labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
@@ -266,8 +268,55 @@ const SummaryScreen = () => {
         bezier
         style={styles.chart}
       />
-    </View>
 
+        <View style={styles.sectionContainer}><Text style={styles.sectionTitle}>Hydratation</Text></View>
+
+      <View style={styles.timeRangeContainer}>
+        {timeRanges.map((range) => (
+          <TouchableOpacity
+            key={range}
+            style={[
+              styles.timeRangeButton,
+              selectedRange === range && styles.timeRangeButtonActive
+            ]}
+            onPress={() => setSelectedRange(range)}
+          >
+            <Text
+              style={[
+                styles.timeRangeText,
+                selectedRange === range && styles.timeRangeTextActive
+              ]}
+            >
+              {range}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Graphique d'hydratation */}
+        <LineChart
+          data={chartHydraData}
+          width={width - 30}
+          height={220}
+          yAxisSuffix=" L"
+          yAxisInterval={1} // une graduation tous les 1 L
+          chartConfig={{
+            backgroundColor: '#9BD9FF',
+            backgroundGradientFrom: '#9BD9FF',
+            backgroundGradientTo: '#9BD9FF',
+            decimalPlaces: 2,
+            color: (opacity = 1) => `rgba(23, 150, 120, ${opacity})`,
+            labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+            style: { borderRadius: 16 },
+            propsForDots: {
+              r: '2',
+              strokeWidth: '1',
+              stroke: '#fff',
+            },
+          }}
+          bezier
+          style={styles.chart}
+        />
 {/* Section Exercices réalisés */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -296,45 +345,6 @@ const SummaryScreen = () => {
         ))}
       </View>
       
-      {/* Section Notifications */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Mes notifications</Text>
-        
-        {notifications?.map((notification) => (
-          <View key={notification.id} style={styles.notificationCard}>
-            <View style={styles.notificationTime}>
-              <Text style={styles.notificationTimeText}>{notification.time}</Text>
-            </View>
-            
-            <View style={styles.notificationInfo}>
-              <Text style={styles.notificationTitle}>{notification.title}</Text>
-              <View style={styles.notificationStatus}>
-                <View 
-                  style={[
-                    styles.statusIndicator, 
-                    notification.active ? styles.active : styles.inactive
-                  ]}
-                />
-                <Text style={styles.statusText}>
-                  {notification.active ? 'Active' : 'Inactive'}
-                </Text>
-              </View>
-            </View>
-            
-            <TouchableOpacity 
-              style={styles.notificationAction}
-              onPress={() => toggleNotification(notification.id)}
-            >
-              <MaterialCommunityIcons 
-                name={notification.active ? "bell" : "bell-off"} 
-                size={24} 
-                color="#666" 
-              />
-            </TouchableOpacity>
-          </View>
-        ))}
-      </View>
-      
     </ScrollView>
   );
 };
@@ -343,7 +353,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: 20,
+    padding: 10,
   },
   header: {
     marginBottom: 20,
@@ -375,7 +385,7 @@ const styles = StyleSheet.create({
   },
   timeRangeButton: {
     padding: 10,
-    borderRadius: 15,
+    borderRadius: 19,
     backgroundColor: 'transparent',
     flex: 1,
     alignItems: 'center',
@@ -396,7 +406,7 @@ const styles = StyleSheet.create({
     marginBottom: 25,
     backgroundColor: 'white',
     borderRadius: 16,
-    padding: 20,
+    padding: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -412,8 +422,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    alignItems: 'center',
     color: '#2c3e50',
   },
+  sectionContainer : {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
+ },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -440,7 +456,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   chart: {
-    borderRadius: 12,
+    marginBottom: 15,
+    borderRadius: 19,
   },
   painSummary: {
     flexDirection: 'row',
