@@ -1,14 +1,15 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 
 type RootStackParamList = {
-  'screens/RegisterStep1Screen': undefined;
-  'screens/LoginScreen': undefined;
+  '/(auth)/register/step1': undefined;
+  '/(auth)/login': undefined;
 };
 
 export default function Home() {
-  
+  const router = useRouter();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   return (
     <View style={styles.container}>
@@ -20,15 +21,17 @@ export default function Home() {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.SignupButton}
-          onPress={() => navigation.navigate('screens/RegisterStep1Screen')} // Redirection vers la page d'inscription
+          onPress={() =>  router.push('/(auth)/register/step1')} // Redirection vers la page d'inscription
         >
-          <Text style={styles.buttonText}>S'inscrire</Text>
+          {/* S'inscrire */}
+          <Text style={styles.buttonText}>Je suis un particulier</Text> 
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('screens/LoginScreen')} // Redirection vers la page de connexion
+          onPress={() =>  router.push('/(auth)/login')} // Redirection vers la page de connexion
         >
-          <Text style={styles.buttonText}>Se connecter</Text>
+          {/* Se connecter */}
+          <Text style={styles.buttonText}>Je suis un professionnel</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -44,45 +47,45 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 32,
+    fontSize: 52,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 8,
+    marginBottom: 38,
   },
   subtitle: {
     fontSize: 20,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 16,
+    marginBottom: 36,
   },
   description: {
     fontSize: 16,
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 62,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    gap: 16,
+    flexDirection: 'column',
+    gap: 46,
   },
   button: {
-    width: '50%',
+    width: '100%',
     alignItems: 'center',
-    borderWidth: 1,
+    // borderWidth: 1,
     borderColor: '#f8bb54',
     backgroundColor: '#fff',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 28,
   },
   SignupButton: {
-    width: '50%',
+    width: '100%',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ED6A5E',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    // borderWidth: 1,
+    // borderColor: '#ED6A5E',
+    paddingVertical: 14,
+    paddingHorizontal: 34,
     borderRadius: 28,
   },
   buttonText: {

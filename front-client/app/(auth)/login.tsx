@@ -9,7 +9,9 @@ import { useAuth } from '../../context/AuthContext';
 
 type RootStackParamList = {
   'screens/RegisterHealthScreen': undefined;
-  'screens/RegisterStep1Screen' : undefined;
+  'register-pro/step1-infos' : undefined;
+  'register/step1' : undefined;
+
 };
 
 export default function LoginScreen() {
@@ -42,7 +44,7 @@ export default function LoginScreen() {
  return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/images/icon.png')}
+        source={require('@/assets/images/icon.png')}
         style={styles.logo}
       />
       <Text style={styles.title}>Se connecter</Text>
@@ -84,7 +86,7 @@ export default function LoginScreen() {
         </View>
       </View>
 
-      <Link href="/screens/ForgotPasswordScreen" style={styles.forgotPassword}>
+      <Link href="/(auth)/forgot-password" style={styles.forgotPassword}>
         <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
       </Link>
 
@@ -97,13 +99,23 @@ export default function LoginScreen() {
 
       <Text style={styles.signupText}>
         Pas encore inscrit ?{' '}
+  </Text>
+
         <Text 
           style={styles.signupLink} 
-          onPress={() => navigation.navigate('screens/RegisterStep1Screen')}
+          onPress={() => navigation.navigate('register/step1')}
         >
-          Créer un compte
+          Créer un compte patient
         </Text>
-      </Text>
+         <Text >
+    ou
+  </Text>
+        <Text 
+          style={styles.signupLink} 
+          onPress={() => navigation.navigate('register-pro/step1-infos')}
+        >
+          Créer un compte professionnel
+        </Text>
       
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>

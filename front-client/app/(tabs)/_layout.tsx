@@ -24,7 +24,7 @@ const TAB_ITEMS = [
   { name: 'pauseActive', title: 'Paus\'active', icon: 'person-walking', path: '/(tabs)/pauseActive' },
   { name: 'RegisterHealthScreen', title: 'Douleur', icon: 'plus-a', path: '/(tabs)/RegisterHealthScreen' },
   { name: 'statsChart', title: 'Progression', icon: 'linechart', path: '/(tabs)/statsChart'  },
-  { name: 'contenu', title: 'Articles', icon: 'folder-sharp',  path: '/(tabs)/contenu' },
+  { name: 'my-space', title: 'Mon espace', icon: 'folder-sharp',  path: '/(tabs)/contenu' },
 ];
 
 export default function TabLayout() {
@@ -55,7 +55,7 @@ export default function TabLayout() {
             case 'index':             headerTitle = 'Votre état actuel'; break;
             case 'pauseActive':       headerTitle = 'Exercices';         break;
             case 'statsChart':        headerTitle = 'Progression';       break;
-            case 'contenu':           headerTitle = 'Articles';           break;
+            case 'my-space':           headerTitle = 'Mon espace';           break;
             default:                  headerTitle = '';                 break;
           }
 

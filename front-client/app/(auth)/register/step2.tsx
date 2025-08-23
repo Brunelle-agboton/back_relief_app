@@ -1,23 +1,22 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, TextInput, Button, Text, TouchableOpacity, StyleSheet, Image, Pressable } from 'react-native';
 import { useNavigation, NavigationProp, RouteProp, useRoute } from '@react-navigation/native';
-
-type RootStackParamList = {
-  'screens/RegisterStep3Screen': { userName: string; email: string; password: string; age: string; sexe: string; poids: string; taille: string };
-  'screens/RegisterStep2Screen': { userName: string; email: string; password: string };
-};
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 export default function RegisterStep2Screen() {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'screens/RegisterStep2Screen'>>();
-  const { userName, email, password } = route.params;
+  const router = useRouter();
+  const navigation = useNavigation();
+  const { userName, email, password } = useLocalSearchParams();
   const [age, setAge] = useState('');
   const [sexe, setSexe] = useState('');
   const [taille, setTaille] = useState('');
   const [poids, setPoids] = useState('');
 
   const handleNext = () => {
-    navigation.navigate('screens/RegisterStep3Screen', { email, password, userName, age, sexe, poids, taille });
+    router.push({
+         pathname: '/register/step3', // Le chemin correct
+          params: { userName, email, password, age, sexe, poids, taille  } // Les données à passer
+      });
   };
 
   const handleBack = () => {
@@ -27,7 +26,7 @@ export default function RegisterStep2Screen() {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/images/icon.png')}
+        source={require('@/assets/images/icon.png')}
         style={styles.logo}
         testID="logo-image"
       />
@@ -94,14 +93,32 @@ export default function RegisterStep2Screen() {
       <Text style={styles.unit}>kg</Text>
     </View>
     
-    <View style={styles.buttonRow}>
-      <TouchableOpacity style={[styles.button, styles.backButton]}>
-        <Text style={styles.buttonText}  onPress={handleBack}>Precedent</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.button, styles.nextButton]}>
-        <Text style={styles.buttonText} onPress={handleNext}>Suivant</Text>
-      </TouchableOpacity>
-    </View>
+
+    <View style={styles.rowRight}>
+        <Pressable
+          onPress={handleBack}
+          style={({ pressed }) => [
+            styles.button,
+            styles.buttonSmall,
+            pressed && styles.pressed,
+            { marginRight: 18 } // espace entre les deux boutons
+          ]}
+          accessibilityLabel="Précédent"
+        >
+          <Text style={styles.buttonText}>Précédent</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={handleNext}
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.pressed
+          ]}
+          accessibilityLabel="Suivant"
+        >
+          <Text style={styles.buttonText}>Suivant</Text>
+        </Pressable>
+      </View>
   </View>
   );
 }
@@ -133,9 +150,15 @@ const styles = StyleSheet.create({
   },
   radioButton: {
     width: 20,
-    padding: 10,
+    height: 21,
     borderWidth: 1,
+   backgroundColor: '#FFFFFF',
     borderColor: '#ccc',
+     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
     borderRadius: 20,
     marginRight: 4,
   },
@@ -180,14 +203,41 @@ const styles = StyleSheet.create({
   marginBottom: 8,
   marginTop: 16,
 },
-  buttonRow: { flexDirection: 'row', marginTop: 32 },
-  button: { flex: 1, marginHorizontal: 10, padding: 16, borderRadius: 28, alignItems: 'center'},
-  nextButton:{
-    backgroundColor: '#FF8C00'
+ rowRight: {
+    width: '100%',
+    alignItems: 'flex-end',
+    marginTop: 32,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
-  backButton:{
-    backgroundColor: '#cccccc'
+  button: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 26,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-    buttonText: { color: '#ffff', fontWeight: 'bold', fontSize: 18 },
+  buttonSmall: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
+  pressed: {
+    transform: [{ scale: 0.985 }],
+    shadowOpacity: 0.04,
+    elevation: 3,
+  },
+  buttonText: {
+    color: '#6b6b6b',
+    fontSize: 15,
+    fontWeight: '500',
+  },
 
 });

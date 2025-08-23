@@ -5,7 +5,7 @@ import { useNavigation,NavigationProp } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
-  'screens/RegisterStep2Screen': { userName: string; email: string; password: string };
+  '/(auth)/register/step2-credentials': { userName: string; email: string; password: string };
 };
 
 export default function RegisterStep1Screen() {
@@ -24,18 +24,17 @@ export default function RegisterStep1Screen() {
       return;
     }
     setError('');
-    navigation.navigate('screens/RegisterStep2Screen', { userName, email, password });
+    navigation.navigate('/(auth)/register/step2-credentials', { userName, email, password });
   };
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../../assets/images/icon.png')}
+      {/* <Image
+        source={require('@/assets/images/icon.png')}
         style={styles.logo}
         testID="logo-image"
-      />
-    <Text style={styles.title}>Créer un compte</Text>
-
+      /> */}
+<Text style={styles.description}>Vos spécialités </Text>
     <View style={styles.inputContainer}>
       <Text style={styles.label}>Username</Text>
      <View style={[
@@ -44,7 +43,7 @@ export default function RegisterStep1Screen() {
             ]}>
       <TextInput
             style={styles.input}
-            placeholder="Nom d'utilisateur"
+            placeholder="Votre nom et prenom d'utilisateur"
             onChangeText={setUserName}
             value={userName}
           />
@@ -89,9 +88,11 @@ export default function RegisterStep1Screen() {
     </View>
     
     {error ? <Text style={styles.error}>{error}</Text> : null}
- <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText} onPress={handleNext}>Suivant</Text>
-      </TouchableOpacity> 
+ <View style={{ width: '100%', alignItems: 'flex-end', paddingHorizontal: 16 }}>
+   <TouchableOpacity style={styles.button} onPress={handleNext} activeOpacity={0.85}>
+     <Text style={styles.buttonText}>Suivant</Text>
+   </TouchableOpacity>
+ </View>
         </View>
 );
 }
@@ -110,6 +111,13 @@ title: {
   marginBottom: 20,
   color: '#333',
 },
+  description: {
+    textAlign: 'center',
+    color: '#FF8C00',
+    padding: 10,
+    fontSize: 16,
+    marginBottom: 20,
+  },
   inputContainer: {
     marginBottom: 16,
   },
@@ -154,10 +162,27 @@ logo: {
   marginTop: 16,
 },
  button: { 
-  marginTop: 20,
-  padding: 16, 
-  alignItems: 'center',
-  borderRadius: 28, 
-  backgroundColor: '#FF8C00'},
- buttonText: { color: '#ffff', fontWeight: 'bold', fontSize: 18 },
+ backgroundColor: '#FFFFFF',      // fond blanc comme sur ton image
+    borderRadius: 30,                // forme "pill"
+    paddingVertical: 12,
+  marginTop: 16,
+
+    // ombre iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 }, // décalage bas pour effet levé
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    // ombre Android
+    elevation: 6,
+    // optionnel : largeur fixe si nécessaire
+   width: 140,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  buttonText: {
+    color: '#6b6b6b', // gris doux
+    fontSize: 15,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
 });

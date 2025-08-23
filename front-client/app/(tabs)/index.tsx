@@ -13,22 +13,21 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { getUserId } from '../../context/AuthContext';
-import { getToken }              from '../../utils/storage';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 const { width } = Dimensions.get('window');
 const { width: screenWidth } = Dimensions.get('window');
 
 const characters = {
-  low: require('@/assets/images/char-1-3.png'),
-  midLow: require('@/assets/images/char-4-5.png'), 
-  midHigh: require('@/assets/images/char-6-7.png'), 
-  high: require('@/assets/images/char-8-10.png'),   
+  low: require('@/assets/images/char-8-10.png'),
+  midLow: require('@/assets/images/char-6-7.png'), 
+  midHigh: require('@/assets/images/char-4-5.png'),
+  high: require('@/assets/images/char-1-3.png'),
 };
 
-export default function HomeScreen() {
+export default function ConnectedHome() {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { authState, isLoading } = useAuth();
   const [painLevel, setPainLevel] = useState<number>();
   const [nbExercises, setNbExercises] = useState<number>();
   const [streakDays, setStreakDays] = useState<number>();
@@ -44,10 +43,6 @@ export default function HomeScreen() {
 
   // Cette fonction fetch les données
   const loadStats = useCallback(async () => {
-    if (!isAuthenticated) {
-    console.log(isAuthenticated);
-      router.replace('/_home');
-    }
     try 
       {
         const { data } = await api.get('/summary/details');
@@ -68,9 +63,9 @@ export default function HomeScreen() {
     const loops = chevrons.map((value, i) =>
       Animated.loop(
         Animated.sequence([
-          Animated.delay(i * 200),
+          Animated.delay(i * 300),
           Animated.timing(value, { toValue: 1, duration: 300, useNativeDriver: true }),
-          Animated.timing(value, { toValue: 0, duration: 300, useNativeDriver: true }),
+          Animated.timing(value, { toValue: 0, duration: 380, useNativeDriver: true }),
         ]),
         { resetBeforeIteration: true }  // important pour relancer proprement
       )
@@ -82,19 +77,30 @@ export default function HomeScreen() {
   const animateScore = useCallback(() => {
     scaleAnim.setValue(1);
     Animated.sequence([
-      Animated.timing(scaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
-      Animated.timing(scaleAnim, { toValue: 1,   duration: 150, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1.3, duration: 100, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1,   duration: 200, useNativeDriver: true }),
     ]).start();
   }, [scaleAnim]);
 
   // useFocusEffect appelle loadStats à chaque fois que l'écran gagne le focus
   useFocusEffect(
-    useCallback(() => {
+    React.useCallback(() => {
+   if (authState.isAuthenticated && !isLoading) {
       loadStats();
       animateChevrons();
       animateScore();
-    }, [loadStats])
-  );    
+    }
+  }, [authState.isAuthenticated, isLoading, loadStats, animateChevrons, animateScore])
+);
+  
+  
+  if (isLoading) {
+    return <View><Text>Chargement...</Text></View>;
+  }
+console.log(authState.isAuthenticated);
+  if (!authState.isAuthenticated) {
+    return <Redirect href="/_home" />;
+  }
   
   // Choix du perso selon la douleur
   const pickCharacter = (level: number) => {
@@ -165,8 +171,8 @@ export default function HomeScreen() {
         <Text style={styles.buttonText}>Accéder aux exercices</Text>
          <View style={styles.chevronContainer}>
         {chevrons.map((anim, i) => (
-          <Animated.View key={i} style={{ opacity: anim, marginLeft: i === 0 ? 8 : 0 }}>
-            <MaterialCommunityIcons name="chevron-right" size={36} color="#fff" />
+          <Animated.View key={i} style={{ opacity: anim, marginLeft: i === 0 ? 2 : 0 }}>
+            <FontAwesome name="chevron-right" size={38} color="#fff" />
           </Animated.View>
         ))}
       </View>

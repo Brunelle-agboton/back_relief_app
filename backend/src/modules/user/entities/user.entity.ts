@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne } from 'typeorm';
 import { PainRecord, HydrationRecord } from '../../health/entities/health.entity';
 import { Notification } from '../../notification/entities/notification.entity';
 import { Activity } from '../../activity/entities/activity.entity';
+import { PractitionerProfile } from '../../practitioner_profile/entities/practitioner_profile.entity';
 
 @Entity()
 export class User {
@@ -20,31 +21,32 @@ export class User {
   @Column({ default: 'user' })
   role: string;
 
-  @Column()
+  // Champs patient — rendus NULLABLE car un professionnel peut ne pas les renseigner
+  @Column({ nullable: true })
   age: number;
 
-  @Column()
+  @Column({ nullable: true })
   poids: number;
 
-  @Column()
+  @Column({ nullable: true })
   taille: number;
 
-  @Column()
+  @Column({ nullable: true })
   sexe: string;
 
-  @Column()
+  @Column({ nullable: true })
   hourSit: number;
 
-  @Column()
+  @Column({ nullable: true })
   isExercise: boolean;
   
-  @Column()
+  @Column({ nullable: true })
   numberTraining: number;
 
-  @Column()
+  @Column({ nullable: true })
   restReminder: boolean;
   
-  @Column()
+  @Column({ nullable: true })
   drinkReminder: boolean;
 
   @OneToMany(() => PainRecord, (painRecord) => painRecord.user)
@@ -58,4 +60,8 @@ export class User {
 
   @OneToMany(() => Activity, (activity) => activity.user)
   activities: Activity[];
+
+  // Relation one-to-one vers le profil professionnel (si role === 'professional')
+@OneToOne(() => PractitionerProfile, (p) => p.user, { cascade: true, nullable: true })
+practitionerProfile?: PractitionerProfile;
 }

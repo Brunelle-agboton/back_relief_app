@@ -101,14 +101,18 @@ export default function RootLayout() {
       <AuthProvider>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="screens/LoginScreen" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(patient)" options={{ headerShown: false }} />   
+          {/* <Stack.Screen name="(teleconsultation)" options={{ headerShown: false }} /> */}
+       
+          {/* <Stack.Screen name="screens/LoginScreen" options={{ headerShown: false }} /> */}
           <Stack.Screen name="_home/index" options={{ headerShown: false }} />
           <Stack.Screen name="screens/LogoutScreen" options={{ headerShown: false }} />
           <Stack.Screen name="screens/ActivityLogScreen" options={{ headerShown: false }} />
-          <Stack.Screen name="screens/RegisterStep1Screen" options={{ headerShown: false }} />
+          {/* <Stack.Screen name="screens/RegisterStep1Screen" options={{ headerShown: false }} />
           <Stack.Screen name="screens/RegisterStep2Screen" options={{ headerShown: false }} />
           <Stack.Screen name="screens/RegisterStep3Screen" options={{ headerShown: false }} />
-          <Stack.Screen name="screens/ForgotPasswordScreen" options={{headerShown: false }}/>
+          <Stack.Screen name="screens/ForgotPasswordScreen" options={{headerShown: false }}/> */}
           <Stack.Screen name="screens/mine" options={{ headerLeft:  () => <BackButton />, headerTitle: 'Compte', headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>
           <Stack.Screen 
             name="screens/UserInfos1" 

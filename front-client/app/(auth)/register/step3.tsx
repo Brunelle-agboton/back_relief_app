@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, Image } from 'react-native';
+import { View, TextInput, Pressable, Text, Image } from 'react-native';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation, NavigationProp, useRoute, RouteProp } from '@react-navigation/native';
-import api from '../../services/api';
+import api from '@/services/api';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 type RootStackParamList = {
-  'screens/LoginScreen': undefined;
-  'screens/RegisterStep3Screen': {
+  '/(auth)/login': undefined;
+  '/(auth)/register/step3': {
     email: string;
     password: string;
     userName: string;
@@ -18,9 +19,11 @@ type RootStackParamList = {
 }
 
 export default function RegisterStep3Screen() {
+    const router = useRouter();
+  
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'screens/RegisterStep3Screen'>>();
-  const { email, password, userName, age, sexe, poids, taille } = route.params;
+  const route = useRoute<RouteProp<RootStackParamList, '/(auth)/register/step3'>>();
+  const { email, password, userName, age, sexe, poids, taille } = useLocalSearchParams();
 
   const [hourSit, setHourSit] = useState('');
   const [isExercise, setIsExercise] = useState<boolean | null>(null);
@@ -36,30 +39,31 @@ export default function RegisterStep3Screen() {
         password,
         userName,
         role: 'user',
-        age: parseInt(age, 10),
+        age: parseInt(age[0], 10),
         sexe,
-        poids: parseInt(poids, 10),
-        taille: parseInt(taille, 10),
+        poids: parseInt(poids[0], 10),
+        taille: parseInt(taille[0], 10),
         hourSit: parseInt(hourSit, 10),
         isExercise,
         numberTraining: parseInt(numberTraining, 10),
         restReminder,
         drinkReminder,
       });
-      navigation.navigate('screens/LoginScreen');
+      router.push('/login');
+      
     } catch (e) {
       setError('Erreur lors de l\'inscription');
     }
   };
   
   const handleBack = () => {
-    navigation.goBack();
+    router.back();
   };
 
   return (
     <View style={styles.container}>
         <Image
-        source={require('../../assets/images/icon.png')}
+        source={require('@/assets/images/icon.png')}
         style={styles.logo}
       />
         <Text style={styles.label}>En moyenne, vous êtes assis :</Text>
@@ -151,14 +155,32 @@ export default function RegisterStep3Screen() {
               </View>
             </View>
           </View>  
-           <View style={styles.buttonRow}>
-      <TouchableOpacity style={[styles.button, styles.backButton]}>
-        <Text style={styles.buttonText}  onPress={handleBack}>Precedent</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.button, styles.nextButton]}>
-        <Text style={styles.buttonText} onPress={handleRegister}>Valider</Text>
-      </TouchableOpacity>
-    </View>
+        
+     <View style={styles.rowRight}>
+            <Pressable
+              onPress={handleBack}
+              style={({ pressed }) => [
+                styles.button,
+                styles.buttonSmall,
+                pressed && styles.pressed,
+                { marginRight: 18 } // espace entre les deux boutons
+              ]}
+              accessibilityLabel="Précédent"
+            >
+              <Text style={styles.buttonText}>Précédent</Text>
+            </Pressable>
+    
+            <Pressable
+              onPress={handleRegister}
+              style={({ pressed }) => [
+                styles.button,
+                pressed && styles.pressed
+              ]}
+              accessibilityLabel="Suivant"
+            >
+              <Text style={styles.buttonText}>Suivant</Text>
+            </Pressable>
+          </View>
             {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
   );
@@ -228,14 +250,41 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 16,
   },
-  buttonRow: { flexDirection: 'row', marginTop: 32 },
-  button: { flex: 1, marginHorizontal: 10, padding: 16, borderRadius: 28, alignItems: 'center'},
-  nextButton:{
-    backgroundColor: '#FF8C00'
+  
+ rowRight: {
+    width: '100%',
+    alignItems: 'flex-end',
+    marginTop: 32,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
-  backButton:{
-    backgroundColor: '#cccccc'
+  button: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 26,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-    buttonText: { color: '#ffff', fontWeight: 'bold', fontSize: 18 },
-
+  buttonSmall: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
+  pressed: {
+    transform: [{ scale: 0.985 }],
+    shadowOpacity: 0.04,
+    elevation: 3,
+  },
+  buttonText: {
+    color: '#6b6b6b',
+    fontSize: 15,
+    fontWeight: '500',
+  },
 });
