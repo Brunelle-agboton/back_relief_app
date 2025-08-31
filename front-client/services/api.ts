@@ -1,10 +1,10 @@
 import axios from 'axios';
 import { getToken } from '../utils/storage';
 
- export const baseURL = 'https://69dfc32307b2.ngrok-free.app/';
+ export const baseURL = 'https://privately-beloved-cowbird.ngrok-free.app/';
 
 const api = axios.create({
-  //baseURL: 'http://localhost:3000/', 
+  // baseURL: 'http://localhost:3000/', 
   baseURL: baseURL,
   timeout: 5000,
 });
