@@ -53,7 +53,7 @@ export default function AvailabilityScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={styles.container} lightColor='#f0f0f0'>
       <ScrollView>
         <ThemedText type="title">Gérer mes disponibilités</ThemedText>
         <Calendar

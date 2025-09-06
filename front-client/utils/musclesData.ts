@@ -3,26 +3,26 @@ import AvantBrasSVG from '@/assets/images/muscles/Avant-bras.svg';
 import BicepsSVG from '@/assets/images/muscles/Biceps.svg';
 import CarpeSVG from '@/assets/images/muscles/Carpe.svg';
 import DeltoidDroitSVG from '@/assets/images/muscles/deltoid-droit.svg'; 
-import FessierGaucheSVG from '@/assets/images/muscles/fessier-gauche.svg'; // Attention à l'espace
+import FessierGaucheSVG from '@/assets/images/muscles/fessier-gauche.svg'; 
 import FessierDroitSVG from '@/assets/images/muscles/Fessier-Droit.svg';
-import GrandDorsalGaucheSVG from '@/assets/images/muscles/Grand-dorsal-gauche.svg'; // Attention à l'espace
-import GrandRondDroitSVG from '@/assets/images/muscles/Grand-Rond-droit.svg'; // Attention à l'espace
-import GrandRondGaucheSVG from '@/assets/images/muscles/Grand-Rond-gauche.svg'; // Attention à l'espace
+import GrandDorsalGaucheSVG from '@/assets/images/muscles/Grand-dorsal-gauche.svg'; 
+import GrandRondDroitSVG from '@/assets/images/muscles/Grand-Rond-droit.svg'; 
+import GrandRondGaucheSVG from '@/assets/images/muscles/Grand-Rond-gauche.svg';
 import GrandDorsalDroitSVG from '@/assets/images/muscles/Grand-dorsal-droit.svg';
 import HeadSVG from '@/assets/images/muscles/head.svg';
 import IschioJambierSVG from '@/assets/images/muscles/Ischio-jambier.svg';
-import LongExtenseurSVG from '@/assets/images/muscles/Long-extenseur.svg'; // Attention à l'espace
+import LongExtenseurSVG from '@/assets/images/muscles/Long-extenseur.svg'; 
 import MainSVG from '@/assets/images/muscles/Main.svg';
-import MolletDroitSVG from '@/assets/images/muscles/Mollet-droit.svg'; // Attention à l'espace
-import MolletGaucheSVG from '@/assets/images/muscles/Mollet-gauche.svg'; // Attention à l'espace
+import MolletDroitSVG from '@/assets/images/muscles/Mollet-droit.svg'; 
+import MolletGaucheSVG from '@/assets/images/muscles/Mollet-gauche.svg'; 
 import ObliqueSVG from '@/assets/images/muscles/Oblique.svg';
-import PiedDroitSVG from '@/assets/images/muscles/Pied-droit.svg'; // Attention à l'espace
-import PiedGaucheSVG from '@/assets/images/muscles/Pied-gauche.svg'; // Attention à l'espace
+import PiedDroitSVG from '@/assets/images/muscles/Pied-droit.svg';
+import PiedGaucheSVG from '@/assets/images/muscles/Pied-gauche.svg'; 
 import QuadricepsSVG from '@/assets/images/muscles/Quadriceps.svg';
-import TibiatDroit1SVG from '@/assets/images/muscles/Tibiat-droit-1.svg'; // Attention au -1
-import TibiatDroitSVG from '@/assets/images/muscles/Tibiat-droit.svg'; // Attention à l'espace
-import TibiatGauche1SVG from '@/assets/images/muscles/Tibiat-gauche-1.svg'; // Attention au -1
-import TibiatGaucheSVG from '@/assets/images/muscles/Tibiat-gauche.svg'; // Attention à l'espace
+import TibiatDroit1SVG from '@/assets/images/muscles/Tibiat-droit-1.svg'; 
+import TibiatDroitSVG from '@/assets/images/muscles/Tibiat-droit.svg';
+import TibiatGauche1SVG from '@/assets/images/muscles/Tibiat-gauche-1.svg'; 
+import TibiatGaucheSVG from '@/assets/images/muscles/Tibiat-gauche.svg'; 
 import TrapezeSVG from '@/assets/images/muscles/Trapeze.svg';
 import TricepsSVG from '@/assets/images/muscles/Triceps.svg';
 import TibiatAnterieurDroitSVG from '@/assets/images/muscles/Tibiat-anterieur.svg';

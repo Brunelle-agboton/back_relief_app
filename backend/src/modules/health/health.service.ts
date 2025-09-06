@@ -4,7 +4,7 @@ import { CreateHealthDto } from './dto/create-health.dto';
 import { PainInputDto } from './dto/pain-input.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PainRecord, HydrationRecord } from './entities/health.entity';
-import { painLocations } from 'src/utils/painLocations';
+import { painLocations } from '../../utils/painLocations';
 import { User } from '../user/entities/user.entity';
 import { Activity, ActivityType }   from '../activity/entities/activity.entity';
 import { Exercise }        from '../exercise/entities/exercise.entity';

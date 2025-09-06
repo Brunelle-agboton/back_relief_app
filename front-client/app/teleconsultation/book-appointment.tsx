@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 // Configure calendar for French language (same as before)
@@ -83,10 +82,10 @@ export default function BookAppointmentScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container} >
       <ScrollView>
-        <ThemedText type="title">Prendre rendez-vous</ThemedText>
-        <ThemedText type="subtitle">avec {proName}</ThemedText>
+        <Text style={styles.title}>Prendre rendez-vous</Text>
+        <Text style={styles.subtitle}>avec {proName}</Text>
         
         <Calendar
           onDayPress={onDayPress}
@@ -101,7 +100,7 @@ export default function BookAppointmentScreen() {
         />
 
         <View style={styles.slotsContainer}>
-          <ThemedText type="subtitle">Créneaux disponibles pour le {selectedDay}</ThemedText>
+          <Text style={styles.subtitle}>Créneaux disponibles pour le {selectedDay}</Text>
           {availableSlots.length > 0 ? (
             <View style={styles.slotsGrid}>
               {availableSlots.map((slot, index) => (
@@ -115,14 +114,15 @@ export default function BookAppointmentScreen() {
           )}
         </View>
       </ScrollView>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
+    padding: 12,
+     backgroundColor: '#fff',
   },
   slotsContainer: {
     padding: 15,
@@ -150,5 +150,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#888',
     marginTop: 20,
+  },
+    title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    lineHeight: 32,
+  },
+  subtitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
   },
 });

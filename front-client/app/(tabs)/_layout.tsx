@@ -13,6 +13,7 @@ import {
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Fontisto from '@expo/vector-icons/Fontisto';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -60,16 +61,29 @@ export default function TabLayout() {
           }
 
           // headerRight: either profile icon or menu
-          const headerRight = () =>
-            name === 'index'
-              ? (
-                <TouchableOpacity onPress={() => router.push('/screens/mine')}>
-                  <Ionicons name="person-circle-outline" size={34} color="black" style={{ marginRight: 16 }} />
-                </TouchableOpacity>
-              )
-              : (<></>
-              );
+          const headerRight = () => {
+           if (name === 'index') {
+                return (
+                  <TouchableOpacity onPress={() => router.push('/screens/mine')} style={{ marginRight: 16 }}>
+                    <Ionicons name="person-circle-outline" size={34} color="black" />
+                  </TouchableOpacity>
+                );
+              }
 
+              if (name === 'my-space') {
+                return (
+                  <TouchableOpacity
+                    onPress={() => router.push('/teleconsultation/async-request')}
+                    style={{ marginRight: 16 }}
+                  >
+                    <FontAwesome name="send" size={24} color="#1662A9" />
+                  </TouchableOpacity>
+                );
+              }
+
+              // Default: rien
+              return null;
+            };
           return {
             headerLeft,
             headerTitle,
@@ -81,8 +95,8 @@ export default function TabLayout() {
            
              tabBarItemStyle: {
                     borderRadius: 25,
-          marginVertical: 6,                    
-          padding: 2,                           // padding interne
+          marginVertical: 4,                    
+          padding: 1,                           // padding interne
         },
           tabBarActiveBackgroundColor: '#fff',    // fond blanc quand actif
             tabBarInactiveBackgroundColor: 'transparent',
