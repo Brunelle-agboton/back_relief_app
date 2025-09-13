@@ -4,20 +4,19 @@ import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'expo-router';
 
 // 1. On définit les types pour le rôle et le profil utilisateur
-type UserRole = 'patient' | 'pro';
+type UserRole = 'user' | 'practitioner';
 
 interface UserProfile {
   sub: string; // L'ID de l'utilisateur
   name: string; // Le nom de l'utilisateur
   email: string;
-  // Ajoutez ici d'autres champs présents dans votre token JWT
+  role: string
 }
 
 // 2. On définit la structure de notre état d'authentification
 interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
-  role: UserRole | null;
   user: UserProfile | null;
 }
 
@@ -33,7 +32,6 @@ const AuthContext = createContext<AuthContextData>({
   authState: {
     token: null,
     isAuthenticated: false,
-    role: null,
     user: null,
   },
   login: () => {},
@@ -45,7 +43,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
     token: null,
     isAuthenticated: false,
-    role: null,
     user: null,
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -56,12 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = await SecureStore.getItemAsync('auth_token');
       if (token) {
         // Si un token est trouvé, on le décode et on restaure l'état complet
-        const decoded: UserProfile & { role: UserRole } = jwtDecode(token);
+        const decoded: UserProfile= jwtDecode(token);
         setAuthState({
           token,
           isAuthenticated: true,
           user: decoded,
-          role: decoded.role,
         });
       }
       setIsLoading(false);
@@ -72,19 +68,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = (token: string) => {
     // À la connexion, on décode le token pour remplir l'état
-    const decoded: UserProfile & { role: UserRole } = jwtDecode(token);
+    const decoded: UserProfile = jwtDecode(token);
     setAuthState({
       token,
       isAuthenticated: true,
       user: decoded,
-      role: decoded.role,
     });
     SecureStore.setItemAsync('auth_token', token);
   };
 
   const logout = () => {
     SecureStore.deleteItemAsync('auth_token');
-    setAuthState({ token: null, isAuthenticated: false, role: null, user: null });
+    setAuthState({ token: null, isAuthenticated: false, user: null });
     // On redirige vers l'écran de login après la déconnexion
     router.replace('/(auth)/login');
   };

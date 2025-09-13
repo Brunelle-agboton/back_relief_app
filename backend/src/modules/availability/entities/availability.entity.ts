@@ -1,17 +1,16 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from '../../user/entities/user.entity';
+import { PractitionerProfile } from '../../practitioner_profile/entities/practitioner_profile.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity('availabilities')
 export class Availability {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'practitioner_id' })
-  practitioner: User;
-
-  @Column({ type: 'integer' })
-  practitionerId: number;
+  @ManyToOne(() => PractitionerProfile, (profile) => profile.availabilities)
+  @JoinColumn({ name: 'practitioner_profile_id' })
+  @Exclude({ toPlainOnly: true })
+  practitionerProfile: PractitionerProfile;
 
   @Column({ type: 'timestamp with time zone' })
   startTime: Date;

@@ -15,4 +15,9 @@ export class AppointmentController {
   findAll() {
     return this.appointmentService.findAll();
   }
+
+  @Get('practitioner/:id')
+  findByPractitionerId(@Param('id') id: string) {
+    return this.appointmentService.findByPractitionerId(+id);
+  }
 }

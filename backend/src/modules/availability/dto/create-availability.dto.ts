@@ -1,10 +1,11 @@
 import { IsDate, IsString, IsBoolean, IsOptional, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
+import { PractitionerProfile } from '../../practitioner_profile/entities/practitioner_profile.entity';
 
 export class CreateAvailabilityDto {
   @IsInt()
-   @Type(() => Number)
-  practitionerId: number;
+   @Type(() => PractitionerProfile)
+  practitionerProfile: PractitionerProfile;
 
   @Type(() => Date)
   @IsDate()

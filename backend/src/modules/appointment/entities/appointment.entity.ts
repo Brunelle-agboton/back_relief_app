@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
+import { PractitionerProfile } from '../../practitioner_profile/entities/practitioner_profile.entity';
 
 export enum AppointmentStatus {
   CONFIRMED = 'confirmed',
@@ -16,15 +17,9 @@ export class Appointment {
   @JoinColumn({ name: 'patient_id' })
   patient: User;
 
-  @Column({ type: 'integer' })
-  patientId: number;
-
-  @ManyToOne(() => User)
+  @ManyToOne(() => PractitionerProfile)
   @JoinColumn({ name: 'practitioner_id' })
-  practitioner: User;
-
-  @Column({ type: 'integer' })
-  practitionerId: number;
+  practitioner: PractitionerProfile;
 
   @Column({ type: 'timestamp with time zone' })
   start_at: Date;

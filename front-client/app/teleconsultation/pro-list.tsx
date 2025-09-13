@@ -1,114 +1,59 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TextInput, Pressable, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, TextInput, Pressable, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-// --- Données Fictives ---
-// À remplacer par un appel API dans un useEffect
-export const DUMMY_PROS = [
-  {
-    id: '1',
-    name: 'Dr Frizzero Vicenzi Tantely ',
-    specialty: 'Kinésithérapeute',
-    imageUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d',
-    bio: 'Expert en analyse du mouvement et en performance physique.',
-    qualifications: ['Master en STAPS, spécialité Kinésiologie'],
-    rating: 4.7,
-    location: 'Québec,Canada',
-    nextAvailability: '26 Septembre, 11:00',
-  },
-  {
-    id: '2',
-    name: 'Dr. Bruno Lemaire',
-    specialty: 'Ergothérapeute',
-    imageUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d',
-    bio: 'Approche holistique pour le bien-être du dos et des articulations.',
-    qualifications: ['Diplôme d\'Ostéopathe (D.O.)', 'Formation en ostéopathie du sport'],
-    rating: 4.8,
-    location: 'Lyon, France',
-    nextAvailability: 'Demain, 10:00',
-  },
-  {
-    id: '3',
-    name: 'Carole Dubois',
-    specialty: 'Ergothérapeute',
-    imageUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d',
-    bio: 'Conseils pour adapter votre poste de travail et prévenir les TMS.',
-    qualifications: ['Diplôme d\'État d\'Ergothérapeute'],
-    rating: 4.9,
-    location: 'Marseille, France',
-    nextAvailability: '25 Septembre, 09:00',
-  },
-  {
-    id: '4',
-    name: 'David Petit',
-    specialty: 'Kinésithérapeute',
-    imageUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d',
-    bio: 'Expert en analyse du mouvement et en performance physique.',
-    qualifications: ['Master en STAPS, spécialité Kinésiologie'],
-    rating: 4.7,
-    location: 'Bordeaux, France',
-    nextAvailability: '26 Septembre, 11:00',
-  },
-];
+import api from '../../services/api'; // Import the API service
+import { SpecialtyCardProps, User, PractitionerProfile, Availability } from '@/interfaces/types';
+import { DUMMY_SPECIALTIES } from '@/utils/specialities';
 
-const SPECIALTY_COLORS: { [key: string]: string } = {                                                                                                                      
-  'Kinésithérapeute': '#CDFBE2',                                                                                                                                             
-  'Ostéopathe': '#FFEDCC',                                                                                                                                                 
-  'Ergothérapeute': '#C9E8FC',                                                                                                                                             
-  'Kinésiologue': '#D4C2F0',                                                                                                                                               
-  'Acupuncture': '#FFD9D9',                                                                                                                                                
-  'Podologie': '#CCE0FF',                                                                                                                                                  
+const SPECIALTY_COLORS: { [key: string]: string } = {
+  'kinesiologue': '#CDFBE2',
+  'physiotherapist': '#FFEDCC',
+  'ergotherapist': '#C9E8FC',
 };
 
-export const DUMMY_SPECIALTIES = [
-  { id: '1', name: 'Kinésithérapeute', displayName: 'Kinésithérapie', imageUrl: require('@/assets/images/specialities/kine.png') },
-  // { id: '2', name: 'Ostéopathie', imageUrl: require('@/assets/images/specialities/osteo.png') },
-  { id: '3', name: 'Ergothérapeute', displayName: 'Ergothérapie', imageUrl: require('@/assets/images/specialities/ergo.png') },
-  // { id: '4', name: 'Kinésiologie', imageUrl: require('@/assets/images/specialities/kinesio.png') },
-  // { id: '5', name: 'Acupuncture', imageUrl: require('@/assets/images/specialities/acupuncture.png') },
-  // { id: '6', name: 'Podologie', imageUrl: require('@/assets/images/specialities/podologie.png') },
-];
-
-// --- Composant Carte pour un Professionnel ---
-export type Pro = {
-  id: string;
-  name: string;
-  specialty: string;
-  imageUrl: string;
-  bio: string;
-  qualifications: string[];
-  rating: number;
-  location: string;
-  nextAvailability: string;
-};
-
-const ProCard = ({ item }: { item: Pro }) => {
+// --- ProCard Component (adapted for PractitionerProfile) ---
+const ProCard = ({ item }: { item: PractitionerProfile }) => {
   const router = useRouter();
 
   const handlePress = () => {
-    // Navigue vers la page de détail du pro en passant son ID
     router.push(`/teleconsultation/pro-details/${item.id}`);
   };
+
+  // Determine next availability
+  const getNextAvailability = (availabilities: Availability[]) => {
+    if (!availabilities || availabilities.length === 0) return 'No availability';
+    const now = new Date();
+    const futureAvailabilities = availabilities.filter(slot => new Date(slot.startTime) > now && !slot.isBooked);
+    if (futureAvailabilities.length === 0) return 'No upcoming availability';
+
+    futureAvailabilities.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    const nextSlot = futureAvailabilities[0];
+    const nextDate = new Date(nextSlot.startTime);
+    return `${nextDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}, ${nextDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  const nextAvailabilityText = getNextAvailability(item.availabilities);
 
   return (
     <Pressable
       style={({ pressed }) => [
-        styles.cardContainer, 
-        { backgroundColor: SPECIALTY_COLORS[item.specialty] || '#FFFFFF' }, // Default to white if specialty not found 
+        styles.cardContainer,
+        { backgroundColor: SPECIALTY_COLORS[item.professionalType] || '#FFFFFF' },
         pressed && styles.cardPressed
-        ]}
+      ]}
       onPress={handlePress}
       accessibilityRole="button"
-      accessibilityLabel={`Voir le profil de ${item.name}`}
+      accessibilityLabel={`Voir le profil de ${item.user.userName}`}
     >
-      <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
-      <Text style={styles.cardName}>{item.name}</Text>
-      <Text style={styles.cardSpecialty}>{item.specialty}</Text>
+      <Image source={{ uri: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d' }} style={styles.cardImage} /> {/* Placeholder image */}
+      <Text style={styles.cardName}>{item.user.userName}</Text>
+      <Text style={styles.cardSpecialty}>{item.professionalType}</Text>
       <View style={styles.locationContainer}>
         <MaterialIcons name="location-on" size={14} color="#6C757D" />
-        <Text style={styles.cardLocation}>{item.location}</Text>
+        <Text style={styles.cardLocation}>{`${item.city}, ${item.country}`}</Text>
       </View>
-      <Text style={styles.cardAvailability}>A partir du {'\n'}{item.nextAvailability}</Text>
+      <Text style={styles.cardAvailability}>A partir du {'\n'}{nextAvailabilityText}</Text>
       <Pressable style={styles.bookButton} onPress={handlePress}>
         <Text style={styles.bookButtonText}>Prendre RDV</Text>
       </Pressable>
@@ -116,26 +61,13 @@ const ProCard = ({ item }: { item: Pro }) => {
   );
 };
 
-// SpecialtyCard Component
-type Specialty = {
-  id: string;
-  name: string;
-  displayName: string;
-  imageUrl: any; // Use 'any' for require() or define a more specific type if needed
-};
-
-type SpecialtyCardProps = {
-  item: Specialty;
-  onPress: (specialtyName: string) => void;
-  isSelected: boolean;
-};
 
 const SpecialtyCard = ({ item, onPress, isSelected }: SpecialtyCardProps) => {
   return (
     <TouchableOpacity
       style={[
         styles.specialtyCard,
-        isSelected && styles.selectedSpecialtyCard, // Apply selected style
+        isSelected && styles.selectedSpecialtyCard,
       ]}
       onPress={() => onPress(item.name)}
     >
@@ -145,10 +77,27 @@ const SpecialtyCard = ({ item, onPress, isSelected }: SpecialtyCardProps) => {
   );
 };
 
-// --- Écran Principal ---
+// --- Main Screen Component ---
 export default function ProListScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
+  const [practitioners, setPractitioners] = useState<PractitionerProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPractitioners = async () => {
+      try {
+        const response = await api.get<PractitionerProfile[]>('/practitioner-profile');
+        setPractitioners(response.data);
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch practitioners');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPractitioners();
+  }, []);
 
   const handleSpecialtyPress = (specialtyName: string) => {
     setSelectedSpecialty(prevSpecialty =>
@@ -157,31 +106,51 @@ export default function ProListScreen() {
   };
 
   const filteredPros = useMemo(() => {
-    let prosToFilter = DUMMY_PROS;
+    let prosToFilter = practitioners; // Use fetched data
 
     // Apply specialty filter first
     if (selectedSpecialty) {
-      prosToFilter = prosToFilter.filter(pro => pro.specialty === selectedSpecialty);
+      prosToFilter = prosToFilter.filter(pro => pro.professionalType === selectedSpecialty);
     }
 
     // Then apply search query filter
     if (searchQuery) {
       prosToFilter = prosToFilter.filter(pro =>
-        pro.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        pro.specialty.toLowerCase().includes(searchQuery.toLowerCase())
+        pro.user.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        pro.professionalType.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     return prosToFilter;
-  }, [searchQuery, selectedSpecialty]);
+  }, [searchQuery, selectedSpecialty, practitioners]); // Add practitioners to dependency array
 
+  if (isLoading) {
     return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#0e5292ff" />
+        <Text style={{ marginTop: 10 }}>Loading professionals...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.errorText}>Error: {error}</Text>
+        <TouchableOpacity onPress={() => { /* Implement retry logic if needed */ }} style={{ marginTop: 10 }}>
+          <Text style={{ color: '#0e5292ff' }}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Trouver un professionnel' }} />
       <FlatList
         data={filteredPros}
         renderItem={({ item }) => <ProCard item={item} />}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.id.toString()} // Key extractor needs to be string
         numColumns={2}
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.listContent}
@@ -211,7 +180,7 @@ export default function ProListScreen() {
             <View style={styles.specialityView}>
               <Text style={styles.subtitle}>Specialites</Text>
               <FlatList
-                data={DUMMY_SPECIALTIES}
+                data={DUMMY_SPECIALTIES} // Still using DUMMY_SPECIALTIES for the filter UI
                 renderItem={({ item }) => (
                   <SpecialtyCard
                     item={item}
@@ -231,7 +200,6 @@ export default function ProListScreen() {
       />
     </View>
   );
-
 }
 
 const styles = StyleSheet.create({
@@ -239,14 +207,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFF',
   },
-    title: {
-    fontFamily: 'Inter-Bold',
+  centered: { // Added for loading/error states
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: { // Added for error states
+    color: 'red',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  title: {
+    // fontFamily: 'Inter-Bold', // Commented out as font might not be loaded
     fontSize: 20,
     color: '#000',
     marginBottom: 8,
   },
   subtitle: {
-    fontFamily: 'Inter-Bold',
+    // fontFamily: 'Inter-Bold', // Commented out as font might not be loaded
     fontSize: 18,
     paddingTop: 8,
   },
@@ -276,37 +253,38 @@ const styles = StyleSheet.create({
     backgroundColor: '#e4e5e6ff',
     borderRadius: 18,
     fontSize: 16,
+    flex: 1, // Allow search bar to take available space
+    color: '#000', // Ensure text is visible
   },
-specialityView: {
-  paddingHorizontal: 16,
-  paddingVertical: 8,
-},
-specialtyCard: {
-  alignItems: 'center',
-  borderWidth:1,
-  borderColor: '#EDEDED',
-  borderRadius: 10,
+  specialityView: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  specialtyCard: {
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#EDEDED',
+    borderRadius: 10,
     padding: 6,
-
-  marginRight: 12,
-  width: 90, // Fixed width for each specialty card
-},
+    marginRight: 12,
+    width: 90,
+  },
   selectedSpecialtyCard: {
-    borderColor: '#0e5292ff', // Highlight color for selected specialty
+    borderColor: '#0e5292ff',
     borderWidth: 2,
   },
-specialtyImage: {
+  specialtyImage: {
 
-  marginBottom: 4,
-},
-specialtyName: {
-  fontSize: 12,
-  textAlign: 'center',
-  color: '#495057',
-},
-specialtiesListContent: {
-  paddingVertical: 8,
-},
+    marginBottom: 4,
+  },
+  specialtyName: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#495057',
+  },
+  specialtiesListContent: {
+    paddingVertical: 8,
+  },
   listContent: {
     padding: 16,
   },
@@ -317,7 +295,6 @@ specialtiesListContent: {
   cardContainer: {
     borderRadius: 18,
     padding: 16,
-
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -325,8 +302,8 @@ specialtiesListContent: {
     shadowRadius: 4,
     elevation: 3,
     alignItems: 'center',
-    width: '48%', // Adjust width for two columns
-    marginHorizontal: '1%', // Add horizontal margin
+    width: '48%',
+    marginHorizontal: '1%',
   },
   cardPressed: {
     opacity: 0.8,
@@ -334,7 +311,7 @@ specialtiesListContent: {
   cardImage: {
     width: 80,
     height: 80,
-    borderRadius: 40, // Cercle parfait
+    borderRadius: 40,
     marginBottom: 12,
   },
   cardName: {
@@ -361,8 +338,7 @@ specialtiesListContent: {
     marginLeft: 4,
   },
   cardAvailability: {
-    fontFamily: 'Urbanist',
-
+    // fontFamily: 'Urbanist', // Commented out as font might not be loaded
     fontSize: 12,
     color: '#020202',
     marginBottom: 12,

@@ -81,7 +81,7 @@ export default function MySpace() {
     </TouchableOpacity>
      <TouchableOpacity style={styles.startCallBtn}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Appel width={-12} style={{ marginRight: 16,}}/>
+        <Appel width={20} style={{ marginRight: 16,}}/>
         <Text style={{ color: '#000', fontWeight: '600', fontSize: 15 }}>Rejoindre l’appel</Text>
       </View>
     </TouchableOpacity>

@@ -1,98 +1,141 @@
-import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image } from 'react-native';
-import { useNavigation,NavigationProp } from '@react-navigation/native';
+import React, { useState, useMemo } from 'react';
+import { View, Pressable, Dimensions, TouchableOpacity, Text, StyleSheet, ScrollView } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { CalendarList } from "react-native-calendars";
+import { formatDate, timeSlots, daysOfWeek } from '@/utils/availabilities';
+import api from '@/services/api';
 
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+export default function RegisterProStep3Screen() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const [error, setError] = useState('');  // { [date: string]: string[] }
+  const [availabilities, setAvailabilities] = useState<Record<string, string[]>>({});
+  const [selectedDate, setSelectedDate] = useState<string>(formatDate());
+    const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const intervalOptions = [15, 30, 45, 60];
+  const interval = 15
+    // Marked dates for CalendarList
+    const markedDates = useMemo(() => {
+      return {
+        [selectedDate]: {
+          selected: true,
+          selectedColor: "#D9FBEA", // mint highlight
+          selectedTextColor: "#03694B",
+        },
+      };
+    }, [selectedDate]);
 
-type RootStackParamList = {
-  '/(auth)/register/step2-credentials': { userName: string; email: string; password: string };
-};
+    const renderHourChip = (time: string) => {
+        const selected = selectedTime === time;
+        return (
+          <Pressable
+            key={time}
+            onPress={() => setSelectedTime(time)}
+            style={[styles.hourChip, selected && styles.hourChipSelected]}
+          >
+            <Text style={[styles.hourText, selected && styles.hourTextSelected]}>{time}</Text>
+          </Pressable>
+        );
+      };
+    
 
-export default function RegisterStep1Screen() {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-
-  const [userName, setUserName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
-
-  const handleNext = () => {
-    if (!userName || !email || !password) {
-      setError('Tous les champs sont obligatoires.');
-      return;
-    }
-    setError('');
-    navigation.navigate('/(auth)/register/step2-credentials', { userName, email, password });
-  };
-
+       const handleRegister = async () => {
+        const playload = {...params,  availabilities};
+          try {
+            const res = await api.post('/practitioner-profile', playload);
+            
+              router.replace('/login');
+          } catch (e) {
+            setError('Erreur' + e);
+          }
+        };
+  
   return (
-    <View style={styles.container}>
-      {/* <Image
-        source={require('@/assets/images/icon.png')}
-        style={styles.logo}
-        testID="logo-image"
-      /> */}
-    <Text style={styles.title}>Créer un compte pro</Text>
-<Text style={styles.description}>Vos disponibilités</Text>
-    <View style={styles.inputContainer}>
-      <Text style={styles.label}>Username</Text>
-     <View style={[
-              styles.inputWrapper,
-              emailFocused && styles.inputFocused
-            ]}>
-      <TextInput
-            style={styles.input}
-            placeholder="Votre nom et prenom d'utilisateur"
-            onChangeText={setUserName}
-            value={userName}
+    <ScrollView style={styles.container}>
+    <Text style={styles.title}>Vos disponibilités</Text>
+  {/* Calendar (react-native-calendars) */}
+        <View style={styles.calendarWrap}>
+          <CalendarList
+            horizontal
+            pagingEnabled
+            calendarWidth={Dimensions.get("window").width - 32}
+            pastScrollRange={0}
+            futureScrollRange={12}
+            onDayPress={(day) => {
+              setSelectedDate(day.dateString);
+              setSelectedTime(null);
+            }}
+            markedDates={markedDates}
+            theme={{
+              backgroundColor: "#EBF2F3",
+              calendarBackground: "#EBF2F3",
+              textSectionTitleColor: "#222",
+              selectedDayBackgroundColor: "#D9FBEA",
+              selectedDayTextColor: "#03694B",
+              todayTextColor: "#03694B",
+              dayTextColor: "#333",
+              textDisabledColor: "#cfcfcf",
+              dotColor: "#00adf5",
+              arrowColor: "#9AA2A9",
+              monthTextColor: "#4A5568",
+              textDayFontSize: 12,
+              textMonthFontSize: 14,
+              textDayHeaderFontSize: 12,
+            }}
+            style={{ borderRadius: 12 }}
+            hideArrows={false}
+            showScrollIndicator={false}
           />
-      </View>
-    </View>
+        </View>
+{/* 
+<Text style={styles.sectionTitle}>Intervalle (en minutes)</Text>                                                             
+       <View style={styles.intervalContainer}>                                                                                      
+        {intervalOptions.map(opt => (                                                                                             
+          <TouchableOpacity                                                                                                        
+           key={opt}                                                                                                        
+           style={[styles.intervalButton, interval === opt && styles.intervalButtonSelected]}                                
+             onPress={() => setInterval(opt)}                                                                               
+          >                                                                                                                  
+           <Text style={[styles.intervalText, interval === opt && styles.intervalTextSelected]}>{opt}</Text>                  
+         </TouchableOpacity>                                                                                                     
+     ))}                                                                                                                       
+   </View>  */}
 
-    <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <View style={[
-              styles.inputWrapper,
-              emailFocused && styles.inputFocused
-            ]}>
-              <TextInput 
-                style={styles.input} 
-                placeholder="Email" 
-                placeholderTextColor="#999"
-                onChangeText={setEmail} 
-                value={email}
-                onFocus={() => setEmailFocused(true)}
-                onBlur={() => setEmailFocused(false)}
-              />
-            </View>
+        {/* Heures */}
+        <Text style={[styles.sectionTitle, { marginTop: 18 }]}>Creneaux pour le {selectedDate}</Text>
+
+        <View style={styles.hoursWrap}>
+          <Text style={styles.subSectionTitle}>Matin</Text>
+          <View style={styles.chipsRow}>
+            {timeSlots.map(renderHourChip)}
           </View>
-    
-    <View style={styles.inputContainer}>
-      <Text style={styles.label}>Mot de passe</Text>
-      <View style={[
-        styles.inputWrapper,
-        passwordFocused && styles.inputFocused
-      ]}>
-        <TextInput 
-          style={styles.input} 
-          placeholder="Mot de passe" 
-          placeholderTextColor="#999"
-          secureTextEntry 
-          onChangeText={setPassword} 
-          value={password}
-          onFocus={() => setPasswordFocused(true)}
-          onBlur={() => setPasswordFocused(false)}
-        />
-      </View>
-    </View>
-    
+          <TouchableOpacity
+  style={styles.confirmBtn}
+  onPress={() => {
+    if (!selectedTime) return;
+    setAvailabilities(prev => {
+      const times = prev[selectedDate] || [];
+      // Évite les doublons
+      if (times.includes(selectedTime)) return prev;
+      return {
+        ...prev,
+        [selectedDate]: [...times, selectedTime],
+      };
+    });
+    setSelectedTime(null); // reset après ajout
+  }}
+  disabled={!selectedTime}
+>
+  <Text style={styles.confirmText}>Ajouter ce créneau</Text>
+</TouchableOpacity>
+        </View>
+
+       
     {error ? <Text style={styles.error}>{error}</Text> : null}
  <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText} onPress={handleNext}>Suivant</Text>
+        <Text style={styles.buttonText} onPress={handleRegister}>S'inscrire</Text>
       </TouchableOpacity> 
-        </View>
+        </ScrollView>
 );
 }
 
@@ -100,7 +143,7 @@ const styles = StyleSheet.create({
 container: {
   flex: 1,
   padding: 20,
-  justifyContent: 'center',
+  // justifyContent: 'center',
   backgroundColor: '#fff',
 },
 title: {
@@ -110,61 +153,111 @@ title: {
   marginBottom: 20,
   color: '#333',
 },
-  description: {
-    textAlign: 'center',
-    color: '#FF8C00',
-    padding: 10,
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  label: {
-    marginBottom: 8,
-    fontSize: 16,
-    color: '#555',
-  },
-  inputWrapper: {
-    borderRadius: 30,
-    backgroundColor: '#f9f9f9',
-    overflow: 'hidden', // Empêche le débordement du fond
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  input: {
-    padding: 15,
-    paddingHorizontal: 20,
-    fontSize: 16,
-    color: '#333',
-  },
-  inputFocused: {
-    borderColor: '#FFAE00',
-    backgroundColor: '#fffdf6',
-    shadowColor: '#FFAE00',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
 error: {
   color: 'red',
   marginBottom: 16,
   textAlign: 'center',
 },
-logo: {
-  width: 90,
-  height: 90,
-  resizeMode: 'contain',
-  alignSelf: 'center',
-  marginBottom: 8,
-  marginTop: 16,
-},
  button: { 
   marginTop: 20,
+  marginBottom: 46,
+
   padding: 16, 
   alignItems: 'center',
   borderRadius: 28, 
   backgroundColor: '#FF8C00'},
  buttonText: { color: '#ffff', fontWeight: 'bold', fontSize: 18 },
+ /* Sections */
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F1724",
+    marginBottom: 8,
+  },
+
+  calendarWrap: {
+    backgroundColor: "#EBF2F3",
+    borderRadius: 24,
+    padding: 10,
+    // drop shadow subtle
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+
+  /* Hours */
+  hoursWrap: {
+    backgroundColor: "#EBF2F3",
+    borderRadius: 24,
+    padding: 12,
+    marginTop: 10,
+    // shadow subtle
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  subSectionTitle: { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 8 },
+
+  chipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8, // ios/android newer RN support; fallback with margin
+  },
+  hourChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  hourChipSelected: {
+    backgroundColor: "#DFF3E6",
+    borderWidth: 1,
+    borderColor: "#07A06B",
+  },
+  hourText: { color: "#374151" },
+  hourTextSelected: { color: "#03694B" },
+
+  /* Confirm */
+  confirmBtn: {
+    width: '80%',
+    marginLeft: 42,
+
+    marginTop: 18,
+    backgroundColor: "#DFFCEB",
+    borderRadius: 15,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  confirmBtnDisabled: {
+    opacity: 0.8,
+  },
+  confirmText: { color: "#0B2E20", fontWeight: "700", fontSize: 16 },
+    intervalContainer: {                                                                                                             
+        flexDirection: 'row',                                                                                                          
+        justifyContent: 'center',                                                                                                      
+        gap: 10,                                                                                                                       
+        marginBottom: 10,                                                                                                              
+      },                                                                                                                               
+      intervalButton: {                                                                                                                
+        paddingHorizontal: 20,                                                                                                         
+        paddingVertical: 10,                                                                                                           
+        borderRadius: 20,                                                                                                              
+        backgroundColor: '#F0F0F0',                                                                                                    
+      },                                                                                                                               
+      intervalButtonSelected: {                                                                                                        
+        backgroundColor: '#FF8C00',                                                                                                    
+      },                                                                                                                               
+      intervalText: {                                                                                                                  
+        color: '#333',                                                                                                                 
+        fontWeight: '600',                                                                                                             
+      },                                                                                                                               
+      intervalTextSelected: {                                                                                                          
+        color: '#fff',                                                                                                                 
+      },               
 });

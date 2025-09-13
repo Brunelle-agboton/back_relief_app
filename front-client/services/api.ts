@@ -22,3 +22,8 @@ api.interceptors.request.use(
 );
 //U6xKeW6nJsKp.zW
 export default api;
+
+//ngrok http --url=privately-beloved-cowbird.ngrok-free.app 3000
+
+// maintenant que l'inscription des practitioner est ok peux tu fetch les donnes du backend dans ProListScreen. S'il te plait met juste        │
+// en place la recuperation, ne modifie pas autre chose  

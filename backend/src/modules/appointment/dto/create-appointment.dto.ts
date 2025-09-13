@@ -1,24 +1,22 @@
-import { IsDate, IsString, IsOptional, IsInt } from 'class-validator';
+import { IsInt, IsString, IsOptional, IsDateString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateAppointmentDto {
   @IsInt()
-     @Type(() => Number)
+  @Type(() => Number)
   patientId: number;
 
   @IsInt()
-     @Type(() => Number)
+  @Type(() => Number)
   practitionerId: number;
 
-  @Type(() => Date)
-  @IsDate()
-  start_at: Date;
-
-  @Type(() => Date)
-  @IsDate()
-  end_at: Date;
+  @IsDateString()
+  date: string; // YYYY-MM-DD
 
   @IsString()
+  time: string; // HH:MM
+
   @IsOptional()
-  notes?: string;
+  @IsString()
+  note?: string;
 }

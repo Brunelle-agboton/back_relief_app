@@ -17,13 +17,20 @@ import { ProgramController } from './modules/program/program.controller';
 import { ProgramLineController } from './modules/program-line/program-line.controller';
 import { ActivityController} from './modules/activity/activity.controller'
 import { SummaryController } from './modules/summary/summary.controller';
+import { AppointmentController } from './modules/appointment/appointment.controller';
+import { PractitionerProfileController } from './modules/practitioner_profile/practitioner_profile.controller';
+import { AvailabilityController } from './modules/availability/availability.controller';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { ExerciseModule } from './modules/exercise/exercise.module';
 import { ProgramModule } from './modules/program/program.module';
 import { ProgramLineModule } from './modules/program-line/program-line.module';
 import { ActivityModule } from './modules/activity/activity.module';
+import { PractitionerProfileModule } from './modules/practitioner_profile/practitioner_profile.module';
 import { SummaryModule } from './modules/summary/summary.module';
+import { AvailabilityModule } from './modules/availability/availability.module';
+import { AppointmentModule } from './modules/appointment/appointment.module';
+// import { SummaryModule } from './modules/summary/summary.module';
 
 const imagesPath = join(__dirname, '..', '..', 'front-client', 'assets', 'images');
 console.log('→ Serving images from:', imagesPath);
@@ -43,6 +50,9 @@ console.log('→ Serving images from:', imagesPath);
     ProgramLineModule,
     ActivityModule,
     SummaryModule,
+    PractitionerProfileModule,
+    AvailabilityModule,
+    AppointmentModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname,'..', '..', 'front-client', 'assets', 'images'),
       serveRoot: '/images',
@@ -60,7 +70,7 @@ console.log('→ Serving images from:', imagesPath);
     // Other modules can be imported here
   ],
   controllers: [AppController, UserController, HealthController, AuthController, NotificationController, 
-    ExerciseController, ProgramController, ProgramLineController, ActivityController, SummaryController],
+    ExerciseController, ProgramController, ProgramLineController, ActivityController, SummaryController, AppointmentController,AvailabilityController, PractitionerProfileController],
   providers: [AppService],
 })
 export class AppModule {
