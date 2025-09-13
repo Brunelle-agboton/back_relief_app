@@ -38,7 +38,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8060:8080
   frontend:
       build:
         context: ./front-client

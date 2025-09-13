@@ -11,7 +11,6 @@ type RootStackParamList = {
   'screens/RegisterHealthScreen': undefined;
   'register-pro/step1-infos' : undefined;
   'register/step1' : undefined;
-
 };
 
 export default function LoginScreen() {
@@ -22,7 +21,7 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
-  const { login } = useAuth();
+  const { login, authState } = useAuth();
 
   const handleLogin = async () => {
     try {
@@ -34,9 +33,15 @@ export default function LoginScreen() {
   
       // Stocke le token pour les prochains appels API
       login(token);
-      await saveToken(token);   
-        router.replace('/(tabs)');
-      //console.log('Navigation vers RegisterHealthScreen réussie');
+      await saveToken(token);  
+
+      if(authState.user?.role === "user") {
+          router.replace('/(tabs)');
+      } 
+      else if(authState.user?.role === "practitioner"){
+        router.replace('/(pro)');
+      }
+        
     } catch (e) {
       setError('Identifiants invalides');
     }

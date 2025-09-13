@@ -1,169 +1,557 @@
-import React, { useEffect, useState } from 'react';
- import { 
-    View, Text, StyleSheet, Image, ScrollView, Pressable, ActivityIndicator, SafeAreaView } from
-       'react-native';
-import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
- import { DUMMY_PROS, Pro } from '../pro-list'; // On importe les données pour la simulation
-  export default function ProDetailsScreen() {
-  const { id } = useLocalSearchParams(); // Récupère l'ID de l'URL
-   const router = useRouter();
-   const [pro, setPro] = useState<Pro>();
-  const [isLoading, setIsLoading] = useState(true);
-   useEffect(() => {
-    const fetchProData = () => {
-      const foundPro = DUMMY_PROS.find(p => p.id === id);
-      setPro(foundPro);
-      setIsLoading(false);
-    };
+import React, { useMemo, useState, useEffect } from "react";
+import {
+  SafeAreaView,
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  Pressable,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions,
+  Alert, ActivityIndicator
+} from "react-native";
+import { Stack, useRouter,useLocalSearchParams } from "expo-router";
+import { CalendarList } from "react-native-calendars";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import Localisation  from '@/assets/images/Consultation/Localisation.svg';
+import { formatDate } from '@/utils/availabilities';
+import api from '@/services/api';
+import { SpecialtyCardProps, User, PractitionerProfile, Availability } from '@/interfaces/types';
+import { useAuth } from '@/context/AuthContext';
 
-     fetchProData();
-   }, [id]);
+function formatDateISO(d = new Date()) {
+  return d.toISOString().slice(0, 10); // YYYY-MM-DD
+}
 
-   if (isLoading) {
-     return <ActivityIndicator size="large" style={styles.centered} />;
-   }
+const toLocalYYYYMMDD = (d: Date) => {
+  const year = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${m}-${day}`;
+};
 
-   if (!pro) {
-     return (
-      <View style={styles.centered}>
-      <Text>Professionnel non trouvé.</Text>
-      </View>
+const timeHHMM = (isoOrDate: string | Date) => {
+  const d = new Date(isoOrDate);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+};
+
+export default function ProBookingScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+    const id = params.id ? Number(params.id) : undefined;
+  const { authState } = useAuth();
+
+  // const PRO = { ...params, years: 12,
+  // rating: 5.0,}
+    const [loading, setLoading] = useState<boolean>(true);
+  const [PRO, setPRO] = useState<PractitionerProfile | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(formatDate());
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+const [customReason, setCustomReason] = useState<string>(''); // edit text
+const [isCustomEditing, setIsCustomEditing] = useState(false);
+const REASON_MAX = 300;
+
+
+  useEffect(() => {
+    if (!id) {
+      Alert.alert('Erreur', 'Praticien introuvable');
+      router.back();
+      return;
+    }
+
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        // Adapte l'endpoint à ton API (ex: /practitioners/:id ou /teleconsultation/practitioners/:id)
+        const res = await api.get(`/practitioner-profile/${id}`);
+        if (!mounted) return;
+        setPRO(res.data);
+      } catch (err) {
+        console.error(err);
+        Alert.alert('Erreur', 'Impossible de charger le profil');
+        router.back();
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, [id]);
+
+ // Grouper availabilities par date locale (YYYY-MM-DD)
+  const groupedAvailabilities = useMemo(() => {
+    if (!PRO?.availabilities) return {};
+    return PRO.availabilities.reduce<Record<string, Availability[]>>((acc, slot) => {
+      const d = new Date(slot.startTime);
+      const key = toLocalYYYYMMDD(d);
+      acc[key] ||= [];
+      acc[key].push(slot);
+      return acc;
+    }, {});
+  }, [PRO?.availabilities]);
+
+  // marquer les dates (markedDates pour CalendarList)
+  const markedDates = useMemo(() => {
+    const marks: Record<string, any> = {};
+    Object.keys(groupedAvailabilities).forEach(date => {
+      // dot + background possible : on ajoute marked + custom styles, et selection si égal selectedDate
+      marks[date] = { marked: true, dotColor: '#1662A9' };
+    });
+    if (selectedDate) {
+      marks[selectedDate] = { ...(marks[selectedDate] || {}), selected: true, selectedColor: '#D9FBEA', selectedTextColor: '#03694B' };
+    }
+    return marks;
+  }, [groupedAvailabilities, selectedDate]);
+
+  // Quand on récupère le profil, si il y a des disponibilités on sélectionne la première date+heure.
+  useEffect(() => {
+    if (!PRO) return;
+    const allSlots = [...(PRO.availabilities || [])]
+      .filter(s => !s.isBooked)
+      .sort((a,b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
+    if (allSlots.length === 0) {
+      // Pas de dispo du tout
+      Alert.alert('Aucune disponibilité', 'Aucune dispo pour ce praticien.');
+      // tu peux router.back() si tu veux quitter l'écran automatiquement
+      // router.back();
+      setSelectedDate(null);
+      setSelectedTime(null);
+      return;
+    }
+    // premier créneau non-booké
+    const first = allSlots[0];
+    const firstDate = toLocalYYYYMMDD(new Date(first.startTime));
+    const firstTime = timeHHMM(new Date(first.startTime));
+
+    setSelectedDate(prev => prev ?? firstDate); // si déjà sélectionné on garde, sinon preset
+    setSelectedTime(prev => prev ?? firstTime);
+  }, [PRO]);
+
+  // Obtenir la liste des heures disponibles pour la date sélectionnée (triées, format HH:MM)
+  const availableTimesForSelectedDate: string[] = useMemo(() => {
+    if (!selectedDate) return [];
+    const slots = groupedAvailabilities[selectedDate] || [];
+    const times = slots
+      .filter(s => !s.isBooked)
+      .sort((a,b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+      .map(s => timeHHMM(new Date(s.startTime)));
+    // remove duplicates (si jamais)
+    return Array.from(new Set(times));
+  }, [groupedAvailabilities, selectedDate]);
+
+  // Lorsqu'on clique sur un jour dans le calendrier
+  const onDayPress = (day: { dateString: string }) => {
+    setSelectedDate(day.dateString);
+    // automatiquement sélectionner la première dispo de ce jour (si existe)
+    const times = (groupedAvailabilities[day.dateString] || [])
+      .filter(s => !s.isBooked)
+      .sort((a,b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    if (times.length > 0) {
+      setSelectedTime(timeHHMM(new Date(times[0].startTime)));
+    } else {
+      setSelectedTime(null);
+    }
+  };
+
+  // Organisation Matin / Après-midi
+  const morningSlots = availableTimesForSelectedDate.filter(t => Number(t.split(':')[0]) < 12);
+  const afternoonSlots = availableTimesForSelectedDate.filter(t => Number(t.split(':')[0]) >= 12);
+
+  // Render hour chip (tu avais déjà renderHourChip)
+  const renderHourChip = (time: string) => {
+    const selected = selectedTime === time;
+    return (
+      <Pressable
+        key={time}
+        onPress={() => setSelectedTime(time)}
+        style={[styles.hourChip, selected && styles.hourChipSelected]}
+      >
+        <Text style={[styles.hourText, selected && styles.hourTextSelected]}>{time}</Text>
+      </Pressable>
+    );
+  };
+
+const onConfirm = async () => {
+  if (!PRO || !selectedTime || !selectedDate) {
+    Alert.alert('Sélection manquante', 'Choisissez une date et une heure.');
+    return;
+  }
+  
+  // construit le note : priorise customReason s'il existe
+  const note = customReason || '';
+
+  try {
+    await api.post(`/appointments`, {
+      patientId: parseInt(authState?.user?.sub ?? '', 10),
+      practitionerId: PRO.id,
+      date: selectedDate,
+      time: selectedTime,
+      note: note?.trim() || undefined,
+    });
+    Alert.alert('Succès', `RDV demandé : ${selectedDate} ${selectedTime}`);
+    // rafraîchir / rediriger selon ton flow
+    router.push(`/(tabs)/my-space`);
+  } catch (err: any) {
+    console.error(err);
+    Alert.alert('Erreur', err?.response?.data?.message || 'Impossible de réserver pour le moment.');
+  }
+};
+
+
+   if (loading || !PRO) {
+    return (
+      <SafeAreaView style={{flex:1, justifyContent:'center', alignItems:'center'}}>
+        <ActivityIndicator size="large" color="#1662A9" />
+      </SafeAreaView>
     );
   }
-  const handleBookingPress = () => {
-    // Navigue vers la page de prise de rdv en passant l'ID du pro
-    router.push({
-      pathname: '/teleconsultation/book-appointment',
-       params: { proId: pro.id, proName: pro.name }
-     });
-   };
 
-   return (
-     <SafeAreaView style={styles.container}>
-       <Stack.Screen options={{ title: pro.name }} />
-       <ScrollView contentContainerStyle={styles.scrollContent}>
-         {/* Section d'en-tête */}
-         <View style={styles.headerSection}>
-           <Image source={{ uri: pro.imageUrl }} style={styles.profileImage} />
-           <Text style={styles.name}>{pro.name}</Text>
-           <Text style={styles.specialty}>{pro.specialty}</Text>
-           <View style={styles.ratingContainer}>
-             <Text style={styles.rating}>0 ★</Text>
-           </View>
-         </View>
-          {/* Section Bio */}
-         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>À propos</Text>
-          {/* {pro.bio} */}
-          <Text style={styles.bio}></Text>
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      {/* <Stack.Screen options={{ title: "" }} /> */}
+
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Title */}
+        <Text style={styles.title}>Enchanté !</Text>
+
+        {/* Card */}
+        <View style={styles.card}>
+          <View style={styles.avatarWrap}>
+            {/* {PRO?.avatar ? (
+              <Image source={{ uri:  'https://images.unsplash.com/photo-1633332755192-727a05c4013d' }} style={styles.avatar} />
+            ) : ( */}
+              <View style={styles.avatarPlaceholder}>
+                <Ionicons name="person" size={44} color="#fff" />
+              </View>
+            {/* )} */}
+          </View>
+
+          <Text style={styles.proName} numberOfLines={2}>
+            {PRO?.user.userName}
+          </Text>
+          <Text style={styles.specialty}>{PRO.professionalType}</Text>
+
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <MaterialCommunityIcons name="briefcase-check" size={18} color="#1662A9" />
+              <Text style={styles.statLabel}>Expérience</Text>
+              {/* {PRO.years} */}
+              <Text style={styles.statValue}>12 ans</Text>
+            </View>
+
+            <View style={styles.statItem}>
+              <Ionicons name="star" size={18} color="#1662A9" />
+              <Text style={styles.statLabel}>Note</Text>
+              <Text style={styles.statValue}>{PRO?.rating?.toFixed(1)}4.5</Text>
+            </View>
+
+            <View style={styles.statItem}>
+              <Localisation />
+              <Text style={styles.statLabel}>Localisation</Text>
+              <Text style={styles.statValue}>{`${PRO?.city}, ${PRO.country}`}</Text>
+            </View>
+          </View>
         </View>
-        {/* Section Qualifications */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Diplômes et certifications</Text>
-          {pro.qualifications.map((qual, index) => (
-            <Text key={index} style={styles.listItem}>• {qual}</Text>
-          ))}
+{/* Mes compétences */}
+        <Text style={styles.sectionTitle}>Mes compétences</Text>
+         <View style={styles.specialityContainerButton}>
+            {PRO?.specialties?.map((s) => {
+                      return (
+                        <TouchableOpacity 
+                          key={s} // Toujours utiliser une clé unique pour les éléments de la liste
+                          style={[styles.specialityBtn]}
+                    
+                        >
+                          <Text style={[styles.specialityBtnText]}>
+                            {s}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                    </View>
+        {/* Mes disponibilités */}
+        <Text style={styles.sectionTitle}>Mes disponibilités</Text>
+
+        {/* Calendar (react-native-calendars) */}
+        <View style={styles.calendarWrap}>
+          <CalendarList
+            horizontal
+            pagingEnabled
+            calendarWidth={Dimensions.get("window").width - 32}
+            pastScrollRange={0}
+            futureScrollRange={12}
+           onDayPress={onDayPress}
+            markedDates={markedDates}
+            theme={{
+              backgroundColor: "#EBF2F3",
+              calendarBackground: "#EBF2F3",
+              textSectionTitleColor: "#222",
+              selectedDayBackgroundColor: "#D9FBEA",
+              selectedDayTextColor: "#03694B",
+              todayTextColor: "#03694B",
+              dayTextColor: "#333",
+              textDisabledColor: "#cfcfcf",
+              dotColor: "#00adf5",
+              arrowColor: "#9AA2A9",
+              monthTextColor: "#4A5568",
+              textDayFontSize: 12,
+              textMonthFontSize: 14,
+              textDayHeaderFontSize: 12,
+            }}
+            style={{ borderRadius: 12 }}
+            hideArrows={false}
+            showScrollIndicator={false}
+          />
         </View>
-      </ScrollView>
-      {/* Bouton de prise de RDV flottant */}
-      <View style={styles.footer}>
-        <Pressable style={styles.bookingButton} onPress={handleBookingPress}>
-          <Text style={styles.bookingButtonText}>Prendre rendez-vous</Text>
-        </Pressable>
+
+        {/* Heures */}
+        <Text style={[styles.sectionTitle]}>Heures</Text>
+
+        <View style={styles.hoursWrap}>
+          <Text style={styles.subSectionTitle}>Matin</Text>
+          <View style={styles.chipsRow}>
+            {morningSlots.length > 0 ? morningSlots.map(renderHourChip) : <Text style={styles.noSlotText}>A créneau le matin</Text>}
+          </View>
+
+          <Text style={[styles.subSectionTitle, { marginTop: 12 }]}>Après-midi</Text>
+          <View style={styles.chipsRow}>
+            {afternoonSlots.length > 0 ? afternoonSlots.map(renderHourChip) : <Text style={styles.noSlotText}>Aucun crén créneau l'après-midi</Text>}
+          </View>
+        </View>
+        {/* Motif */}
+        <Text style={styles.sectionTitle}>Motif</Text>
+
+<View style={{ marginBottom: 8 }}>
+      <TextInput
+        value={customReason}
+        onChangeText={(t) => {
+          if (t.length <= REASON_MAX) setCustomReason(t);
+        }}
+        placeholder="Décris rapidement la raison (max 300 caractères)"
+        multiline
+        style={[styles.motifWrap,]}
+      />
       </View>
+        {/* Confirm button */}
+        <Pressable
+          onPress={() => {
+          if (!selectedDate || !selectedTime) {
+              Alert.alert('Sélection manquante', 'Choisissez une date et une heure.');
+              return;
+            }
+            // ici ton comportement de confirmation (call API / navigation)
+            console.log('Confirm', { practitionerId: PRO.id, date: selectedDate, time: selectedTime });
+            Alert.alert('RDV demandé', `${selectedDate} ${selectedTime}`);
+          }}
+          style={({ pressed }) => [
+            styles.confirmBtn,
+            !(selectedTime && selectedDate) && styles.confirmBtnDisabled,
+            pressed && { opacity: 0.85 },
+          ]}
+          disabled={!(selectedTime && selectedDate)}
+        >
+          <Text style={styles.confirmText}>Confirmer le rendez-vous</Text>
+        </Pressable>
+      </ScrollView>
     </SafeAreaView>
-   );
- }
+  );
+}
 
- const styles = StyleSheet.create({
-   container: {
-     flex: 1,
-     backgroundColor: '#FFFFFF',
-   },
-   centered: {
-     flex: 1,
-     justifyContent: 'center',
-     alignItems: 'center',
-   },
-   scrollContent: {
-     paddingBottom: 100, // Espace pour le bouton flottant
-   },
-   headerSection: {
-     alignItems: 'center',
-     padding: 24,
-     backgroundColor: '#F8F9FA',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E9ECEF',
+/* --- Styles --- */
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: "#F6F7F7" },
+  container: {
+    padding: 16,
+    paddingBottom: 40,
   },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 16,
+
+  /* Title */
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#0F1724",
+    marginBottom: 12,
   },
-  name: {
-     fontSize: 24,
-     fontWeight: 'bold',
-     color: '#212529',
-   },
-   specialty: {
-     fontSize: 18,
-     color: '#495057',
-     marginTop: 4,
-   },
-   ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    backgroundColor: '#FFD700',
-    borderRadius: 12,
-    paddingVertical: 4,
+
+  /* Card */
+  card: {
+    backgroundColor: "#DFFCEB", // mint pale
+    borderRadius: 24,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    alignItems: "center",
+    marginBottom: 18,
+    // shadow
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  avatarWrap: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: "transparent",
+    marginTop: -6,
+    marginBottom: 6,
+  },
+  avatar: { width: 92, height: 92, borderRadius: 46 },
+  avatarPlaceholder: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: "#9EEAC8",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  proName: { fontSize: 15, fontWeight: "700", textAlign: "center", marginTop: 6, color: "#0B2E20" },
+  specialty: { fontSize: 13, color: "#6B7280", marginTop: 6 },
+
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 14,
+    width: "100%",
     paddingHorizontal: 8,
   },
-  rating: {
-    fontSize: 16,
-    color: '#000',
-    fontWeight: 'bold',
+  statItem: {
+    alignItems: "center",
+    flex: 1,
   },
-  section: {
-    padding: 24,
+  statLabel: {
+    fontSize: 11,
+    color: "#B4B4B4",
+    marginTop: 6,
   },
+  statValue: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#0B2E20",
+    marginTop: 2,
+    textAlign: "center",
+  },
+
+  /* Sections */
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#343A40',
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F1724",
+    marginTop: 20,
+    marginBottom: 8,
   },
-  bio: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#495057',
+
+  calendarWrap: {
+    backgroundColor: "#EBF2F3",
+    borderRadius: 24,
+    padding: 10,
+    // drop shadow subtle
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
   },
-  listItem: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#495057',
-    marginBottom: 4,
+
+  /* Hours */
+  hoursWrap: {
+    backgroundColor: "#EBF2F3",
+    borderRadius: 24,
+    padding: 12,
+    marginTop: 10,
+    // shadow subtle
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1,
+  },motifWrap: {
+     minHeight: 74,
+    backgroundColor: "#EBF2F3",
+    borderRadius: 24,
+    padding: 12,
+    marginTop: 10,
+    // shadow subtle
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1,
   },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderTopWidth: 1,
-    borderTopColor: '#E9ECEF',
+
+  subSectionTitle: { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 8 },
+
+  chipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8, // ios/android newer RN support; fallback with margin
   },
-  bookingButton: {
-    backgroundColor: '#007BFF',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
+  hourChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    marginRight: 8,
+    marginBottom: 8,
   },
-  bookingButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
+  hourChipSelected: {
+    backgroundColor: "#DFF3E6",
+    borderWidth: 1,
+    borderColor: "#07A06B",
+  },
+  hourText: { color: "#374151" },
+  hourTextSelected: { color: "#03694B" },
+  noSlotText: { color: '#666', fontStyle: 'italic' } as any,
+
+  /* Confirm */
+  confirmBtn: {
+    width: '80%',
+    marginLeft: 42,
+
+    marginTop: 18,
+    backgroundColor: "#DFFCEB",
+    borderRadius: 15,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  confirmBtnDisabled: {
+    opacity: 0.8,
+  },
+  confirmText: { color: "#0B2E20", fontWeight: "700", fontSize: 16 },
+   meetButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+  },
+  specialityContainerButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  },
+  specialityBtn: {
+    margin: 8,
+    borderColor: '#1662A9',
+    borderWidth: 1,
+    borderRadius: 19,
+    paddingHorizontal: 8,
+    backgroundColor: '#fff',
+  },
+  specialityBtnSelected: {
+    backgroundColor: '#CDFBE2',
+    borderColor: '#CDFBE2',
+  },
+  specialityBtnText: {
+    fontSize: 14,
+    color: '#000',
+  },
+  specialityBtnTextSelected: {
+    color: '#fff',
   },
 });

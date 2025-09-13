@@ -3,10 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import LoadingScreen from '../app/loading';
 
 export default function Index() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { authState, isLoading } = useAuth();
   const router = useRouter();
 
-  if (isAuthenticated) {
+  if (authState.isAuthenticated) {
      router.replace('/(tabs)');
   } else {
     router.replace('/_home');
