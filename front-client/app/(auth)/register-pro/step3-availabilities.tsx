@@ -11,7 +11,7 @@ export default function RegisterProStep3Screen() {
   const [error, setError] = useState('');  // { [date: string]: string[] }
   const [availabilities, setAvailabilities] = useState<Record<string, string[]>>({});
   const [selectedDate, setSelectedDate] = useState<string>(formatDate());
-    const [selectedTime, setSelectedTime] = useState<string | null>(null);
+    const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
   const intervalOptions = [15, 30, 45, 60];
   const interval = 15
     // Marked dates for CalendarList
@@ -26,11 +26,15 @@ export default function RegisterProStep3Screen() {
     }, [selectedDate]);
 
     const renderHourChip = (time: string) => {
-        const selected = selectedTime === time;
+        const selected = selectedTimes.includes(time);
         return (
           <Pressable
             key={time}
-            onPress={() => setSelectedTime(time)}
+            onPress={() => {
+              setSelectedTimes(prev => 
+                selected ? prev.filter(t => t !== time) : [...prev, time]
+              );
+            }}
             style={[styles.hourChip, selected && styles.hourChipSelected]}
           >
             <Text style={[styles.hourText, selected && styles.hourTextSelected]}>{time}</Text>
@@ -63,7 +67,7 @@ export default function RegisterProStep3Screen() {
             futureScrollRange={12}
             onDayPress={(day) => {
               setSelectedDate(day.dateString);
-              setSelectedTime(null);
+              setSelectedTimes([]);
             }}
             markedDates={markedDates}
             theme={{
@@ -107,26 +111,29 @@ export default function RegisterProStep3Screen() {
         <View style={styles.hoursWrap}>
           <Text style={styles.subSectionTitle}>Matin</Text>
           <View style={styles.chipsRow}>
+            <TouchableOpacity onPress={() => setSelectedTimes(timeSlots)} style={styles.selectAllButton}><Text style={styles.selectAllButtonText}>Tout sélectionner</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => setSelectedTimes([])} style={styles.selectAllButton}><Text style={styles.selectAllButtonText}>Tout désélectionner</Text></TouchableOpacity>
+          </View>
+          <View style={styles.chipsRow}>
             {timeSlots.map(renderHourChip)}
           </View>
           <TouchableOpacity
   style={styles.confirmBtn}
   onPress={() => {
-    if (!selectedTime) return;
+    if (selectedTimes.length === 0) return;
     setAvailabilities(prev => {
-      const times = prev[selectedDate] || [];
-      // Évite les doublons
-      if (times.includes(selectedTime)) return prev;
+      const existingTimes = prev[selectedDate] || [];
+      const newTimes = selectedTimes.filter(time => !existingTimes.includes(time));
       return {
         ...prev,
-        [selectedDate]: [...times, selectedTime],
+        [selectedDate]: [...existingTimes, ...newTimes].sort(),
       };
     });
-    setSelectedTime(null); // reset après ajout
+    setSelectedTimes([]); // reset après ajout
   }}
-  disabled={!selectedTime}
+  disabled={selectedTimes.length === 0}
 >
-  <Text style={styles.confirmText}>Ajouter ce créneau</Text>
+  <Text style={styles.confirmText}>Ajouter les créneaux</Text>
 </TouchableOpacity>
         </View>
 
@@ -259,5 +266,14 @@ error: {
       },                                                                                                                               
       intervalTextSelected: {                                                                                                          
         color: '#fff',                                                                                                                 
-      },               
+      },  
+      selectAllButton: {
+        backgroundColor: '#ddd',
+        padding: 10,
+        borderRadius: 5,
+        margin: 15,
+      },
+      selectAllButtonText: {
+        color: '#333',
+      },
 });
