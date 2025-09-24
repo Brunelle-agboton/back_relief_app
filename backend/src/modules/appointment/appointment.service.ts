@@ -34,7 +34,7 @@ export class AppointmentService {
     }
 
     // 3. Combine date and time to create start_at and calculate end_at
-    const startDateTimeString = `${date}T${time}:00`; // Assuming date is YYYY-MM-DD and time is HH:MM
+    const startDateTimeString = `${date}T${time}`; // Assuming date is YYYY-MM-DD and time is HH:MM
     const start_at = new Date(startDateTimeString);
 
     if (isNaN(start_at.getTime())) {
@@ -97,5 +97,16 @@ export class AppointmentService {
     });
   }
 
+    async findByUserId(userId: number): Promise<Appointment[]> {
+    return this.appointmentRepository.find({
+      where: {
+        patient: { id: userId },
+      },
+      relations: ['patient', 'practitioner'], // Include patient and practitioner details
+      order: {
+        start_at: 'ASC', // Order by start time ascending
+      },
+    });
+  }
   // We will add more methods here later
 }

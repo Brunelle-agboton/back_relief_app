@@ -10,7 +10,7 @@ import { AvailabilityModule } from '../availability/availability.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Appointment]),
-    UserModule,
+    forwardRef(() => UserModule),
     forwardRef(() => PractitionerProfileModule),
     forwardRef(() => AvailabilityModule),
   ],

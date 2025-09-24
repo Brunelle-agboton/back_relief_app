@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePractitionerProfileDto } from './dto/create-practitioner_profile.dto';
 import { UpdatePractitionerProfileDto } from './dto/update-practitioner_profile.dto';
-import { PractitionerProfile, EstablishmentType } from './entities/practitioner_profile.entity';
+import { PractitionerProfile, EstablishmentType, ProfessionalType } from './entities/practitioner_profile.entity';
 import { UserService } from '../user/user.service';
 import { Availability } from '../availability/entities/availability.entity';
 import { AddAvailabilityToPractitionerDto } from './dto/add-availability-to-practitioner.dto';
@@ -28,6 +28,10 @@ export class PractitionerProfileService {
  // Vérification de la valeur
   if (!Object.values(EstablishmentType).includes(profileData.establishmentType)) {
     throw new BadRequestException(`Invalid establishmentType: ${profileData.establishmentType}`);
+  }
+  // Vérification de la valeur
+  if (!Object.values(ProfessionalType).includes(profileData.professionalType)) {
+    throw new BadRequestException(`Invalid establishmentType: ${profileData.professionalType}`);
   }
     let specialtiesArray: string[];
     if (typeof proSpecialities === 'string') {
@@ -85,6 +89,19 @@ export class PractitionerProfileService {
 
     if (!profile) {
       throw new NotFoundException(`Practitioner profile for user with ID ${userId} not found`);
+    }
+
+    return profile;
+  }
+
+  async findByEmail(email: string): Promise<PractitionerProfile> {
+    const profile = await this.practitionerProfileRepository.findOne({
+      where: { user: { email: email } },
+      relations: ['user', 'availabilities'],
+    });
+
+    if (!profile) {
+      throw new NotFoundException(`Practitioner profile for user with email ${email} not found`);
     }
 
     return profile;

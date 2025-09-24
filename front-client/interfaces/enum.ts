@@ -3,3 +3,10 @@ export enum EstablishmentType {
   FRENCH_HEALTH_FACILITY = 'Établissement de santé français',
  PRIVATE_CLINIC = 'Clinique privée',
 }
+
+export enum ProfessionalType {
+  KINESIOLOGUE = 'Kinesiologue',
+  PHYSIOTHERAPIST = 'Physiotherapist',
+  ERGOTHERAPEUTE = 'Ergothérapeute',
+  OTHER = 'other',
+}

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { usePractitioner } from '@/context/PractitionerContext';
 import { Calendar } from 'react-native-calendars';
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
+// import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import api from '@/services/api';
 
 // Helper to group availabilities by date
@@ -189,13 +189,13 @@ const AvailabilityScreen = () => {
         </View>
 
         {/* Time picker modal */}
-        <DateTimePickerModal
+        {/* <DateTimePickerModal
           isVisible={isTimePickerVisible}
           mode="time"
           onConfirm={handleConfirmTime}
           onCancel={hideTimePicker}
           // is24Hour prop can be set if needed (Android)
-        />
+        /> */}
 
         {/* Existing availabilities */}
         <View style={styles.card}>

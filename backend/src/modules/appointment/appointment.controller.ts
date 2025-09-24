@@ -16,6 +16,11 @@ export class AppointmentController {
     return this.appointmentService.findAll();
   }
 
+  @Get('as-patient/:id')
+  findByUserId(@Param('id') id: string) {
+    return this.appointmentService.findByUserId(+id);
+  }
+
   @Get('practitioner/:id')
   findByPractitionerId(@Param('id') id: string) {
     return this.appointmentService.findByPractitionerId(+id);

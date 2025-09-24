@@ -31,7 +31,8 @@ import { SummaryModule } from './modules/summary/summary.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
 import { AppointmentModule } from './modules/appointment/appointment.module';
 // import { SummaryModule } from './modules/summary/summary.module';
-
+import { WebrtcModule } from './modules/rooms/webrtc.module';
+import { RoomsController } from './modules/rooms/rooms.controller';
 const imagesPath = join(__dirname, '..', '..', 'front-client', 'assets', 'images');
 console.log('→ Serving images from:', imagesPath);
 @Module({
@@ -53,6 +54,7 @@ console.log('→ Serving images from:', imagesPath);
     PractitionerProfileModule,
     AvailabilityModule,
     AppointmentModule,
+    WebrtcModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname,'..', '..', 'front-client', 'assets', 'images'),
       serveRoot: '/images',
@@ -69,8 +71,9 @@ console.log('→ Serving images from:', imagesPath);
 
     // Other modules can be imported here
   ],
-  controllers: [AppController, UserController, HealthController, AuthController, NotificationController, 
-    ExerciseController, ProgramController, ProgramLineController, ActivityController, SummaryController, AppointmentController,AvailabilityController, PractitionerProfileController],
+  controllers: [AppController, UserController, HealthController, AuthController, NotificationController, RoomsController,
+    ExerciseController, ProgramController, ProgramLineController, ActivityController, SummaryController, 
+    AppointmentController,AvailabilityController, PractitionerProfileController],
   providers: [AppService],
 })
 export class AppModule {

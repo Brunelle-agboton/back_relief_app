@@ -14,7 +14,7 @@ import { Availability } from '../../availability/entities/availability.entity';
 export enum ProfessionalType {
 KINESIOLOGUE = 'kinesiologue',
 PHYSIOTHERAPIST = 'physiotherapist',
-ERGOTHERAPIST = 'ergotherapist',
+ERGOTHERAPEUTE = 'Ergothérapeute',
 OTHER = 'other',
 }
 

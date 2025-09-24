@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { ScrollView, View, TextInput, TouchableOpacity, Text, StyleSheet, Image, Pressable } from 'react-native';
+import { ScrollView, View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
-import { EstablishmentType } from '@/interfaces/enum';
-import api from '@/services/api';
+import { EstablishmentType, ProfessionalType } from '@/interfaces/enum';
+import BackButton from '@/components/BackButton';
+
+const postalCodeRegex = /^([A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d|\d{5})$/;
+const licenseNumberRegex = /^[A-Za-z0-9]{5,20}$/;
 
 export default function RegisterProStep1Screen() {
   const router = useRouter();
@@ -13,149 +16,177 @@ export default function RegisterProStep1Screen() {
   const [adresse, setAdresse] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [country, setCountry] = useState('');
-  const [establishmentType, setEstablishmentType] = useState<EstablishmentType | ''>('');
-  const [professionalType, setProfessionalType] = useState('');
+  const [establishmentType, setEstablishmentType] = useState<EstablishmentType | ''>(EstablishmentType.PRIVATE_CLINIC);
+  const [professionalType, setProfessionalType] = useState<ProfessionalType | ''>(ProfessionalType.KINESIOLOGUE);
   const [licenseNumber, setLicenseNumber] = useState('');
   const [error, setError] = useState('');
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
-  const options: { label: string; value: EstablishmentType }[] = [
+
+  const [isCityValid, setIsCityValid] = useState(true);
+  const [isAdresseValid, setIsAdresseValid] = useState(true);
+  const [isPostalCodeValid, setIsPostalCodeValid] = useState(true);
+  const [isCountryValid, setIsCountryValid] = useState(true);
+  const [isEstablishmentTypeValid, setIsEstablishmentTypeValid] = useState(true);
+  const [isProfessionalTypeValid, setIsProfessionalTypeValid] = useState(true);
+  const [isLicenseNumberValid, setIsLicenseNumberValid] = useState(true);
+
+  const establishmentOptions: { label: string; value: EstablishmentType }[] = [
     { label: EstablishmentType.CANADIAN_HEALTH_FACILITY, value: EstablishmentType.CANADIAN_HEALTH_FACILITY },
     { label: EstablishmentType.FRENCH_HEALTH_FACILITY, value: EstablishmentType.FRENCH_HEALTH_FACILITY },
     { label: EstablishmentType.PRIVATE_CLINIC, value: EstablishmentType.PRIVATE_CLINIC },
   ];
 
-  const handleNext = async () => {
-    // Simple validation
-    if ( !adresse || !city || !postalCode || !country || !establishmentType || !professionalType) {
-      setError('Tous les champs sont obligatoires.');
+  const professionalOptions: { label: string; value: ProfessionalType }[] = [
+    { label: ProfessionalType.KINESIOLOGUE, value: ProfessionalType.KINESIOLOGUE },
+    { label: ProfessionalType.PHYSIOTHERAPIST, value: ProfessionalType.PHYSIOTHERAPIST },
+    { label: ProfessionalType.ERGOTHERAPEUTE, value: ProfessionalType.ERGOTHERAPEUTE },
+    { label: ProfessionalType.OTHER, value: ProfessionalType.OTHER },
+  ];
+
+  const registerPro = async () => {
+    const isCityEmpty = city.trim() === '';
+    const isAdresseEmpty = adresse.trim() === '';
+    const isPostalCodeEmpty = postalCode.trim() === '';
+    const isCountryEmpty = country.trim() === '';
+    const isEstablishmentTypeEmpty = establishmentType === '';
+    const isProfessionalTypeEmpty = professionalType === '';
+
+    setIsCityValid(!isCityEmpty);
+    setIsAdresseValid(!isAdresseEmpty);
+    setIsPostalCodeValid(!isPostalCodeEmpty && postalCodeRegex.test(postalCode));
+    setIsCountryValid(!isCountryEmpty);
+    setIsEstablishmentTypeValid(!isEstablishmentTypeEmpty);
+    setIsProfessionalTypeValid(!isProfessionalTypeEmpty);
+    setIsLicenseNumberValid(licenseNumber.trim() === '' || licenseNumberRegex.test(licenseNumber));
+
+    if (isCityEmpty || isAdresseEmpty || isPostalCodeEmpty || isCountryEmpty || isEstablishmentTypeEmpty || isProfessionalTypeEmpty) {
+      setError('Tous les champs obligatoires doivent être remplis.');
       return;
     }
+
+    if (!postalCodeRegex.test(postalCode) || (licenseNumber.trim() !== '' && !licenseNumberRegex.test(licenseNumber))) {
+      setError('Veuillez corriger les champs en rouge.');
+      return;
+    }
+
     setError('');
-    // try {
-    //   const res = await api.post('/user/register', {
-    //     email,
-    //     password,
-    //     userName,
-    //     role: 'practitioner',
-    //   });
-    //   const userId = res.data.id;
-      router.push({
-        pathname: '/register-pro/step2-specialities', // Le chemin correct
-        params: {
-         adresse, city, postalCode, country,
-          establishmentType, professionalType, licenseNumber
-        }
-      });
-
-    // } catch (e) {
-    //   setError('Erreur lors de l\'inscription');
-    // }
-
+    
+    router.push({
+      pathname: '/register-pro/step-meet-tantely',
+      params: {
+        ...params,
+        adresse, city, postalCode, country,
+        establishmentType, professionalType, licenseNumber
+      }
+    });
   };
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>
-        Où exercez-vous ? 
-      </Text>
+       <BackButton />
+      <Text style={styles.title}>Où exercez-vous ?</Text>
 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Adresse</Text>
-        <View style={styles.inputWrapper}>
+        <View style={[styles.inputWrapper, !isAdresseValid && styles.inputError]}>
           <TextInput
             style={styles.input}
-            placeholder="Adresse"
+            placeholder="Votre Adresse"
             onChangeText={setAdresse}
             value={adresse}
           />
         </View>
+        {!isAdresseValid && <Text style={styles.errorText}>L'adresse est obligatoire.</Text>}
       </View>
 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Ville</Text>
-        <View style={styles.inputWrapper}>
+        <View style={[styles.inputWrapper, !isCityValid && styles.inputError]}>
           <TextInput
             style={styles.input}
-            placeholder="Ville"
+            placeholder="Votre Ville"
             onChangeText={setCity}
             value={city}
           />
         </View>
+        {!isCityValid && <Text style={styles.errorText}>La ville est obligatoire.</Text>}
       </View>
 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Code Postal</Text>
-        <View style={styles.inputWrapper}>
+        <View style={[styles.inputWrapper, !isPostalCodeValid && styles.inputError]}>
           <TextInput
             style={styles.input}
-            placeholder="Code Postal"
+            placeholder="Votre Code Postal"
             onChangeText={setPostalCode}
             value={postalCode}
           />
         </View>
+        {!isPostalCodeValid && <Text style={styles.errorText}>Le code postal est invalide.</Text>}
       </View>
 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Pays</Text>
-        <View style={styles.inputWrapper}>
+        <View style={[styles.inputWrapper, !isCountryValid && styles.inputError]}>
           <TextInput
             style={styles.input}
-            placeholder="Pays"
+            placeholder="Votre Pays"
             onChangeText={setCountry}
             value={country}
           />
         </View>
+        {!isCountryValid && <Text style={styles.errorText}>Le pays est obligatoire.</Text>}
       </View>
 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Type d'établissement</Text>
-        <View style={styles.inputWrapper}>
+        <View style={[styles.inputWrapper, !isEstablishmentTypeValid && styles.inputError]}>
           <Picker
             selectedValue={establishmentType}
             onValueChange={(value) => setEstablishmentType(value as EstablishmentType | '')}
-            mode="dialog" // ou "dialog" sur Android selon préférence
-            prompt="Choisir un type"
-            dropdownIconColor="#666"
-            accessibilityLabel="Type d'établissement"
             style={styles.picker}
           >
-            {/* Placeholder non sélectionnable */}
             <Picker.Item label="Sélectionner un type..." value="" />
-            {options.map(opt => (
+            {establishmentOptions.map(opt => (
               <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
             ))}
           </Picker>
         </View>
+        {!isEstablishmentTypeValid && <Text style={styles.errorText}>Le type d'établissement est obligatoire.</Text>}
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>Fonction {'\n'}professionnelle</Text>
-        <View style={styles.inputWrapper}>
-          <TextInput
-            style={styles.input}
-            placeholder="Ex: Kinésiologue, Physiothérapeute"
-            onChangeText={setProfessionalType}
-            value={professionalType}
-          />
+        <Text style={styles.label}>Fonction professionnelle</Text>
+        <View style={[styles.inputWrapper, !isProfessionalTypeValid && styles.inputError]}>
+          <Picker
+            selectedValue={professionalType}
+            onValueChange={(value) => setProfessionalType(value as ProfessionalType | '')}
+            style={styles.picker}
+          >
+            <Picker.Item label="Sélectionner une fonction..." value="" />
+            {professionalOptions.map(opt => (
+              <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
+            ))}
+          </Picker>
         </View>
+        {!isProfessionalTypeValid && <Text style={styles.errorText}>La fonction professionnelle est obligatoire.</Text>}
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>Numéro {'\n'}professionnel</Text>
-        <View style={styles.inputWrapper}>
+        <Text style={styles.label}>Numéro professionnel</Text>
+        <View style={[styles.inputWrapper, !isLicenseNumberValid && styles.inputError]}>
           <TextInput
             style={styles.input}
-            placeholder="Numéro de licence"
+            placeholder="Numéro de licence (optionnel)"
             onChangeText={setLicenseNumber}
             value={licenseNumber}
           />
         </View>
+        {!isLicenseNumberValid && <Text style={styles.errorText}>Le numéro de licence est invalide.</Text>}
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <View style={{ width: '100%', alignItems: 'flex-end', paddingHorizontal: 16 }}>
-        <TouchableOpacity style={styles.button} onPress={handleNext} activeOpacity={0.85}>
+        <TouchableOpacity style={styles.button} onPress={registerPro} activeOpacity={0.85}>
           <Text style={styles.buttonText}>Suivant</Text>
         </TouchableOpacity>
       </View>
@@ -166,83 +197,76 @@ export default function RegisterProStep1Screen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // justifyContent: 'center',
     padding: 20,
     backgroundColor: '#fff',
+    marginTop: 46,
   },
   title: {
-    marginTop: 66,
     fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 19,
+    textAlign: 'left',
+    marginBottom: 30,
     color: '#333',
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 18,
   },
   label: {
     fontSize: 14,
+    fontWeight: 'bold',
     color: '#555',
-    marginRight: 10,
-    width: 100, // Fixed width for labels
+    marginBottom: 8,
   },
   inputWrapper: {
-    flex: 1,
     borderRadius: 10,
     backgroundColor: '#f9f9f9',
-    overflow: 'hidden', // Empêche le débordement du fond
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  input: {
-    padding: 10,
-    fontSize: 16,
-    color: '#333',
-  },
-  inputFocused: {
-    borderColor: '#FFAE00',
-    backgroundColor: '#fffdf6',
-    shadowColor: '#FFAE00',
+    borderColor: '#fff',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 3,
   },
+  input: {
+    padding: 10,
+    fontSize: 14,
+    color: '#333',
+  },
+  inputError: {
+    borderColor: 'red',
+  },
   picker: {
     height: 48,
-    borderWidth: 0,
-    // width: '100%' // facultatif
   },
   error: {
     color: 'red',
     marginBottom: 16,
     textAlign: 'center',
   },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: 4,
+  },
   button: {
-    backgroundColor: '#FFFFFF',      // fond blanc comme sur ton image
-    borderRadius: 30,                // forme "pill"
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
     paddingVertical: 12,
     marginTop: 16,
+    marginBottom: 36,
 
-    // ombre iOS
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 }, // décalage bas pour effet levé
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
-    // ombre Android
     elevation: 6,
-    // optionnel : largeur fixe si nécessaire
     width: 140,
     alignItems: 'center',
-    justifyContent: 'flex-start',
   },
   buttonText: {
-    color: '#6b6b6b', // gris doux
+    color: '#6b6b6b',
     fontSize: 15,
     fontWeight: '500',
-    textAlign: 'center',
   },
 });

@@ -1,4 +1,4 @@
-import { IsInt, IsString, IsOptional, IsDateString } from 'class-validator';
+import { IsInt, IsString, IsOptional, IsDateString, IsDate } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateAppointmentDto {

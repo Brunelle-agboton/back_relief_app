@@ -13,4 +13,9 @@ export class AuthController {
     if (!user) throw new UnauthorizedException();
     return this.authService.login(user);
   }
+
+  @Post('register-practitioner')
+  async registerPractitioner(@Body() dto: any) {
+    return this.authService.registerPractitioner(dto);
+  }
 }

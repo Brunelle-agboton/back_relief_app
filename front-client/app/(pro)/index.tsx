@@ -1,220 +1,187 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, FlatList, RefreshControl, Alert, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { usePractitioner } from '@/context/PractitionerContext'; // Corrected import path
-import api from '@/services/api'; // Import the API service
+import { usePractitioner } from '@/context/PractitionerContext';
+import { useAuth } from '@/context/AuthContext';
+import api from '@/services/api';
+import { Appointment } from '@/interfaces/types';
+import NextMeetingCard from '@/components/NextMeetingCard';
+import { Ionicons } from '@expo/vector-icons';
 
-// Helper to group appointments by date (reused from availability.tsx)
-const groupAppointmentsByDate = (appointments: any[]) => {
-  if (!appointments) return {};
-  return appointments.reduce((acc: Record<string, any[]>, appointment: any) => {
-    const date = new Date(appointment.start_at).toLocaleDateString('en-CA'); // YYYY-MM-DD format
-    if (!acc[date]) {
-      acc[date] = [];
+// --- Date Helper Functions ---
+const isoDateKey = (d: Date): string => d.toISOString().split('T')[0];
+const dayShort = (d: Date): string => d.toLocaleDateString('fr-FR', { weekday: 'short' }).slice(0, 3);
+const dayNumber = (d: Date): string => String(d.getDate());
+const monthLabel = (d: Date): string => d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+const renderAppointment = ({ item }: { item: Appointment }) => {
+  const appointmentDate = new Date(item.start_at);
+  const cardProps = {
+    isMeeting: false,
+    date: appointmentDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
+    time: appointmentDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+    reason: item.notes || 'Aucun motif spécifié',
+    onCancel: () => Alert.alert('Annulation', `Annuler le RDV ID: ${item.id}?`),
+    onJoin: () => Alert.alert('Rejoindre', `Rejoindre la visio pour le RDV ID: ${item.id}`),
+    item: {
+      imageUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d',
+      name: item.isInterview ? (item.practitioner.professionalType || 'Admin') : (item.patient.userName || 'Patient inconnu'),
+      specialty: item.isInterview ? 'Entretien de validation' : `Patient - ${item.patient.email}`,
+      location: item.isInterview ? item.practitioner.city : 'En ligne',
     }
-    acc[date].push(appointment);
-    // Sort by start time
-    acc[date].sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
-    return acc;
-  }, {});
+  };
+  return <NextMeetingCard {...cardProps} />;
 };
 
-const ProHomeScreen = () => {
+export default function ProDashboard() {
   const router = useRouter();
-  const { profile, isLoading, error } = usePractitioner();
+  const { profile, loading: loadingProfile, refetch: refetchProfile } = usePractitioner();
+  const { authState } = useAuth();
 
-  // State for appointments
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [isAppointmentsLoading, setIsAppointmentsLoading] = useState(true);
-  const [appointmentsError, setAppointmentsError] = useState<string | null>(null);
+  const [interviewAppointments, setInterviewAppointments] = useState<Appointment[]>([]);
+  const [loadingInterviews, setLoadingInterviews] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // State for the calendar
+  const [weekAnchor, setWeekAnchor] = useState(new Date());
+  const [selectedDateKey, setSelectedDateKey] = useState(isoDateKey(new Date()));
 
-  // Fetch appointments
+  const fetchInterviewAppointments = useCallback(async () => {
+    if (!authState.user?.sub) return;
+    try {
+      setLoadingInterviews(true);
+      const response = await api.get<Appointment[]>(`/appointments/as-patient/${authState.user.sub}`);
+      setInterviewAppointments(response.data);
+    } catch (error) {
+      console.error("Failed to fetch interview appointments:", error);
+    } finally {
+      setLoadingInterviews(false);
+    }
+  }, [authState.user]);
+
   useEffect(() => {
-    const fetchAppointments = async () => {
-      if (profile?.id) { // Only fetch if profile ID is available
-        setIsAppointmentsLoading(true);
-        try {
-          const response = await api.get(`/appointments/practitioner/${profile.id}`);
-          console.log(response.data);
-          setAppointments(response.data);
-          setAppointmentsError(null);
-        } catch (err: any) {
-          setAppointmentsError(err.response?.data?.message || 'Failed to fetch appointments.');
-        } finally {
-          setIsAppointmentsLoading(false);
-        }
+    fetchInterviewAppointments();
+  }, [fetchInterviewAppointments]);
+
+  const allUpcomingAppointments = useMemo(() => {
+    const patientAppointments = (profile?.appointments || []).filter(a => new Date(a.start_at) > new Date());
+    const markedInterviewAppointments = interviewAppointments.map(a => ({ ...a, isInterview: true }));
+    const combined = [...patientAppointments, ...markedInterviewAppointments];
+    combined.sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+    return combined;
+  }, [profile, interviewAppointments]);
+
+  // Group appointments by date for the calendar dots and filtering
+  const groupedAppointments = useMemo(() => {
+    return allUpcomingAppointments.reduce((acc, appointment) => {
+      const key = isoDateKey(new Date(appointment.start_at));
+      if (!acc[key]) {
+        acc[key] = [];
       }
-    };
+      acc[key].push(appointment);
+      return acc;
+    }, {} as Record<string, Appointment[]>);
+  }, [allUpcomingAppointments]);
 
-    fetchAppointments();
-  }, [profile?.id]); // Dependency on profile.id
+  // Calendar logic
+  const visibleWeek = useMemo(() => {
+    const startOfWeek = new Date(weekAnchor);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday as start of week
+    startOfWeek.setDate(diff);
+    return Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date(startOfWeek);
+      d.setDate(d.getDate() + i);
+      return d;
+    });
+  }, [weekAnchor]);
 
-  // Filter upcoming appointments for display on dashboard
-  const upcomingAppointments = appointments.filter(app => new Date(app.start_at) > new Date());
-  upcomingAppointments.sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
-  const limitedUpcomingAppointments = upcomingAppointments.slice(0, 3); // Show top 3 upcoming
+  const previousWeek = () => setWeekAnchor(d => new Date(d.setDate(d.getDate() - 7)));
+  const nextWeek = () => setWeekAnchor(d => new Date(d.setDate(d.getDate() + 7)));
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={[styles.container, styles.centered]}>
-          <ActivityIndicator size="large" color="#1662A9" />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([refetchProfile(), fetchInterviewAppointments()]);
+    setRefreshing(false);
+  }, [refetchProfile, fetchInterviewAppointments]);
 
-  if (error) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={[styles.container, styles.centered]}>
-          <Text style={styles.errorText}>Error: {error}</Text>
-        </View>
-      </SafeAreaView>
-    );
+  if (loadingProfile || (loadingInterviews && interviewAppointments.length === 0)) {
+    return <View style={[styles.container, styles.centered]}><ActivityIndicator size="large" color="#1662A9" /></View>;
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Welcome, {profile?.user?.userName || 'Professional'}!</Text>
-        <Text style={styles.subtitle}>This is your dashboard.</Text>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Upcoming Appointments</Text>
-          {isAppointmentsLoading ? (
-            <ActivityIndicator size="small" color="#1662A9" style={{ marginTop: 10 }} />
-          ) : appointmentsError ? (
-            <Text style={styles.errorText}>Error: {appointmentsError}</Text>
-          ) : limitedUpcomingAppointments.length > 0 ? (
-            limitedUpcomingAppointments.map(appointment => (
-              <View key={appointment.id} style={styles.appointmentItem}>
-                <Text style={styles.appointmentTime}>
-                  {new Date(appointment.start_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - {new Date(appointment.start_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false })}
-                </Text>
-                <Text style={styles.appointmentDetails}>
-                  Patient: {appointment.patient?.userName || 'N/A'}
-                </Text>
-                {appointment.notes && (
-                  <Text style={styles.appointmentDetails}>Note: {appointment.notes}</Text>
-                )}
-                <Text style={styles.appointmentStatus}>Status: {appointment.status}</Text>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.cardText}>You have no upcoming appointments.</Text>
-          )}
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>My Patients</Text>
-          <Text style={styles.cardText}>View and manage your patient list.</Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Availability</Text>
-          <TouchableOpacity style={styles.specialityBtn} 
-         onPress={() => router.push('/(pro)/availability')}
-            accessibilityRole="button"
-            accessibilityLabel="Gérer vos disponibilités"
-          >
-            <Text style={styles.specialityBtnText}>Manage your schedule</Text>
-          </TouchableOpacity>
-        </View>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Mon Accueil</Text>
+        <TouchableOpacity onPress={() => router.push("/(pro)/availability")}>
+          <Text style={styles.editLink}>Modifier</Text>
+        </TouchableOpacity>
       </View>
-    </SafeAreaView>
+
+      {/* WEEK NAV */}
+      <View style={styles.weekNav}>
+        <TouchableOpacity onPress={previousWeek} style={styles.chevronBtn} accessibilityLabel="Semaine précédente">
+          <Ionicons name="chevron-back" size={22} color="#374151" />
+        </TouchableOpacity>
+        <View style={styles.weekCenter}>
+          <Text style={styles.weekMonthLabel}>{monthLabel(weekAnchor)}</Text>
+          <View style={styles.weekDaysRow}>
+            {visibleWeek.map((d) => {
+              const key = isoDateKey(d);
+              const isSelected = key === selectedDateKey;
+              const hasAppointments = Array.isArray(groupedAppointments[key]) && groupedAppointments[key].length > 0;
+              return (
+                <TouchableOpacity
+                  key={key}
+                  onPress={() => setSelectedDateKey(key)}
+                  style={[styles.dayCell, isSelected && styles.dayCellSelected]}
+                  accessibilityLabel={`Sélectionner ${d.toLocaleDateString("fr-FR")}`}>
+                  <Text style={[styles.dayShort, isSelected && styles.dayShortSelected]}>{dayShort(d)}</Text>
+                  <Text style={[styles.dayNum, isSelected && styles.dayNumSelected]}>{dayNumber(d)}</Text>
+                  {hasAppointments && <View style={[styles.dot, isSelected && styles.dotSelected]} />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+        <TouchableOpacity onPress={nextWeek} style={styles.chevronBtn} accessibilityLabel="Semaine suivante">
+          <Ionicons name="chevron-forward" size={22} color="#374151" />
+        </TouchableOpacity>
+      </View>
+
+      <FlatList
+        data={groupedAppointments[selectedDateKey] || []}
+        renderItem={renderAppointment}
+        keyExtractor={(item) => `${item.id}-${item.isInterview}`}
+        ListHeaderComponent={<Text style={styles.subTitle}>Rendez-vous du jour</Text>}
+        ListEmptyComponent={<Text style={styles.emptyText}>Aucun rendez-vous pour cette date.</Text>}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={{ paddingBottom: 200 }}
+      />
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f0f2f5',
-  },
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#1a202c',
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#4a5568',
-    marginBottom: 24,
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    elevation: 3,
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#2d3748',
-  },
-  cardText: {
-    fontSize: 16,
-    color: '#718096',
-  },
-    specialityBtn: {
-    margin: 8,
-    borderColor: '#1662A9',
-    borderWidth: 1,
-    borderRadius: 19,
-    paddingHorizontal: 8,
-    backgroundColor: '#fff',
-  },
-  specialityBtnText: {
-    color: '#1662A9',
-    fontWeight: '600',
-  },
-  appointmentItem: { // New style for appointment items (reused from availability.tsx)
-    backgroundColor: '#f0f8ff', // Light blue background
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#1662A9',
-  },
-  appointmentTime: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2d3748',
-    marginBottom: 4,
-  },
-  appointmentDetails: {
-    fontSize: 14,
-    color: '#4a5568',
-    marginBottom: 2,
-  },
-  appointmentStatus: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2c9d8f', // Green for confirmed
-    marginTop: 4,
-  },
+  container: { flex: 1, paddingHorizontal: 15, backgroundColor: '#fff' },
+  centered: { justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 15 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#333' },
+  editLink: { fontSize: 16, color: '#1662A9', fontWeight: '600' },
+  subTitle: { fontSize: 20, fontWeight: '600', marginBottom: 15, color: '#444' },
+  emptyText: { textAlign: 'center', marginTop: 30, fontSize: 16, color: '#888' },
+  // Calendar Styles
+  weekNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  chevronBtn: { padding: 1 , marginBottom: 66 },
+  weekCenter: { flex: 1 },
+  weekMonthLabel: { textAlign: 'center', fontSize: 16, fontWeight: 'bold', color: '#374151', marginBottom: 10 },
+  weekDaysRow: { flexDirection: 'row', justifyContent: 'space-around' },
+  dayCell: { alignItems: 'center', padding: 5, borderRadius: 12, width: 40, backgroundColor: '#E2E2E2', margin: 2 },
+  dayCellSelected: { backgroundColor: '#1662A9' },
+  dayShort: { fontSize: 12, textTransform: 'uppercase', color: '#6B7280' },
+  dayShortSelected: { color: '#fff' },
+  dayNum: { fontSize: 16, fontWeight: 'bold', marginTop: 4, color: '#374151' },
+  dayNumSelected: { color: '#fff' },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#1662A9', marginTop: 4 },
+  dotSelected: { backgroundColor: '#fff' },
 });
-
-export default ProHomeScreen;

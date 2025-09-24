@@ -18,6 +18,11 @@ export class PractitionerProfileController {
     return this.practitionerProfileService.findForUser(userId);
   }
 
+  @Get('by-email/:email')
+  getProfileByEmail(@Param('email') email: string) {
+    return this.practitionerProfileService.findByEmail(email);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('me/availability')
   addAvailability(@Request() req, @Body() addAvailabilityDto: AddAvailabilityToPractitionerDto) {
