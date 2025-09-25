@@ -29,6 +29,7 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private jwtService: JwtService) {}
 
   async handleConnection(client: Socket) {
+    this.logger.log(`Client connecting: ${client.id}`);
     try {
       // token attendu dans client.handshake.auth.token (socket.io recommended)
       const token = client.handshake.auth?.token as string;
@@ -55,6 +56,7 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket) {
+    this.logger.log(`Client disconnecting: ${client.id}`);
     const user = (client as any).user;
     if (user?.userId) {
       this.socketsByUser.delete(user.userId);
@@ -81,25 +83,34 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { roomId: string },
   ) {
+    this.logger.log(`Received joinRoom event from socket ${client.id} for room ${payload.roomId}`);
     const user = (client as any).user;
-    if (!user) return client.emit('error', 'Unauthorized');
+    if (!user) {
+      this.logger.warn(`Unauthorized joinRoom attempt from socket ${client.id}`);
+      return client.emit('error', 'Unauthorized');
+    }
 
     const { roomId } = payload;
-    if (!roomId) return client.emit('error', 'roomId required');
+    if (!roomId) {
+      this.logger.warn(`joinRoom event missing roomId from user ${user.userId}`);
+      return client.emit('error', 'roomId required');
+    }
 
     let set = this.rooms.get(roomId);
     if (!set) {
       set = new Set<number>();
       this.rooms.set(roomId, set);
+      this.logger.log(`Created new room: ${roomId}`);
     }
 
     if (set.size >= 2 && !set.has(user.userId)) {
-      // MVP: limit 2 participants per room
+      this.logger.warn(`Room ${roomId} is full. User ${user.userId} cannot join.`);
       return client.emit('room-full');
     }
 
     set.add(user.userId);
     client.join(roomId);
+    this.logger.log(`User ${user.userId} joined room ${roomId}. Current participants: ${set.size}`);
 
     // inform peers
     for (const otherUserId of set) {
@@ -107,11 +118,24 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const otherSocket = this.socketsByUser.get(otherUserId);
         if (otherSocket) {
           this.server.to(otherSocket).emit('peer-joined', { roomId, userId: user.userId });
+          this.logger.log(`Notified peer ${otherUserId} that user ${user.userId} joined room ${roomId}`);
         }
       }
     }
 
     client.emit('joined', { roomId });
+
+    if (set.size === 2) {
+      this.logger.log(`Room ${roomId} now has 2 participants. Emitting call_started.`);
+      // If two users are in the room, signal both to start the call
+      for (const userIdInRoom of set) {
+        const socketIdInRoom = this.socketsByUser.get(userIdInRoom);
+        if (socketIdInRoom) {
+          this.server.to(socketIdInRoom).emit('call_started', { roomId });
+          this.logger.log(`Emitted call_started to user ${userIdInRoom} in room ${roomId}`);
+        }
+      }
+    }
   }
 
   @SubscribeMessage('leaveRoom')
@@ -131,27 +155,100 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (set.size === 0) this.rooms.delete(roomId);
   }
 
-  // offer -> forward to target userId
   @SubscribeMessage('offer')
-  handleOffer(@ConnectedSocket() client: Socket, @MessageBody() payload: { toUserId: number; sdp: any }) {
+  handleOffer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { sdp: any; roomId: string },
+  ) {
     const from = (client as any).user;
-    const targetSock = this.socketsByUser.get(payload.toUserId);
-    if (!targetSock) return client.emit('error', 'peer-offline');
-    this.server.to(targetSock).emit('offer', { fromUserId: from.userId, sdp: payload.sdp });
+    const { sdp, roomId } = payload;
+    const roomParticipants = this.rooms.get(roomId);
+
+    if (!roomParticipants) {
+      return client.emit('error', 'Room not found');
+    }
+
+    for (const participantId of roomParticipants) {
+      if (participantId !== from.userId) {
+        const targetSock = this.socketsByUser.get(participantId);
+        if (targetSock) {
+          this.server.to(targetSock).emit('offer', { fromUserId: from.userId, sdp, roomId });
+        }
+      }
+    }
   }
 
   @SubscribeMessage('answer')
-  handleAnswer(@ConnectedSocket() client: Socket, @MessageBody() payload: { toUserId: number; sdp: any }) {
+  handleAnswer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { sdp: any; roomId: string },
+  ) {
     const from = (client as any).user;
-    const targetSock = this.socketsByUser.get(payload.toUserId);
-    if (!targetSock) return client.emit('error', 'peer-offline');
-    this.server.to(targetSock).emit('answer', { fromUserId: from.userId, sdp: payload.sdp });
+    const { sdp, roomId } = payload;
+    const roomParticipants = this.rooms.get(roomId);
+
+    if (!roomParticipants) {
+      return client.emit('error', 'Room not found');
+    }
+
+    for (const participantId of roomParticipants) {
+      if (participantId !== from.userId) {
+        const targetSock = this.socketsByUser.get(participantId);
+        if (targetSock) {
+          this.server.to(targetSock).emit('answer', { fromUserId: from.userId, sdp, roomId });
+        }
+      }
+    }
   }
 
-  @SubscribeMessage('ice-candidate')
-  handleIce(@ConnectedSocket() client: Socket, @MessageBody() payload: { toUserId: number; candidate: any }) {
-    const targetSock = this.socketsByUser.get(payload.toUserId);
-    if (!targetSock) return client.emit('error', 'peer-offline');
-    this.server.to(targetSock).emit('ice-candidate', { fromUserId: (client as any).user.userId, candidate: payload.candidate });
+  @SubscribeMessage('ice_candidate')
+  handleIce(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { candidate: any; roomId: string },
+  ) {
+    const from = (client as any).user;
+    const { candidate, roomId } = payload;
+    const roomParticipants = this.rooms.get(roomId);
+
+    if (!roomParticipants) {
+      return client.emit('error', 'Room not found');
+    }
+
+    for (const participantId of roomParticipants) {
+      if (participantId !== from.userId) {
+        const targetSock = this.socketsByUser.get(participantId);
+        if (targetSock) {
+          this.server.to(targetSock).emit('ice_candidate', { fromUserId: from.userId, candidate, roomId });
+        }
+      }
+    }
+  }
+
+  @SubscribeMessage('webrtc_ready')
+  handleWebRtcReady(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { roomId: string },
+  ) {
+    const from = (client as any).user;
+    const { roomId } = payload;
+    const roomParticipants = this.rooms.get(roomId);
+
+    if (!roomParticipants) {
+      return client.emit('error', 'Room not found');
+    }
+
+    // If there are two participants, and the other one is ready, 
+    // the initiator should send the offer.
+    if (roomParticipants.size === 2) {
+      for (const participantId of roomParticipants) {
+        if (participantId !== from.userId) {
+          const targetSock = this.socketsByUser.get(participantId);
+          if (targetSock) {
+            // Signal the other participant to create an offer
+            this.server.to(targetSock).emit('create_offer', { roomId });
+          }
+        }
+      }
+    }
   }
 }

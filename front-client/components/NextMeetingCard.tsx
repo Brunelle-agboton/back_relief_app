@@ -1,4 +1,6 @@
 import React from 'react';
+import { useSocket } from '../context/SocketContext';
+import { useRouter } from 'expo-router';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Divider } from 'react-native-elements';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -14,6 +16,7 @@ interface NextMeetingCardProps {
   date: string;
   time: string;
   item: {
+    id: number;
     imageUrl: string;
     location: string;
     name: string;
@@ -21,10 +24,22 @@ interface NextMeetingCardProps {
   };
   reason?: string;
   onCancel: () => void;
-  onJoin: () => void;
+  
 }
 
-const NextMeetingCard: React.FC<NextMeetingCardProps> = ({ isMeeting, date, time, item, reason, onCancel, onJoin }) => {
+const NextMeetingCard: React.FC<NextMeetingCardProps> = ({ isMeeting, date, time, item, reason, onCancel }) => {
+  const { socket } = useSocket();
+  const router = useRouter();
+
+  const onJoin = () => {
+    console.log("Joinning waitng-room ")
+    if (socket) {
+      console.log("Socket is : ")
+      socket.emit('join_room', { roomId: item.id }); // Assuming item.id is the room ID
+      router.push(`/teleconsultation/waiting-room/${item.id}`);
+    }
+     console.log("Joined waitng-room ")
+  };
   if (isMeeting) {
     return (
       <View style={styles.section}>

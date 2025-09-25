@@ -7,7 +7,7 @@ import { RoomsController } from './rooms.controller';
   imports: [
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secretKey',
-      signOptions: { expiresIn: '1h' },
+      signOptions: { expiresIn: '10min' },
     }),
   ],
   providers: [WebrtcGateway],

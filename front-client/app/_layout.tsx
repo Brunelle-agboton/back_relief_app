@@ -12,6 +12,7 @@ import {
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { AuthProvider } from '../context/AuthContext';
+import { SocketProvider } from '../context/SocketContext';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -52,6 +53,8 @@ export default function RootLayout() {
           shouldShowAlert: true,
           shouldPlaySound: false,
           shouldSetBadge: false,
+          shouldShowBanner: true,
+          shouldShowList: true,
         }),
       });
 
@@ -92,6 +95,7 @@ export default function RootLayout() {
     <SafeAreaView style={{ flex: 1 }}>
       <ThemeProvider value={ DefaultTheme}>
         <AuthProvider>
+          <SocketProvider>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
@@ -102,10 +106,6 @@ export default function RootLayout() {
             <Stack.Screen name="_home/index" options={{ headerShown: false }} />
             <Stack.Screen name="screens/LogoutScreen" options={{ headerShown: false }} />
             <Stack.Screen name="screens/ActivityLogScreen" options={{ headerShown: false }} />
-            {/* <Stack.Screen name="screens/RegisterStep1Screen" options={{ headerShown: false }} />
-            <Stack.Screen name="screens/RegisterStep2Screen" options={{ headerShown: false }} />
-            <Stack.Screen name="screens/RegisterStep3Screen" options={{ headerShown: false }} />
-            <Stack.Screen name="screens/ForgotPasswordScreen" options={{headerShown: false }}/> */}
             <Stack.Screen name="screens/mine" options={{ headerLeft:  () => <BackButton />, headerTitle: 'Compte', headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>
             <Stack.Screen 
               name="screens/UserInfos1" 
@@ -147,6 +147,7 @@ export default function RootLayout() {
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />
+        </SocketProvider>
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaView>

@@ -16,6 +16,8 @@ export default function PauseActiveLayout() {
       /> */}
       <Stack.Screen name="pro-list" options={{ title: 'Teleconsultation' }}/>
       <Stack.Screen name="pro-details/[id]" options={{ title: 'Rendez-vous' }}/>
+      <Stack.Screen name="waiting-room/[id]" options={{ title: 'waiting-room' }}/>
+      <Stack.Screen name="video-call/[id]" options={{ title: 'video-call' }}/>
     </Stack>
   );
 }

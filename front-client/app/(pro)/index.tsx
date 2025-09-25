@@ -1,5 +1,7 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, FlatList, RefreshControl, Alert, TouchableOpacity } from 'react-native';
+import React, { useMemo, useState, useEffect, useCallback, useRef  } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, FlatList, RefreshControl, Alert, TouchableOpacity,  Animated 
+} from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { usePractitioner } from '@/context/PractitionerContext';
 import { useAuth } from '@/context/AuthContext';
@@ -7,6 +9,7 @@ import api from '@/services/api';
 import { Appointment } from '@/interfaces/types';
 import NextMeetingCard from '@/components/NextMeetingCard';
 import { Ionicons } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 // --- Date Helper Functions ---
 const isoDateKey = (d: Date): string => d.toISOString().split('T')[0];
@@ -24,6 +27,7 @@ const renderAppointment = ({ item }: { item: Appointment }) => {
     onCancel: () => Alert.alert('Annulation', `Annuler le RDV ID: ${item.id}?`),
     onJoin: () => Alert.alert('Rejoindre', `Rejoindre la visio pour le RDV ID: ${item.id}`),
     item: {
+      id: item.id,
       imageUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d',
       name: item.isInterview ? (item.practitioner.professionalType || 'Admin') : (item.patient.userName || 'Patient inconnu'),
       specialty: item.isInterview ? 'Entretien de validation' : `Patient - ${item.patient.email}`,
@@ -36,7 +40,7 @@ const renderAppointment = ({ item }: { item: Appointment }) => {
 export default function ProDashboard() {
   const router = useRouter();
   const { profile, loading: loadingProfile, refetch: refetchProfile } = usePractitioner();
-  const { authState } = useAuth();
+  const { authState, isLoading } = useAuth();
 
   const [interviewAppointments, setInterviewAppointments] = useState<Appointment[]>([]);
   const [loadingInterviews, setLoadingInterviews] = useState(true);
@@ -45,6 +49,44 @@ export default function ProDashboard() {
   // State for the calendar
   const [weekAnchor, setWeekAnchor] = useState(new Date());
   const [selectedDateKey, setSelectedDateKey] = useState(isoDateKey(new Date()));
+
+  // Crée trois Animated.Value pour piloter l’opacité de chaque chevron
+    const chevrons = [
+      useRef(new Animated.Value(0)).current,
+      useRef(new Animated.Value(0)).current,
+      useRef(new Animated.Value(0)).current,
+    ];
+     // Animated value pour le scale
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+  
+    // Fonction qui joue l’animation chevronsF
+      const animateChevrons = useCallback(() => {
+        // Réinitialiser
+        chevrons.forEach(c => c.setValue(0));
+    
+        // Compose et lance
+        const loops = chevrons.map((value, i) =>
+          Animated.loop(
+            Animated.sequence([
+              Animated.delay(i * 300),
+              Animated.timing(value, { toValue: 1, duration: 300, useNativeDriver: true }),
+              Animated.timing(value, { toValue: 0, duration: 380, useNativeDriver: true }),
+            ]),
+            { resetBeforeIteration: true }  // important pour relancer proprement
+          )
+        );
+        Animated.parallel(loops).start();
+      }, [chevrons]);
+    
+      // Fonction qui pop le score
+      const animateScore = useCallback(() => {
+        scaleAnim.setValue(1);
+        Animated.sequence([
+          Animated.timing(scaleAnim, { toValue: 1.3, duration: 100, useNativeDriver: true }),
+          Animated.timing(scaleAnim, { toValue: 1,   duration: 200, useNativeDriver: true }),
+        ]).start();
+      }, [scaleAnim]);
+    
 
   const fetchInterviewAppointments = useCallback(async () => {
     if (!authState.user?.sub) return;
@@ -59,6 +101,16 @@ export default function ProDashboard() {
     }
   }, [authState.user]);
 
+   // useFocusEffect appelle loadStats à chaque fois que l'écran gagne le focus
+    useFocusEffect(
+      React.useCallback(() => {
+     if (authState.isAuthenticated && !isLoading) {
+        animateChevrons();
+        animateScore();
+      }
+    }, [authState.isAuthenticated, isLoading, animateChevrons, animateScore])
+  );
+    
   useEffect(() => {
     fetchInterviewAppointments();
   }, [fetchInterviewAppointments]);
@@ -158,6 +210,21 @@ export default function ProDashboard() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={{ paddingBottom: 200 }}
       />
+      {/* Bouton */}
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => router.push('/(tabs)/pauseActive')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.buttonText}>Accéder aux exercices</Text>
+               <View style={styles.chevronContainer}>
+              {chevrons.map((anim, i) => (
+                <Animated.View key={i} style={{ opacity: anim, marginLeft: i === 0 ? 2 : 0 }}>
+                  <FontAwesome name="chevron-right" size={38} color="#fff" />
+                </Animated.View>
+              ))}
+            </View>
+            </TouchableOpacity>
     </View>
   );
 }
@@ -184,4 +251,21 @@ const styles = StyleSheet.create({
   dayNumSelected: { color: '#fff' },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#1662A9', marginTop: 4 },
   dotSelected: { backgroundColor: '#fff' },
+  button: {
+    flexDirection: 'row',
+    backgroundColor: '#FF6B61',
+    borderRadius: 30,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+   chevronContainer: {
+    flexDirection: 'row',
+    marginLeft:    12,
+  },
 });
