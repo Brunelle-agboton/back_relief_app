@@ -10,6 +10,7 @@ OneToMany,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Availability } from '../../availability/entities/availability.entity';
+import { Appointment } from '../../appointment/entities/appointment.entity';
 
 export enum ProfessionalType {
 KINESIOLOGUE = 'kinesiologue',
@@ -90,9 +91,12 @@ rating?: number;
 
 @OneToMany(() => Availability, availability => availability.practitionerProfile, { cascade: true })
 availabilities: Availability[];
+
+@OneToMany(() => Appointment, appointment => appointment.practitionerProfile, { cascade: true })
+appointments: Appointment[];
+
 @CreateDateColumn({ type: 'timestamptz' })
 createdAt: Date;
-
 
 @UpdateDateColumn({ type: 'timestamptz' })
 updatedAt: Date;

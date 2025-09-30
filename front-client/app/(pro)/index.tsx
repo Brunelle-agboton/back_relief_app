@@ -19,6 +19,8 @@ const monthLabel = (d: Date): string => d.toLocaleDateString('fr-FR', { month: '
 
 const renderAppointment = ({ item }: { item: Appointment }) => {
   const appointmentDate = new Date(item.start_at);
+  const backgroundColor = item.patient?.role === 'user' ? '#CDFBE2' : '#1662A9';
+
   const cardProps = {
     isMeeting: false,
     date: appointmentDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
@@ -29,10 +31,11 @@ const renderAppointment = ({ item }: { item: Appointment }) => {
     item: {
       id: item.id,
       imageUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d',
-      name: item.isInterview ? (item.practitioner.professionalType || 'Admin') : (item.patient.userName || 'Patient inconnu'),
-      specialty: item.isInterview ? 'Entretien de validation' : `Patient - ${item.patient.email}`,
-      location: item.isInterview ? item.practitioner.city : 'En ligne',
-    }
+      name: item.isInterview ? (item.practitioner?.professionalType || 'Admin') : (item.patient?.userName || 'Patient inconnu'),
+      specialty: item.isInterview ? 'Entretien de validation' : `${item.patient?.role} - ${item.patient?.email || 'email inconnu'}`,
+      location: item.isInterview ? (item.practitioner?.city || 'Lieu inconnu') : 'En ligne',
+    },
+    backgroundColor: backgroundColor,
   };
   return <NextMeetingCard {...cardProps} />;
 };
@@ -116,12 +119,13 @@ export default function ProDashboard() {
   }, [fetchInterviewAppointments]);
 
   const allUpcomingAppointments = useMemo(() => {
-    const patientAppointments = (profile?.appointments || []).filter(a => new Date(a.start_at) > new Date());
+    const patientAppointments = (profile?.appointments || []);
     const markedInterviewAppointments = interviewAppointments.map(a => ({ ...a, isInterview: true }));
     const combined = [...patientAppointments, ...markedInterviewAppointments];
     combined.sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
     return combined;
   }, [profile, interviewAppointments]);
+
 
   // Group appointments by date for the calendar dots and filtering
   const groupedAppointments = useMemo(() => {
@@ -164,10 +168,7 @@ export default function ProDashboard() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Mon Accueil</Text>
-        <TouchableOpacity onPress={() => router.push("/(pro)/availability")}>
-          <Text style={styles.editLink}>Modifier</Text>
-        </TouchableOpacity>
+        <Text style={styles.title}>Bonjour {profile?.user?.userName}</Text>
       </View>
 
       {/* WEEK NAV */}
@@ -205,7 +206,7 @@ export default function ProDashboard() {
         data={groupedAppointments[selectedDateKey] || []}
         renderItem={renderAppointment}
         keyExtractor={(item) => `${item.id}-${item.isInterview}`}
-        ListHeaderComponent={<Text style={styles.subTitle}>Rendez-vous du jour</Text>}
+        ListHeaderComponent={<Text style={styles.subTitle}>Votre planning</Text>}
         ListEmptyComponent={<Text style={styles.emptyText}>Aucun rendez-vous pour cette date.</Text>}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={{ paddingBottom: 200 }}
@@ -216,7 +217,7 @@ export default function ProDashboard() {
               onPress={() => router.push('/(tabs)/pauseActive')}
               activeOpacity={0.8}
             >
-              <Text style={styles.buttonText}>Accéder aux exercices</Text>
+              <Text style={styles.buttonText}>Compléter votre profil </Text>
                <View style={styles.chevronContainer}>
               {chevrons.map((anim, i) => (
                 <Animated.View key={i} style={{ opacity: anim, marginLeft: i === 0 ? 2 : 0 }}>
@@ -234,7 +235,6 @@ const styles = StyleSheet.create({
   centered: { justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 15 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#333' },
-  editLink: { fontSize: 16, color: '#1662A9', fontWeight: '600' },
   subTitle: { fontSize: 20, fontWeight: '600', marginBottom: 15, color: '#444' },
   emptyText: { textAlign: 'center', marginTop: 30, fontSize: 16, color: '#888' },
   // Calendar Styles
@@ -253,9 +253,10 @@ const styles = StyleSheet.create({
   dotSelected: { backgroundColor: '#fff' },
   button: {
     flexDirection: 'row',
-    backgroundColor: '#FF6B61',
+    backgroundColor: '#DADADA',
     borderRadius: 30,
-    paddingVertical: 14,
+    paddingVertical: 10,
+   marginBottom: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },

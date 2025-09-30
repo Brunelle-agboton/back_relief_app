@@ -71,7 +71,7 @@ export class AppointmentService {
     // 5. Create and save the Appointment entity
     const appointment = this.appointmentRepository.create({
       patient: patient,
-      practitioner: practitionerProfile,
+      practitionerProfile: practitionerProfile,
       start_at: start_at,
       end_at: end_at,
       notes: note,
@@ -88,9 +88,9 @@ export class AppointmentService {
   async findByPractitionerId(practitionerId: number): Promise<Appointment[]> {
     return this.appointmentRepository.find({
       where: {
-        practitioner: { id: practitionerId },
+        practitionerProfile: { id: practitionerId },
       },
-      relations: ['patient', 'practitioner'], // Include patient and practitioner details
+      relations: ['patient', 'practitionerPofile'], // Include patient and practitioner details
       order: {
         start_at: 'ASC', // Order by start time ascending
       },
@@ -102,7 +102,7 @@ export class AppointmentService {
       where: {
         patient: { id: userId },
       },
-      relations: ['patient', 'practitioner'], // Include patient and practitioner details
+      relations: ['patient', 'practitionerProfile'], // Include patient and practitioner details
       order: {
         start_at: 'ASC', // Order by start time ascending
       },

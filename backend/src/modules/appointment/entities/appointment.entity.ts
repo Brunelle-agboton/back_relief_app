@@ -17,9 +17,9 @@ export class Appointment {
   @JoinColumn({ name: 'patient_id' })
   patient: User;
 
-  @ManyToOne(() => PractitionerProfile)
+  @ManyToOne(() => PractitionerProfile, (profile) => profile.appointments)
   @JoinColumn({ name: 'practitioner_id' })
-  practitioner: PractitionerProfile;
+  practitionerProfile: PractitionerProfile;
 
   @Column({ type: 'timestamp with time zone' })
   start_at: Date;

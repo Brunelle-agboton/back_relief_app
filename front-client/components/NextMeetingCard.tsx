@@ -24,10 +24,10 @@ interface NextMeetingCardProps {
   };
   reason?: string;
   onCancel: () => void;
-  
+  backgroundColor?: string;
 }
 
-const NextMeetingCard: React.FC<NextMeetingCardProps> = ({ isMeeting, date, time, item, reason, onCancel }) => {
+const NextMeetingCard: React.FC<NextMeetingCardProps> = ({ isMeeting, date, time, item, reason, onCancel, backgroundColor }) => {
   const { socket } = useSocket();
   const router = useRouter();
 
@@ -50,7 +50,10 @@ const NextMeetingCard: React.FC<NextMeetingCardProps> = ({ isMeeting, date, time
 
   return (
     <View>
-      <View style={styles.sectionWithMeetig}>
+      <TouchableOpacity onPress={() => router.push("/(pro)/agenda")}>
+                <Text style={styles.editLink}>Modifier</Text>
+              </TouchableOpacity>
+      <View style={[styles.sectionWithMeetig, { backgroundColor: backgroundColor || styles.sectionWithMeetig.backgroundColor }]}>
         <View style={styles.sectionHeader}>
           <View style={styles.sectionHeader}>
             <Calendar style={{ marginRight: 8 }} />
@@ -213,7 +216,9 @@ const styles = StyleSheet.create({
         borderRadius:16,
         paddingHorizontal: 8,
     paddingVertical: 8,
-      }
+      },
+  editLink: { fontSize: 16, color: '#1662A9', fontWeight: '600' },
+
 });
 
 export default NextMeetingCard;

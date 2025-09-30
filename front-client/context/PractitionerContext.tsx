@@ -1,37 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import api from '../services/api';
 import { useAuth } from './AuthContext';
-
-// Interface pour une disponibilité, basée sur l'entité backend
-interface Availability {
-  id: number;
-  startTime: string; // Les dates sont des chaînes de caractères lorsqu'elles viennent du JSON
-  endTime: string;
-  timezone: string;
-  isBooked: boolean;
-}
-
-// Interface for the User object nested in the profile
-interface User {
-  id: number;
-  userName: string;
-  email: string;
-}
-
-// Interface pour le profil du praticien
-interface PractitionerProfile {
-  id: number;
-  user: User;
-  professionalType: string;
-  specialties: string[];
-  bio?: string;
-  licenseNumber?: string;
-  phone?: string;
-  city: string;
-  country: string;
-  availabilities: Availability[];
-  timezone: string;
-}
+import { Appointment, PractitionerProfile, User, Availability } from '@/interfaces/types';
 
 // Structure des données du contexte
 interface PractitionerContextData {

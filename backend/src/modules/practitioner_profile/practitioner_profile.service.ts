@@ -74,17 +74,17 @@ export class PractitionerProfileService {
   }
 
   findAll() {
-    return this.practitionerProfileRepository.find({ relations: ['user', 'availabilities'] });
+    return this.practitionerProfileRepository.find({ relations: ['user', 'availabilities', 'appointments', 'appointments.patient', 'appointments.practitionerProfile'] });
   }
 
   findOne(id: number) {
-    return this.practitionerProfileRepository.findOne({ where: { id }, relations: ['user', 'availabilities'] });
+    return this.practitionerProfileRepository.findOne({ where: { id }, relations: ['user', 'availabilities', 'appointments', 'appointments.patient', 'appointments.practitionerProfile'] });
   }
 
   async findForUser(userId: number): Promise<PractitionerProfile> {
     const profile = await this.practitionerProfileRepository.findOne({
       where: { user: { id: userId} },
-      relations: ['user', 'availabilities'],
+      relations: ['user', 'availabilities', 'appointments', 'appointments.patient', 'appointments.practitionerProfile'],
     });
 
     if (!profile) {
@@ -95,10 +95,17 @@ export class PractitionerProfileService {
   }
 
   async findByEmail(email: string): Promise<PractitionerProfile> {
-    const profile = await this.practitionerProfileRepository.findOne({
-      where: { user: { email: email } },
-      relations: ['user', 'availabilities'],
-    });
+    const profile = await this.practitionerProfileRepository
+      .createQueryBuilder('profile')
+      .leftJoinAndSelect('profile.user', 'user')
+      .leftJoinAndSelect(
+        'profile.availabilities',
+        'availability',
+        'availability.isBooked = :isBooked',
+        { isBooked: false },
+      )
+      .where('user.email = :email', { email })
+      .getOne();
 
     if (!profile) {
       throw new NotFoundException(`Practitioner profile for user with email ${email} not found`);

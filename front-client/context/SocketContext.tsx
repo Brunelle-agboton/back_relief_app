@@ -18,7 +18,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    console.log('SocketProvider useEffect - authState:', authState);
     const userId = authState.user?.sub;
     const token = authState.token;
 
@@ -40,7 +39,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           console.log('Socket disconnected from /webrtc');
         });
 
-        newSocket.on('connect_error', (err) => {
+        newSocket.on('connect_error', (err: any) => {
           console.error('Socket connection error:', err.message);
         });
 

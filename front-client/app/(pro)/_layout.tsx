@@ -22,8 +22,6 @@ const Logo = () => (
   </View>
 );
 
-
-
 const ProLayout = () => {
   const router = useRouter();
 
@@ -81,7 +79,7 @@ const ProLayout = () => {
 
           {/* Agenda / Planning */}
           <Tabs.Screen
-            name="availability"
+            name="agenda"
             options={{
               title: "Agenda",
               tabBarIcon: ({ color, focused }) => (
@@ -90,17 +88,16 @@ const ProLayout = () => {
               headerShown: false,
             }}
           />
-          {/* Profil / Paramètres */}
+                    {/* Profil / Paramètres */}
           <Tabs.Screen
-            name="pro-dashboard"
+            name="profile"
             options={{
               title: "Profil",
               tabBarIcon: ({ color, focused }) => (
-                <Ionicons name={focused ? "folder-outline" : "folder-sharp"} size={22} color={color} />
+                <Ionicons name={focused ? "folder-sharp" : "folder-outline"} size={22} color={color} />
               ),
             }}
           />
-        </Tabs>
 
           {/* Messages */}
           <Tabs.Screen
@@ -109,9 +106,12 @@ const ProLayout = () => {
               title: "Messages",
               tabBarIcon: ({ color, focused }) => (
                 <MaterialCommunityIcons name={focused ? "message-badge" : "message-badge-outline"} size={22} color={color} />
+                
               ),
             }}
           />
+
+        </Tabs>
 
          
       </SafeAreaView>

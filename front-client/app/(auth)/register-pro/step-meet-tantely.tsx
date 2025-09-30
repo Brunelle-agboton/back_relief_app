@@ -98,7 +98,7 @@ export default function RegisterProStepMeet() {
     const payload = {
       ...params,
       appointment: {
-        practitionerId: 4,
+        practitionerId: 1,
         date: selectedDate,
         startTime: formattedTime, // Send time in UTC format (e.g., "18:30")
       },

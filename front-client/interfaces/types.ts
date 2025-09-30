@@ -59,7 +59,7 @@ export interface User {
   id: number;
   email: string;
   userName: string;
-  role: 'practitioner' | 'patient';
+  role: 'practitioner' | 'user';
   age?: number | null;
   drinkReminder?: boolean | null;
   hourSit?: number | null;
@@ -91,7 +91,8 @@ export interface PractitionerProfile {
   timezone: string;
   updatedAt: string;
   user?: User; // Practitioner is also a user
-  availabilities: Availability[]
+  availabilities: Availability[];
+  appointments: Appointment[];
 }
 
 export interface Appointment {
@@ -105,8 +106,8 @@ export interface Appointment {
   cancelled_byId: number | null;
   created_at: string;
   updated_at: string;
-  patient: User;
-  practitioner: PractitionerProfile;
+  patient?: User;
+  practitioner?: PractitionerProfile;
   // Internal flag for UI logic
   isInterview?: boolean;
 }

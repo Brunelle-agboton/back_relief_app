@@ -51,7 +51,7 @@ export class AuthService {
     const { appointment } = dto;
     const createAppointmentDto: CreateAppointmentDto = {
       patientId: user.id, // The new practitioner is the "patient" for this onboarding appointment
-      practitionerId: 4, // The admin practitioner's ID
+      practitionerId: 1, // The admin practitioner's ID
       date: appointment.date, // Assuming this is a 'YYYY-MM-DD' string from the DTO
       time: appointment.startTime, // Assuming this is a 'HH:MM' string from the DTO
     };
