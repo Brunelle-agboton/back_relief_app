@@ -9,6 +9,8 @@ import Localisation from '@/assets/images/Consultation/Localisation.svg';
 import Appel from '@/assets/images/Consultation/Appel.svg';
 import Heure from '@/assets/images/Consultation/Heure.svg';
 import Annuler from '@/assets/images/Consultation/Annuler.svg';
+import Modifier from '@/assets/images/Consultation/Modifier.svg';
+
 
 // Define the props for the component
 interface NextMeetingCardProps {
@@ -50,8 +52,9 @@ const NextMeetingCard: React.FC<NextMeetingCardProps> = ({ isMeeting, date, time
 
   return (
     <View>
-      <TouchableOpacity onPress={() => router.push("/(pro)/agenda")}>
+      <TouchableOpacity onPress={() => router.push("/(pro)/agenda")} style={{ flexDirection: 'row', justifyContent: 'space-between'}}>
                 <Text style={styles.editLink}>Modifier</Text>
+                <Modifier />
               </TouchableOpacity>
       <View style={[styles.sectionWithMeetig, { backgroundColor: backgroundColor || styles.sectionWithMeetig.backgroundColor }]}>
         <View style={styles.sectionHeader}>

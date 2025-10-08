@@ -19,6 +19,7 @@ import { ActivityController} from './modules/activity/activity.controller'
 import { SummaryController } from './modules/summary/summary.controller';
 import { AppointmentController } from './modules/appointment/appointment.controller';
 import { PractitionerProfileController } from './modules/practitioner_profile/practitioner_profile.controller';
+import { PractitionerDiplomeController } from './modules/practitioner_diplome/practitioner_diplome.controller';
 import { AvailabilityController } from './modules/availability/availability.controller';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -27,6 +28,7 @@ import { ProgramModule } from './modules/program/program.module';
 import { ProgramLineModule } from './modules/program-line/program-line.module';
 import { ActivityModule } from './modules/activity/activity.module';
 import { PractitionerProfileModule } from './modules/practitioner_profile/practitioner_profile.module';
+import { PractitionerDiplomeModule } from './modules/practitioner_diplome/practitioner_diplome.module';
 import { SummaryModule } from './modules/summary/summary.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
 import { AppointmentModule } from './modules/appointment/appointment.module';
@@ -52,6 +54,7 @@ console.log('→ Serving images from:', imagesPath);
     ActivityModule,
     SummaryModule,
     PractitionerProfileModule,
+    PractitionerDiplomeModule,
     AvailabilityModule,
     AppointmentModule,
     WebrtcModule,
@@ -73,7 +76,7 @@ console.log('→ Serving images from:', imagesPath);
   ],
   controllers: [AppController, UserController, HealthController, AuthController, NotificationController, RoomsController,
     ExerciseController, ProgramController, ProgramLineController, ActivityController, SummaryController, 
-    AppointmentController,AvailabilityController, PractitionerProfileController],
+    AppointmentController,AvailabilityController, PractitionerProfileController, PractitionerDiplomeController],
   providers: [AppService],
 })
 export class AppModule {

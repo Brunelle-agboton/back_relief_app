@@ -11,11 +11,13 @@ OneToMany,
 import { User } from '../../user/entities/user.entity';
 import { Availability } from '../../availability/entities/availability.entity';
 import { Appointment } from '../../appointment/entities/appointment.entity';
+import { PractitionerDiplome } from 'src/modules/practitioner_diplome/entities/practitioner_diplome.entity';
 
 export enum ProfessionalType {
 KINESIOLOGUE = 'kinesiologue',
 PHYSIOTHERAPIST = 'physiotherapist',
 ERGOTHERAPEUTE = 'Ergothérapeute',
+ORTHOPEDIST = 'orthopedist',
 OTHER = 'other',
 }
 
@@ -88,6 +90,9 @@ isActive: boolean;
 
 @Column({ type: 'numeric', precision: 3, scale: 2, nullable: true })
 rating?: number;
+
+@OneToMany(() => PractitionerDiplome, diplome => diplome.practitionerProfile, { cascade: true })
+diplomes: PractitionerDiplome[];
 
 @OneToMany(() => Availability, availability => availability.practitionerProfile, { cascade: true })
 availabilities: Availability[];

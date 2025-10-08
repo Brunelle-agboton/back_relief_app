@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { View, Pressable, Dimensions, TouchableOpacity, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { View, Pressable, Dimensions, TouchableOpacity, Text, StyleSheet, ScrollView, ActivityIndicator, FlatList } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { CalendarList } from "react-native-calendars";
 import { formatDate } from '@/utils/availabilities';
@@ -27,6 +27,22 @@ const getSafeTimezone = (tz: string | null | undefined): string => {
   }
   return tz || 'UTC'; // Fallback to UTC if timezone is missing
 };
+
+const HourChip = React.memo(({ time, selectedTime, onSelect }) => {
+  const isSelected = selectedTime?.id === time.id;
+  const handlePress = useCallback(() => onSelect(time), [onSelect, time]);
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      style={[styles.hourChip, isSelected && styles.hourChipSelected]}
+    >
+      <Text style={[styles.hourText, isSelected && styles.hourTextSelected]}>
+        {new Date(time.startTime).toLocaleTimeString('ca-CA', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: getSafeTimezone(time.timezone) })}
+      </Text>
+    </Pressable>
+  );
+});
 
 export default function RegisterProStepMeet() {
   const router = useRouter();
@@ -68,47 +84,28 @@ export default function RegisterProStepMeet() {
     return marks;
   }, [groupedAvailabilities, selectedDate]);
 
-  const renderHourChip = (time: any) => {
-    const isSelected = selectedTime?.id === time.id; // Compare by id
-    return (
-      <Pressable
-        key={time.id}
-        onPress={() => setSelectedTime(time)} // Store the whole object
-        style={[styles.hourChip, isSelected && styles.hourChipSelected]}
-      >
-        <Text style={[styles.hourText, isSelected && styles.hourTextSelected]}>
-          {new Date(time.startTime).toLocaleTimeString('ca-CA', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: getSafeTimezone(time.timezone) })}
-        </Text>
-      </Pressable>
-    );
-  };
-
   const handleRegister = async () => {
     if (!selectedTime) {
       setError('Veuillez sélectionner un créneau horaire.');
       return;
     }
 
-    // Format time to UTC HH:MM for the backend
-    const dateObj = new Date(selectedTime.startTime);
-    const utcHours = String(dateObj.getUTCHours()).padStart(2, '0');
-    const utcMinutes = String(dateObj.getUTCMinutes()).padStart(2, '0');
-    const formattedTime = `${utcHours}:${utcMinutes}`;
-
     const payload = {
       ...params,
       appointment: {
         practitionerId: 1,
-        date: selectedDate,
-        startTime: formattedTime, // Send time in UTC format (e.g., "18:30")
+        startTime: selectedTime.startTime, // Send the full ISO string
       },
     };
-    // console.log(payload);
+
     try {
       await api.post('/auth/register-practitioner', payload);
       router.replace('/(auth)/login');
     } catch (e: any) {
-      setError('Erreur lors de l\'inscription: ' + (e.response?.data?.message || e.message));
+      console.error("Caught Error:", JSON.stringify(e.response?.data, null, 2));
+      const message = e.response?.data?.message || e.message;
+      const errorMessage = Array.isArray(message) ? message.join(', ') : message;
+      setError('Erreur lors de l\'inscription: ' + errorMessage);
     }
   };
 
@@ -164,14 +161,21 @@ export default function RegisterProStepMeet() {
 
       <View style={styles.hoursWrap}>
         <Text style={styles.subSectionTitle}>Horaires</Text>
-        <View style={styles.chipsRow}>
-          {groupedAvailabilities[selectedDate] ? (
-            groupedAvailabilities[selectedDate].map(renderHourChip)
-          ) : (
-            <Text>Aucun créneau disponible pour cette date.</Text>
+        <FlatList
+          data={groupedAvailabilities[selectedDate] || []}
+          renderItem={({ item }) => (
+            <HourChip
+              time={item}
+              selectedTime={selectedTime}
+              onSelect={setSelectedTime}
+            />
           )}
-        </View>
-    
+          keyExtractor={(item) => item.id.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsRow}
+          ListEmptyComponent={<Text>Aucun créneau disponible pour cette date.</Text>}
+        />
       </View>
           <View>
         <TouchableOpacity

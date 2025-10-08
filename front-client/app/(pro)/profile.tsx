@@ -15,11 +15,24 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { usePractitioner } from "@/context/PractitionerContext";
+import NextMeetingCard from '@/components/NextMeetingCard';
+import { Appointment } from '@/interfaces/types';
 
 
 const MyPatientsView = () => {
-    const { profile } = usePractitioner(); // expects context to expose existing availabilities
-    
+    const { profile } = usePractitioner(); 
+    const [interviewAppointments, setInterviewAppointments] = useState<Appointment[]>([]);
+      const [loadingInterviews, setLoadingInterviews] = useState(true);
+      const [refreshing, setRefreshing] = useState(false);
+
+      
+    const allUpcomingAppointments = useMemo(() => {
+        const patientAppointments = (profile?.appointments || []);
+        const markedInterviewAppointments = interviewAppointments.map(a => ({ ...a, isInterview: true }));
+        const combined = [...patientAppointments, ...markedInterviewAppointments];
+        combined.sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+        return combined;
+      }, [profile, interviewAppointments]);
     return (
         <SafeAreaView> </SafeAreaView>
     );
@@ -27,7 +40,7 @@ const MyPatientsView = () => {
 const MyProfileView = () => {
         const { profile } = usePractitioner(); // expects context to expose existing availabilities
         return (
-        <SafeAreaView> </SafeAreaView>
+        <SafeAreaView />
     );
 };
 

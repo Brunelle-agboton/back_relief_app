@@ -5,8 +5,9 @@ export enum EstablishmentType {
 }
 
 export enum ProfessionalType {
-  KINESIOLOGUE = 'Kinesiologue',
-  PHYSIOTHERAPIST = 'Physiotherapist',
+  KINESIOLOGUE = 'kinesiologue',
+ORTHOPEDIST = 'orthopedist',
+  PHYSIOTHERAPIST = 'physiotherapist',
   ERGOTHERAPEUTE = 'Ergothérapeute',
   OTHER = 'other',
 }

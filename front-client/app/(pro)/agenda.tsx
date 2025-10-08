@@ -390,7 +390,7 @@ const AvailabilityView = () => {
             theme={{
                backgroundColor: "#EBF2F3",
                calendarBackground: "#EBF2F3",
-     selectedDayBackgroundColor: "#D9FBEA",
+     selectedDayBackgroundColor: "#1662A9",
         todayTextColor: "#064E3B",
               arrowColor: "#475569",
               monthTextColor: "#475569",

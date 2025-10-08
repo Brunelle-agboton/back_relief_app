@@ -19,7 +19,7 @@ export class AppointmentService {
   ) {}
 
   async create(createAppointmentDto: CreateAppointmentDto): Promise<Appointment> {
-    const { patientId, practitionerId, date, time, note } = createAppointmentDto;
+    const { patientId, practitionerId, startTime, note } = createAppointmentDto;
 
     // 1. Find Patient (User)
     const patient = await this.userService.findOne(patientId);
@@ -33,12 +33,11 @@ export class AppointmentService {
       throw new NotFoundException(`Practitioner with ID ${practitionerId} not found.`);
     }
 
-    // 3. Combine date and time to create start_at and calculate end_at
-    const startDateTimeString = `${date}T${time}`; // Assuming date is YYYY-MM-DD and time is HH:MM
-    const start_at = new Date(startDateTimeString);
+    // 3. Create start_at from the provided ISO string
+    const start_at = new Date(startTime);
 
     if (isNaN(start_at.getTime())) {
-      throw new BadRequestException('Invalid date or time format.');
+      throw new BadRequestException('Invalid startTime format. Please provide a valid ISO 8601 date string.');
     }
 
     // Appointment duration is 30 minutes

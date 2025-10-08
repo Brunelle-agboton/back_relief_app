@@ -36,7 +36,14 @@ export const PractitionerProvider = ({ children }: { children: ReactNode }) => {
         setProfile(response.data);
         setError(null);
       } catch (e: any) {
-        setError(e.message || 'Failed to fetch practitioner profile.');
+        if (e.response && e.response.status === 404) {
+          // Profile not found, which is normal for a new user.
+          setProfile(null);
+          setError(null);
+        } else {
+          // For other errors (network, server error, etc.), set the error state.
+          setError(e.message || 'Failed to fetch practitioner profile.');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -51,6 +58,11 @@ export const PractitionerProvider = ({ children }: { children: ReactNode }) => {
     // On charge le profil uniquement si un token est présent
     if (authState.token) {
       fetchProfile();
+    } else {
+      // No token, so we are not fetching anything.
+      setIsLoading(false);
+      setProfile(null);
+      setError(null);
     }
   }, [authState.token]); // Se redéclenche si l'utilisateur change (login/logout)
 

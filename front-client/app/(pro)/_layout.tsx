@@ -41,10 +41,9 @@ const ProLayout = () => {
             // TabBar container style (rounded, floating)
             tabBarStyle: {
               backgroundColor: "#1662A9",
-              
                borderTopWidth: Platform.OS === 'ios' ? 0.2 : 0,
-    height: Platform.OS === 'ios' ? 85 : 75,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 12,
+                height: Platform.OS === 'ios' ? 85 : 75,
+                paddingBottom: Platform.OS === 'ios' ? 28 : 12,
             },
             tabBarItemStyle: {
                     borderRadius: 25,
@@ -88,7 +87,7 @@ const ProLayout = () => {
               headerShown: false,
             }}
           />
-                    {/* Profil / Paramètres */}
+                    {/* Profil */}
           <Tabs.Screen
             name="profile"
             options={{

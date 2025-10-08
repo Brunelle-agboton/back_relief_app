@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Stack } from 'expo-router';
 import BackButton from '@/components/BackButton';
 
-export default function PauseActiveLayout() {
+export default function TeleconsultationLayout() {
   return (
     <Stack
       screenOptions={{

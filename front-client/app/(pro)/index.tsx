@@ -161,6 +161,15 @@ export default function ProDashboard() {
     setRefreshing(false);
   }, [refetchProfile, fetchInterviewAppointments]);
 
+  const isProfileCompletionUnlocked = useMemo(() => {
+    return interviewAppointments.some(appointment => appointment.status === 'completed');
+  }, [interviewAppointments]);
+
+  const isProfileComplete = useMemo(() => {
+    return profile?.specialties && profile.specialties.length > 0;
+  }, [profile]);
+
+  console.log("is ok ? ",isProfileComplete )
   if (loadingProfile || (loadingInterviews && interviewAppointments.length === 0)) {
     return <View style={[styles.container, styles.centered]}><ActivityIndicator size="large" color="#1662A9" /></View>;
   }
@@ -212,20 +221,31 @@ export default function ProDashboard() {
         contentContainerStyle={{ paddingBottom: 200 }}
       />
       {/* Bouton */}
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => router.push('/(tabs)/pauseActive')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.buttonText}>Compléter votre profil </Text>
-               <View style={styles.chevronContainer}>
-              {chevrons.map((anim, i) => (
-                <Animated.View key={i} style={{ opacity: anim, marginLeft: i === 0 ? 2 : 0 }}>
-                  <FontAwesome name="chevron-right" size={38} color="#fff" />
-                </Animated.View>
-              ))}
-            </View>
-            </TouchableOpacity>
+      {!isProfileComplete && (
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: isProfileCompletionUnlocked ? '#1662A9' : '#DADADA' }]}
+          onPress={() => {
+            if (isProfileCompletionUnlocked) {
+              router.push('/(auth)/register-pro/step2-specialities');
+            } else {
+              Alert.alert(
+                "Action non autorisée",
+                "Vous devez avoir réalisé un entretien Tantely pour pouvoir compléter votre profil."
+              );
+            }
+          }}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonText}>Compléter votre profil </Text>
+           <View style={styles.chevronContainer}>
+          {chevrons.map((anim, i) => (
+            <Animated.View key={i} style={{ opacity: anim, marginLeft: i === 0 ? 2 : 0 }}>
+              <FontAwesome name="chevron-right" size={38} color="#fff" />
+            </Animated.View>
+          ))}
+        </View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

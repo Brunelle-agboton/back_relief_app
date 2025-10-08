@@ -33,12 +33,12 @@ export default function RegisterProStep2Screen() {
       return;
     }
     setError('');
+    const diplomes = [{diplome, school, country, yearExperience}]
     router.push({
       pathname: '/register-pro/step3-availabilities',
       params: { 
         ...params, // Passer tous les anciens paramètres
-        diplome, school, country, yearExperience,
-
+        diplomes: JSON.stringify(diplomes),
         proSpecialities: JSON.stringify(proSpecialities) // Passer les spécialités en JSON
       }
     });

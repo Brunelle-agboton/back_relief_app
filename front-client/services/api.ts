@@ -2,6 +2,7 @@ import axios from 'axios';
 import { getToken } from '../utils/storage';
 
 export const baseURL = 'https://privately-beloved-cowbird.ngrok-free.app/';
+// export const  baseURL= 'http://localhost:3000/';
 
 const api = axios.create({
   // baseURL: 'http://localhost:3000/', 

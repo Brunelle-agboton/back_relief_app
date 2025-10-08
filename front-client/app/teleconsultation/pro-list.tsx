@@ -10,6 +10,7 @@ const SPECIALTY_COLORS: { [key: string]: string } = {
   'kinesiologue': '#CDFBE2',
   'physiotherapist': '#FFEDCC',
   'ergotherapist': '#C9E8FC',
+  'orthopedist': '#fcc9f3ff',
 };
 
 // --- ProCard Component (adapted for PractitionerProfile) ---
@@ -44,16 +45,17 @@ const ProCard = ({ item }: { item: PractitionerProfile }) => {
       ]}
       onPress={handlePress}
       accessibilityRole="button"
-      accessibilityLabel={`Voir le profil de ${item.user.userName}`}
+      accessibilityLabel={`Voir le profil de ${item.user?.userName}`}
     >
       <Image source={{ uri: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d' }} style={styles.cardImage} /> {/* Placeholder image */}
-      <Text style={styles.cardName}>{item.user.userName}</Text>
+      <Text style={styles.cardName}>{item.user?.userName}</Text>
       <Text style={styles.cardSpecialty}>{item.professionalType}</Text>
       <View style={styles.locationContainer}>
         <MaterialIcons name="location-on" size={14} color="#6C757D" />
         <Text style={styles.cardLocation}>{`${item.city}, ${item.country}`}</Text>
       </View>
-      <Text style={styles.cardAvailability}>A partir du {'\n'}{nextAvailabilityText}</Text>
+      <Text style={styles.cardAvailability}>{`A partir du
+${nextAvailabilityText}`}</Text>
       <Pressable style={styles.bookButton} onPress={handlePress}>
         <Text style={styles.bookButtonText}>Prendre RDV</Text>
       </Pressable>
@@ -116,7 +118,7 @@ export default function ProListScreen() {
     // Then apply search query filter
     if (searchQuery) {
       prosToFilter = prosToFilter.filter(pro =>
-        pro.user.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        pro.user?.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         pro.professionalType.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }

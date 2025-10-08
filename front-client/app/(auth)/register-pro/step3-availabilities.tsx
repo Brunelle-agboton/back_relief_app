@@ -1,226 +1,256 @@
 import React, { useState, useMemo } from 'react';
-import { View, Pressable, Dimensions, TouchableOpacity, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { CalendarList } from "react-native-calendars";
-import { formatDate, timeSlots, daysOfWeek } from '@/utils/availabilities';
+import { Calendar } from "react-native-calendars";
+import { LocaleConfig } from 'react-native-calendars';
+import { usePractitioner } from '@/context/PractitionerContext';
 import api from '@/services/api';
+
+LocaleConfig.locales['fr'] = {
+  monthNames: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
+  monthNamesShort: ['Janv.','Févr.','Mars','Avril','Mai','Juin','Juil.','Août','Sept.','Oct.','Nov.','Déc.'],
+  dayNames: ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'],
+  dayNamesShort: ['Dim.','Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.'],
+  today: 'Aujourd\'hui'
+};
+LocaleConfig.defaultLocale = 'fr';
+
+const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+const morningSlots = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30'];
+const afternoonSlots = ['13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'];
 
 export default function RegisterProStep3Screen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [error, setError] = useState('');  // { [date: string]: string[] }
-  const [availabilities, setAvailabilities] = useState<Record<string, string[]>>({});
-  const [selectedDate, setSelectedDate] = useState<string>(formatDate());
-    const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
-  const intervalOptions = [15, 30, 45, 60];
-  const interval = 15
-    // Marked dates for CalendarList
-    const markedDates = useMemo(() => {
-      return {
-        [selectedDate]: {
-          selected: true,
-          selectedColor: "#D9FBEA", // mint highlight
-          selectedTextColor: "#03694B",
-        },
-      };
-    }, [selectedDate]);
+  const { profile, refetchProfile } = usePractitioner();
+  const [error, setError] = useState('');
 
-    const renderHourChip = (time: string) => {
-        const selected = selectedTimes.includes(time);
-        return (
-          <Pressable
-            key={time}
-            onPress={() => {
-              setSelectedTimes(prev => 
-                selected ? prev.filter(t => t !== time) : [...prev, time]
-              );
-            }}
-            style={[styles.hourChip, selected && styles.hourChipSelected]}
-          >
-            <Text style={[styles.hourText, selected && styles.hourTextSelected]}>{time}</Text>
-          </Pressable>
-        );
-      };
-    
+  const [dateRange, setDateRange] = useState({ startDate: null, endDate: null });
+  const [weeklySchedule, setWeeklySchedule] = useState<Record<string, string[]>>({
+    'Lundi': [], 'Mardi': [], 'Mercredi': [], 'Jeudi': [], 'Vendredi': [], 'Samedi': [], 'Dimanche': []
+  });
+  const [selectedDay, setSelectedDay] = useState('Lundi');
 
-       const handleRegister = async () => {
-        const playload = {...params,  availabilities};
-          try {
-            const res = await api.post('/practitioner-profile', playload);
-            
-              router.replace('/login');
-          } catch (e) {
-            setError('Erreur' + e);
+  const onDayPress = (day) => {
+    if (!dateRange.startDate || dateRange.endDate) {
+      setDateRange({ startDate: day.dateString, endDate: null });
+    } else {
+      const start = new Date(dateRange.startDate);
+      const end = new Date(day.dateString);
+      if (start > end) {
+        setDateRange({ startDate: day.dateString, endDate: dateRange.startDate });
+      } else {
+        setDateRange({ ...dateRange, endDate: day.dateString });
+      }
+    }
+  };
+
+  const markedDates = useMemo(() => {
+    const marked = {};
+    if (dateRange.startDate) {
+      marked[dateRange.startDate] = { startingDay: true, color: '#1662A9', textColor: 'white' };
+      if (dateRange.endDate) {
+        let currentDate = new Date(dateRange.startDate);
+        const endDate = new Date(dateRange.endDate);
+        while (currentDate <= endDate) {
+          const dateString = currentDate.toISOString().split('T')[0];
+          if (!marked[dateString]) {
+            marked[dateString] = { color: '#D9E8F5', textColor: 'black' };
           }
-        };
-  
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        marked[dateRange.endDate] = { endingDay: true, color: '#1662A9', textColor: 'white' };
+      }
+    }
+    return marked;
+  }, [dateRange]);
+
+  const toggleTimeSlot = (slot) => {
+    setWeeklySchedule(prev => {
+      const currentSlots = prev[selectedDay];
+      const newSlots = currentSlots.includes(slot)
+        ? currentSlots.filter(s => s !== slot)
+        : [...currentSlots, slot];
+      return { ...prev, [selectedDay]: newSlots.sort() };
+    });
+  };
+
+  const handleProfile = async () => {
+    if (!dateRange.startDate || !dateRange.endDate) {
+      Alert.alert("Erreur", "Veuillez sélectionner une période de début et de fin.");
+      return;
+    }
+
+    const generatedAvailabilities = {};
+    let currentDate = new Date(dateRange.startDate);
+    const endDate = new Date(dateRange.endDate);
+
+    while (currentDate <= endDate) {
+      const dayOfWeek = daysOfWeek[currentDate.getDay() === 0 ? 6 : currentDate.getDay() - 1];
+      const slots = weeklySchedule[dayOfWeek];
+      
+      if (slots.length > 0) {
+        const dateString = currentDate.toISOString().split('T')[0];
+        generatedAvailabilities[dateString] = slots;
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    const payload = { ...params, availabilities: generatedAvailabilities };
+    try {
+        const res = await api.patch(`/practitioner-profile/complete-profile/${profile?.id}`, payload);
+        await refetchProfile();
+        router.replace('/(pro)');
+    } catch (e) {
+        setError('Erreur: ' + e.message);
+        console.error('Erreur', e);
+    }
+  };
+
+  const renderHourChip = (time: string) => {
+    const isSelected = weeklySchedule[selectedDay].includes(time);
+    return (
+      <TouchableOpacity
+        key={time}
+        style={[styles.hourChip, isSelected && styles.hourChipSelected]}
+        onPress={() => toggleTimeSlot(time)}
+      >
+        <Text style={[styles.hourText, isSelected && styles.hourTextSelected]}>{time}</Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <ScrollView style={styles.container}>
-    <Text style={styles.title}>Vos disponibilités</Text>
-  {/* Calendar (react-native-calendars) */}
-        <View style={styles.calendarWrap}>
-          <CalendarList
-            horizontal
-            pagingEnabled
-            calendarWidth={Dimensions.get("window").width - 32}
-            pastScrollRange={0}
-            futureScrollRange={12}
-            onDayPress={(day) => {
-              setSelectedDate(day.dateString);
-              setSelectedTimes([]);
-            }}
-            markedDates={markedDates}
-            theme={{
-              backgroundColor: "#EBF2F3",
-              calendarBackground: "#EBF2F3",
-              textSectionTitleColor: "#222",
-              selectedDayBackgroundColor: "#D9FBEA",
-              selectedDayTextColor: "#03694B",
-              todayTextColor: "#03694B",
-              dayTextColor: "#333",
-              textDisabledColor: "#cfcfcf",
-              dotColor: "#00adf5",
-              arrowColor: "#9AA2A9",
-              monthTextColor: "#4A5568",
-              textDayFontSize: 12,
-              textMonthFontSize: 14,
-              textDayHeaderFontSize: 12,
-            }}
-            style={{ borderRadius: 12 }}
-            hideArrows={false}
-            showScrollIndicator={false}
-          />
-        </View>
-{/* 
-<Text style={styles.sectionTitle}>Intervalle (en minutes)</Text>                                                             
-       <View style={styles.intervalContainer}>                                                                                      
-        {intervalOptions.map(opt => (                                                                                             
-          <TouchableOpacity                                                                                                        
-           key={opt}                                                                                                        
-           style={[styles.intervalButton, interval === opt && styles.intervalButtonSelected]}                                
-             onPress={() => setInterval(opt)}                                                                               
-          >                                                                                                                  
-           <Text style={[styles.intervalText, interval === opt && styles.intervalTextSelected]}>{opt}</Text>                  
-         </TouchableOpacity>                                                                                                     
-     ))}                                                                                                                       
-   </View>  */}
+      <Text style={styles.title}>Vos disponibilités</Text>
 
-        {/* Heures */}
-        <Text style={[styles.sectionTitle, { marginTop: 18 }]}>Creneaux pour le {selectedDate}</Text>
+      <Text style={styles.sectionTitle}>1. Choisissez une période</Text>
+              <View style={styles.calendarWrap}>
+      
+      <Calendar
+        onDayPress={onDayPress}
+        markingType={'period'}
+        markedDates={markedDates}
+        theme={{
+                backgroundColor: "#EBF2F3",
+               calendarBackground: "#EBF2F3",
+            arrowColor: '#1662A9',
+            monthTextColor: '#1662A9',
+        }}
+      />
+</View>
+      <Text style={styles.sectionTitle}>2. Définissez vos horaires hebdomadaires</Text>
+      <View style={styles.hoursWrap}>
 
-        <View style={styles.hoursWrap}>
-          <Text style={styles.subSectionTitle}>Matin</Text>
-          <View style={styles.chipsRow}>
-            <TouchableOpacity onPress={() => setSelectedTimes(timeSlots)} style={styles.selectAllButton}><Text style={styles.selectAllButtonText}>Tout sélectionner</Text></TouchableOpacity>
-            <TouchableOpacity onPress={() => setSelectedTimes([])} style={styles.selectAllButton}><Text style={styles.selectAllButtonText}>Tout désélectionner</Text></TouchableOpacity>
-          </View>
-          <View style={styles.chipsRow}>
-            {timeSlots.map(renderHourChip)}
-          </View>
+      <View style={styles.weekDaysRow}>
+        {daysOfWeek.map(day => (
           <TouchableOpacity
-  style={styles.confirmBtn}
-  onPress={() => {
-    if (selectedTimes.length === 0) return;
-    setAvailabilities(prev => {
-      const existingTimes = prev[selectedDate] || [];
-      const newTimes = selectedTimes.filter(time => !existingTimes.includes(time));
-      return {
-        ...prev,
-        [selectedDate]: [...existingTimes, ...newTimes].sort(),
-      };
-    });
-    setSelectedTimes([]); // reset après ajout
-  }}
-  disabled={selectedTimes.length === 0}
->
-  <Text style={styles.confirmText}>Ajouter les créneaux</Text>
-</TouchableOpacity>
-        </View>
+            key={day}
+            style={[styles.dayCell, selectedDay === day && styles.dayCellSelected]}
+            onPress={() => setSelectedDay(day)}
+          >
+            <Text style={[styles.dayShort, selectedDay === day && styles.dayShortSelected]}>{day.substring(0, 3)}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      </View>
 
-       
-    {error ? <Text style={styles.error}>{error}</Text> : null}
- <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText} onPress={handleRegister}>S'inscrire</Text>
-      </TouchableOpacity> 
-        </ScrollView>
-);
+      <View style={styles.hoursWrap}>
+        <Text style={styles.subSectionTitle}>Matin</Text>
+        <View style={styles.chipsRow}>
+          {morningSlots.map(renderHourChip)}
+        </View>
+      </View>
+
+       <View style={styles.hoursWrap}>
+        <Text style={styles.subSectionTitle}>Après-midi</Text>
+        <View style={styles.chipsRow}>
+          {afternoonSlots.map(renderHourChip)}
+        </View>
+      </View>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <TouchableOpacity style={styles.button} onPress={handleProfile}>
+        <Text style={styles.buttonText}>Confirmer le profil</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
 }
 
 const styles = StyleSheet.create({
-container: {
-  flex: 1,
-  padding: 20,
-  // justifyContent: 'center',
-  backgroundColor: '#fff',
-},
-title: {
-  fontSize: 24,
-  fontWeight: 'bold',
-  textAlign: 'center',
-  marginBottom: 20,
-  color: '#333',
-},
-error: {
-  color: 'red',
-  marginBottom: 16,
-  textAlign: 'center',
-},
- button: { 
-  marginTop: 20,
-  marginBottom: 46,
-
-  padding: 16, 
-  alignItems: 'center',
-  borderRadius: 28, 
-  backgroundColor: '#FF8C00'},
- buttonText: { color: '#ffff', fontWeight: 'bold', fontSize: 18 },
- /* Sections */
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#0F1724",
-    marginBottom: 8,
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
   },
-
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  subSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 15,
+    marginBottom: 10,
+  },
   calendarWrap: {
     backgroundColor: "#EBF2F3",
     borderRadius: 24,
     padding: 10,
-    // drop shadow subtle
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.03,
     shadowRadius: 8,
     elevation: 1,
   },
-
-  /* Hours */
+  weekDaysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  dayCell: {
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    width: 45,
+  },
+  dayCellSelected: {
+    backgroundColor: '#1662A9',
+  },
+  dayShort: {
+    fontSize: 14,
+    color: 'black',
+  },
+  dayShortSelected: {
+    color: 'white',
+  },
   hoursWrap: {
     backgroundColor: "#EBF2F3",
+    textAlign: 'center',
     borderRadius: 24,
     padding: 12,
     marginTop: 10,
-    // shadow subtle
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.02,
-    shadowRadius: 6,
-    elevation: 1,
   },
-  subSectionTitle: { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 8 },
-
   chipsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8, // ios/android newer RN support; fallback with margin
+    gap: 8,
   },
   hourChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 3,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: "#fff",
-    marginRight: 8,
-    marginBottom: 8,
   },
   hourChipSelected: {
     backgroundColor: "#DFF3E6",
@@ -229,51 +259,23 @@ error: {
   },
   hourText: { color: "#374151" },
   hourTextSelected: { color: "#03694B" },
-
-  /* Confirm */
-  confirmBtn: {
-    width: '80%',
-    marginLeft: 42,
-
-    marginTop: 18,
-    backgroundColor: "#DFFCEB",
-    borderRadius: 15,
-    paddingVertical: 14,
-    alignItems: "center",
+  button: {
+    marginTop: 30,
+    padding: 15,
+    marginHorizontal:20,
+    backgroundColor: '#1662A9',
+    borderRadius: 18,
+    alignItems: 'center',
+    marginBottom: 40,
   },
-  confirmBtnDisabled: {
-    opacity: 0.8,
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
-  confirmText: { color: "#0B2E20", fontWeight: "700", fontSize: 16 },
-    intervalContainer: {                                                                                                             
-        flexDirection: 'row',                                                                                                          
-        justifyContent: 'center',                                                                                                      
-        gap: 10,                                                                                                                       
-        marginBottom: 10,                                                                                                              
-      },                                                                                                                               
-      intervalButton: {                                                                                                                
-        paddingHorizontal: 20,                                                                                                         
-        paddingVertical: 10,                                                                                                           
-        borderRadius: 20,                                                                                                              
-        backgroundColor: '#F0F0F0',                                                                                                    
-      },                                                                                                                               
-      intervalButtonSelected: {                                                                                                        
-        backgroundColor: '#FF8C00',                                                                                                    
-      },                                                                                                                               
-      intervalText: {                                                                                                                  
-        color: '#333',                                                                                                                 
-        fontWeight: '600',                                                                                                             
-      },                                                                                                                               
-      intervalTextSelected: {                                                                                                          
-        color: '#fff',                                                                                                                 
-      },  
-      selectAllButton: {
-        backgroundColor: '#ddd',
-        padding: 10,
-        borderRadius: 5,
-        margin: 15,
-      },
-      selectAllButtonText: {
-        color: '#333',
-      },
+  error: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 10,
+  }
 });

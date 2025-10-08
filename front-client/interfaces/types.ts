@@ -99,7 +99,7 @@ export interface Appointment {
   id: number;
   start_at: string;
   end_at: string;
-  status: 'confirmed' | 'cancelled' | 'pending';
+  status: 'confirmed' | 'cancelled' | 'completed';
   notes: string | null;
   meeting_url: string | null;
   cancellation_reason: string | null;

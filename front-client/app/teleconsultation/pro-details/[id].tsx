@@ -183,19 +183,12 @@ export default function ProBookingScreen() {
     
     const note = customReason || '';
 
-    // Format time to UTC HH:MM for the backend
-    const dateObj = new Date(selectedTime.startTime);
-    const utcHours = String(dateObj.getUTCHours()).padStart(2, '0');
-    const utcMinutes = String(dateObj.getUTCMinutes()).padStart(2, '0');
-    const timeInUTC = `${utcHours}:${utcMinutes}`;
-
     try {
       await api.post(`/appointments`, {
         patientId: parseInt(authState?.user?.sub ?? '', 10),
         practitionerId: PRO.id,
-        date: selectedDate,
-        time: timeInUTC, // <-- Send UTC time
-        note: note?.trim() || undefined,
+        startTime: selectedTime.startTime,
+        notes: note?.trim() || undefined,
       });
       Alert.alert('Succès', `RDV demandé : ${selectedDate} ${timeHHMM(new Date(selectedTime.startTime), selectedTime.timezone)}`);
       router.push(`/(tabs)/my-space`);
