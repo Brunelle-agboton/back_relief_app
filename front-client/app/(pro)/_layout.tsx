@@ -95,6 +95,7 @@ const ProLayout = () => {
               tabBarIcon: ({ color, focused }) => (
                 <Ionicons name={focused ? "folder-sharp" : "folder-outline"} size={22} color={color} />
               ),
+              headerShown: false
             }}
           />
 

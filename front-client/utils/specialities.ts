@@ -17,7 +17,7 @@ export const specialites = [
 
 export const DUMMY_SPECIALTIES = [
   { id: '1', name: 'kinesiologue', displayName: 'Kinésiologue', imageUrl: require('@/assets/images/specialities/kine.png') },
-  { id: '3', name: 'ergotherapist', displayName: 'Ergothérapeute', imageUrl: require('@/assets/images/specialities/ergo.png') },
+  { id: '3', name: 'Ergothérapeute', displayName: 'Ergothérapeute', imageUrl: require('@/assets/images/specialities/ergo.png') },
   { id: '4', name: 'orthopedist', displayName: 'Orthopédique', imageUrl: require('@/assets/images/specialities/ergo.png') },
   // Add other professional types as needed, matching backend enum values
 ];

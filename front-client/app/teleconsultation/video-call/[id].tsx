@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Button, Platform } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Button, Platform, PermissionsAndroid, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSocket } from '@/context/SocketContext';
+import { useAuth } from '@/context/AuthContext';
 import {
   RTCPeerConnection,
   RTCIceCandidate,
@@ -13,7 +14,12 @@ import {
 const configuration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    // You might need TURN servers for production
+    { urls: 'stun:stun.services.mozilla.com:3478' },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
   ],
 };
 
@@ -21,6 +27,8 @@ const VideoCallScreen = () => {
   const { id: roomId } = useLocalSearchParams();
   const router = useRouter();
   const { socket, isConnected } = useSocket();
+  const { authState, isLoading } = useAuth();
+  
 
   const [localStream, setLocalStream] = useState<any>(null);
   const [remoteStream, setRemoteStream] = useState<any>(null);
@@ -40,7 +48,38 @@ const VideoCallScreen = () => {
 
     console.log(`VideoCallScreen: Connected to socket, Room ID: ${roomId}`);
 
+    const requestPermissions = async () => {
+      if (Platform.OS === 'android') {
+        try {
+          const granted = await PermissionsAndroid.requestMultiple([
+            PermissionsAndroid.PERMISSIONS.CAMERA,
+            PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          ]);
+          if (
+            granted['android.permission.CAMERA'] === PermissionsAndroid.RESULTS.GRANTED &&
+            granted['android.permission.RECORD_AUDIO'] === PermissionsAndroid.RESULTS.GRANTED
+          ) {
+            return true;
+          } else {
+            console.log('Permissions denied');
+            return false;
+          }
+        } catch (err) {
+          console.warn(err);
+          return false;
+        }
+      }
+      return true;
+    };
+
     const setupWebRTC = async () => {
+      const permissionsGranted = await requestPermissions();
+      if (!permissionsGranted) {
+        // Handle permission denial, maybe show a message to the user
+        router.replace('/');
+        return;
+      }
+
       console.log('Setting up WebRTC...');
       peerConnection.current = new RTCPeerConnection(configuration);
 
@@ -48,6 +87,13 @@ const VideoCallScreen = () => {
         if (event.candidate) {
           console.log('Sending ICE candidate', event.candidate);
           socket.emit('ice_candidate', { candidate: event.candidate, roomId });
+        }
+      };
+
+      peerConnection.current.ontrack = (event) => {
+        if (event.streams && event.streams[0]) {
+          console.log('Remote stream received', event.streams[0]);
+          setRemoteStream(event.streams[0]);
         }
       };
 
@@ -121,7 +167,16 @@ const VideoCallScreen = () => {
       socket.off('answer');
       socket.off('ice_candidate');
     };
-  }, [socket, isConnected, roomId, router, localStream]);
+  }, [socket, isConnected, roomId, router]);
+
+  const handleEndCall = () => {
+    if(authState.user?.role === "user") {
+          router.replace('/(tabs)');
+      } 
+      else if(authState.user?.role === "practitioner"){
+        router.replace('/(pro)');
+      }
+  }
 
   if (!localStream) {
     return (
@@ -152,10 +207,9 @@ const VideoCallScreen = () => {
           />
         )}
       </View>
-      <Button title="End Call" onPress={() => {
-        // Implement call ending logic
-        router.replace('/'); // Redirect after ending call
-      }} />
+      <TouchableOpacity onPress={handleEndCall} style={{marginBottom: 19, borderRadius: 12, backgroundColor: "#39DF87"}}>
+        <Text>End Call</Text>
+      </TouchableOpacity>
     </View>
   );
 };

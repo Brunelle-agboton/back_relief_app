@@ -9,7 +9,7 @@ import { DUMMY_SPECIALTIES } from '@/utils/specialities';
 const SPECIALTY_COLORS: { [key: string]: string } = {
   'kinesiologue': '#CDFBE2',
   'physiotherapist': '#FFEDCC',
-  'ergotherapist': '#C9E8FC',
+  'Ergothérapeute': '#C9E8FC',
   'orthopedist': '#fcc9f3ff',
 };
 
@@ -54,8 +54,10 @@ const ProCard = ({ item }: { item: PractitionerProfile }) => {
         <MaterialIcons name="location-on" size={14} color="#6C757D" />
         <Text style={styles.cardLocation}>{`${item.city}, ${item.country}`}</Text>
       </View>
-      <Text style={styles.cardAvailability}>{`A partir du
-${nextAvailabilityText}`}</Text>
+      <View style={{ alignItems: 'center', marginBottom: 8 }}>
+        <Text style={[styles.cardAvailability, { fontWeight: '600' }]}>A partir du</Text>
+        <Text style={[styles.cardAvailability, { fontWeight: '600', marginTop: -12}]}>{nextAvailabilityText}</Text>
+      </View>
       <Pressable style={styles.bookButton} onPress={handlePress}>
         <Text style={styles.bookButtonText}>Prendre RDV</Text>
       </Pressable>

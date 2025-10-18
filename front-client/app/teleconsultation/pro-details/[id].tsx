@@ -292,7 +292,7 @@ export default function ProBookingScreen() {
           </View>
           <Text style={[styles.subSectionTitle, { marginTop: 12 }]}>Après-midi</Text>
           <View style={styles.chipsRow}>
-            {afternoonSlots.length > 0 ? afternoonSlots.map(renderHourChip) : <Text style={styles.noSlotText}>Aucun crén créneau l'après-midi</Text>}
+            {afternoonSlots.length > 0 ? afternoonSlots.map(renderHourChip) : <Text style={styles.noSlotText}>Aucun créneau l'après-midi</Text>}
           </View>
         </View>
         <Text style={styles.sectionTitle}>Motif</Text>

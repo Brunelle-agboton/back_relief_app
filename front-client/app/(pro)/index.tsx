@@ -31,9 +31,9 @@ const renderAppointment = ({ item }: { item: Appointment }) => {
     item: {
       id: item.id,
       imageUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d',
-      name: item.isInterview ? (item.practitioner?.professionalType || 'Admin') : (item.patient?.userName || 'Patient inconnu'),
+      name: item.isInterview ? (item.practitionerProfile?.professionalType || 'Admin') : (item.patient?.userName || 'Patient inconnu'),
       specialty: item.isInterview ? 'Entretien de validation' : `${item.patient?.role} - ${item.patient?.email || 'email inconnu'}`,
-      location: item.isInterview ? (item.practitioner?.city || 'Lieu inconnu') : 'En ligne',
+      location: item.isInterview ? (item.practitionerProfile?.city || 'Lieu inconnu') : 'En ligne',
     },
     backgroundColor: backgroundColor,
   };

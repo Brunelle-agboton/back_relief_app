@@ -92,10 +92,10 @@ export default function TabLayout() {
             headerBackground: () => <View style={styles.headerBg} />,
             tabBarActiveTintColor: '#39DF87',
             tabBarInactiveTintColor: '#fff',
-           
              tabBarItemStyle: {
-                    borderRadius: 25,
-          marginVertical: 4,                    
+            borderRadius: 25,
+          marginVertical: 6,     
+                         
           padding: 1,                           // padding interne
         },
           tabBarActiveBackgroundColor: '#fff',    // fond blanc quand actif
@@ -104,6 +104,7 @@ export default function TabLayout() {
             tabBarIconStyle: styles.tabIcon,
             tabBarHideOnKeyboard: true,
             tabBarStyle: styles.tabBar,
+    borderRadius: 25,
 
             freezeOnBlur: true,
           
@@ -221,7 +222,7 @@ const styles = StyleSheet.create({
   tabIcon: {
     marginBottom: -4,
   },
-    tabButton: {
+  tabButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
   },
   tabButtonActive: {
     backgroundColor: '#fff',
-    borderRadius: 25,
+    borderRadius: 20,
   },
   modalOverlay: {
     flex: 1,

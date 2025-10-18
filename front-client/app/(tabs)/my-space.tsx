@@ -1,39 +1,56 @@
-import React from 'react';
+import React, { useState, useEffect} from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView,Image } from 'react-native';
 import { Divider } from 'react-native-elements'
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { Appointment } from '@/interfaces/types';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
+import { useAuth } from '@/context/AuthContext';
+import useAppointments from '@/hooks/useAppointments'; // Import the hook
 import NextMeetingCard from '@/components/NextMeetingCard';
+import api from '@/services/api';
 
-const item = {
-    id: '4',
-    name: 'Dr Frizzero Vicenzi Tantely ',
-    specialty: 'Kinésithérapeute, physiothérapeute  ',
-    imageUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d',
-    bio: 'Expert en analyse du mouvement et en performance physique.',
-    qualifications: ['Master en STAPS, spécialité Kinésiologie'],
-    rating: 4.7,
-    location: 'Québec,Canada',
-    nextAvailability: '26 Septembre, 11:00',
-  };
 export default function MySpace() {
   const router = useRouter();
-  const is_meetting = false; //true
+  const { authState } = useAuth();
+  const { appointments, loading } = useAppointments(authState.user?.sub, 'user');
+  const nextAppointment = appointments
+    .filter(a => new Date(a.start_at) > new Date())
+    .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())[0];
+
+  const isMeeting = !!nextAppointment;
+
+  const handleCancel = () => {
+    // Logic to cancel the appointment
+    alert('Rendez-vous annulé');
+  };
+
   return (
     <View style={styles.container}>
       <View style={{ flex: 1, marginTop: 0, justifyContent: 'flex-start' }}>
-         <Text style={[styles.subtitle, { paddingHorizontal: 6,  marginBottom: 25,}]}>Mon prochain rendez-vous</Text>
-        <NextMeetingCard 
-          isMeeting={is_meetting}
-          date="Lundi 15/09/2025"
-          time="22:00"
-          item={item}
-          reason="Douleurs lombaires et aux trapèzes"
-          onCancel={() => alert('Rendez-vous annulé')}
-          onJoin={() => alert('Rejoindre l’appel')}        
-        />
+        <Text style={[styles.subtitle, { paddingHorizontal: 6, marginBottom: 25 }]}>Mon prochain rendez-vous</Text>
+        {loading ? (
+          <Text>Chargement...</Text>
+        ) : isMeeting && nextAppointment && nextAppointment.practitionerProfile ? (
+          <NextMeetingCard
+            isMeeting={!isMeeting}
+            date={new Date(nextAppointment.start_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+            time={new Date(nextAppointment.start_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            item={{
+              id: nextAppointment.id,
+              imageUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d', // Placeholder, replace with actual image URL if available
+              location: nextAppointment.practitionerProfile.city,
+              name: nextAppointment.practitionerProfile.user?.userName || 'N/A',
+              specialty: nextAppointment.practitionerProfile.specialties.join(', '),
+            }}
+            reason={nextAppointment.notes || ''}
+            onCancel={handleCancel}
+          />
+        ) : (
+          <Text>Aucun rendez-vous à venir.</Text>
+        )}
+        
          <Text style={[styles.subtitle, { paddingHorizontal: 5,  paddingVertical: 16, marginTop: 20}]}>Consulter</Text>
         <TouchableOpacity
           activeOpacity={0.85}

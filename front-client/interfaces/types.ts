@@ -107,7 +107,7 @@ export interface Appointment {
   created_at: string;
   updated_at: string;
   patient?: User;
-  practitioner?: PractitionerProfile;
+  practitionerProfile?: PractitionerProfile;
   // Internal flag for UI logic
   isInterview?: boolean;
 }

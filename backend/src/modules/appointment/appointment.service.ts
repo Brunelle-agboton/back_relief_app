@@ -100,11 +100,13 @@ export class AppointmentService {
     return this.appointmentRepository.find({
       where: {
         patient: { id: userId },
+        status: AppointmentStatus.CONFIRMED,
       },
-      relations: ['patient', 'practitionerProfile'], // Include patient and practitioner details
+      relations: ['patient', 'practitionerProfile', 'practitionerProfile.user'], // Include patient and practitioner details
       order: {
         start_at: 'ASC', // Order by start time ascending
       },
+      // limit: 1, //Only get the next appointement
     });
   }
   // We will add more methods here later

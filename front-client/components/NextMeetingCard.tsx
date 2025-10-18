@@ -34,13 +34,10 @@ const NextMeetingCard: React.FC<NextMeetingCardProps> = ({ isMeeting, date, time
   const router = useRouter();
 
   const onJoin = () => {
-    console.log("Joinning waitng-room ")
     if (socket) {
-      console.log("Socket is : ")
-      socket.emit('join_room', { roomId: item.id }); // Assuming item.id is the room ID
+      socket.emit('joinRoom', { roomId: item.id }); // Assuming item.id is the room ID
       router.push(`/teleconsultation/waiting-room/${item.id}`);
     }
-     console.log("Joined waitng-room ")
   };
   if (isMeeting) {
     return (
@@ -80,7 +77,7 @@ const NextMeetingCard: React.FC<NextMeetingCardProps> = ({ isMeeting, date, time
           </View>
           <View style={styles.sectionContainerRight}>
             <View style={styles.cardTextContainer}>
-              <Text style={styles.cardName}>{item.name}</Text>
+              <Text style={styles.cardName}>Dr {item.name}</Text>
               <Text style={styles.cardSpecialty}>{item.specialty}</Text>
               <Text style={styles.cardBio}>Motif:{'\n'}{reason}</Text>
             </View>
@@ -118,13 +115,14 @@ const styles = StyleSheet.create({
         marginBottom: 14,
         backgroundColor: '#CDFBE2',
         borderRadius: 20,
-        padding: 10,
         height: 190,
         
       },
       sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        paddingTop: 5,
+        paddingHorizontal: 8,
         alignItems: 'center',
       },
       sectionTitle: {
@@ -136,19 +134,18 @@ const styles = StyleSheet.create({
       sectionContainer : {
         flexDirection: 'row',
         marginTop: 14,
-        justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 15,
      },
        sectionContainerLeft : {
         flexDirection: 'column',
-        justifyContent: 'space-between',
+        paddingHorizontal: 10,
         alignItems: 'center',
         marginBottom: 15,
      },
        sectionContainerRight : {
         flexDirection: 'column',
-        justifyContent: 'space-between',
+        paddingHorizontal: 18,
         alignItems: 'center',
         marginRight: 12,
     
