@@ -8,7 +8,7 @@ CreateDateColumn,
 UpdateDateColumn,
 ManyToOne,
 } from 'typeorm';
-import { PractitionerProfile } from 'src/modules/practitioner_profile/entities/practitioner_profile.entity';
+import { PractitionerProfile } from '../../practitioner_profile/entities/practitioner_profile.entity';
 import { Exclude } from 'class-transformer';
 
 @Entity('practitioner_diplome')

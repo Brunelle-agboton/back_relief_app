@@ -73,11 +73,34 @@ export class ProgramLineService {
     });;
   }
 
-  update(id: number, updateProgramLineDto: UpdateProgramLineDto) {
-    return `This action updates a #${id} programLine`;
+  async update(id: number, updateProgramLineDto: UpdateProgramLineDto) {
+    const line = await this.programLineRepository.findOneBy({ id });
+    if (!line) throw new Error(`ProgramLine with id ${id} not found`);
+
+    // Update fields
+    Object.assign(line, updateProgramLineDto);
+
+    // Handle relations if they are updated
+    if (updateProgramLineDto.programId) {
+      const program = await this.programRepository.findOneBy({ id: updateProgramLineDto.programId });
+      if (!program) throw new Error(`Program #${updateProgramLineDto.programId} not found`);
+      line.program = program;
+    }
+
+    if (updateProgramLineDto.exerciseId) {
+      const exercise = await this.exerciseRepository.findOneBy({ id: updateProgramLineDto.exerciseId });
+      if (!exercise) throw new Error(`Exercise #${updateProgramLineDto.exerciseId} not found`);
+      line.exercise = exercise;
+    }
+
+    return this.programLineRepository.save(line);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} programLine`;
+  async remove(id: number) {
+    const result = await this.programLineRepository.delete(id);
+    if (result.affected === 0) {
+      throw new Error(`ProgramLine with ID ${id} not found`);
+    }
+    return { message: `ProgramLine with ID ${id} has been successfully removed` };
   }
 }

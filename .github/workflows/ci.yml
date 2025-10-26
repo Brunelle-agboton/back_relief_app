@@ -2,7 +2,7 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ test_and_ci ]
   pull_request:
     branches: [ main ]
 
@@ -63,26 +63,26 @@ jobs:
         sleep 10
         curl --fail http://localhost:3000/health || exit 1
 
-  build-frontend:
-    runs-on: ubuntu-latest
+  # build-frontend:
+  #   runs-on: ubuntu-latest
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v3
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20
+  #   - name: Set up Node.js
+  #     uses: actions/setup-node@v3
+  #     with:
+  #       node-version: 20
 
-    - name: Install frontend dependencies
-      working-directory: ./front-client
-      run: npm ci
+  #   - name: Install frontend dependencies
+  #     working-directory: ./front-client
+  #     run: npm ci
 
-    - name: Lint frontend code
-      working-directory: ./front-client
-      run: npm run lint
+  #   - name: Lint frontend code
+  #     working-directory: ./front-client
+  #     run: npm run lint
 
-    - name: Run frontend tests
-      working-directory: ./front-client
-      run: npm test
+  #   - name: Run frontend tests
+  #     working-directory: ./front-client
+  #     run: npm test

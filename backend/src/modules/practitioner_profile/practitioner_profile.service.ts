@@ -9,7 +9,7 @@ import { UserService } from '../user/user.service';
 import { Availability } from '../availability/entities/availability.entity';
 import { AddAvailabilityToPractitionerDto } from './dto/add-availability-to-practitioner.dto';
 import { AvailabilityService } from '../availability/availability.service';
-import { PractitionerDiplome } from 'src/modules/practitioner_diplome/entities/practitioner_diplome.entity';
+import { PractitionerDiplome } from '../practitioner_diplome/entities/practitioner_diplome.entity';
 
 @Injectable()
 export class PractitionerProfileService {
@@ -33,7 +33,7 @@ export class PractitionerProfileService {
   }
   // Vérification de la valeur
   if (!Object.values(ProfessionalType).includes(profileData.professionalType)) {
-    throw new BadRequestException(`Invalid establishmentType: ${profileData.professionalType}`);
+    throw new BadRequestException(`Invalid professionalType: ${profileData.professionalType}`);
   }
     let specialtiesArray: string[];
     if (typeof proSpecialities === 'string') {
@@ -222,11 +222,22 @@ export class PractitionerProfileService {
     return this.availabilityService.create(newAvailability); // Use the AvailabilityService to save
   }
 
-  update(id: number, updatePractitionerProfileDto: UpdatePractitionerProfileDto) {
-    return `This action updates a #${id} practitionerProfile`;
+  async update(id: number, updatePractitionerProfileDto: UpdatePractitionerProfileDto): Promise<PractitionerProfile> {
+    const profile = await this.practitionerProfileRepository.findOne({ where: { id } });
+    if (!profile) {
+      throw new NotFoundException(`PractitionerProfile with ID ${id} not found`);
+    }
+
+    Object.assign(profile, updatePractitionerProfileDto);
+
+    return this.practitionerProfileRepository.save(profile);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} practitionerProfile`;
+  async remove(id: number): Promise<{ message: string }> {
+    const result = await this.practitionerProfileRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`PractitionerProfile with ID ${id} not found`);
+    }
+    return { message: `PractitionerProfile with ID ${id} has been successfully removed` };
   }
 }

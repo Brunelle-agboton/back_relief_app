@@ -11,7 +11,7 @@ OneToMany,
 import { User } from '../../user/entities/user.entity';
 import { Availability } from '../../availability/entities/availability.entity';
 import { Appointment } from '../../appointment/entities/appointment.entity';
-import { PractitionerDiplome } from 'src/modules/practitioner_diplome/entities/practitioner_diplome.entity';
+import { PractitionerDiplome } from '../../practitioner_diplome/entities/practitioner_diplome.entity';
 
 export enum ProfessionalType {
 KINESIOLOGUE = 'kinesiologue',

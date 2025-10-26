@@ -3,6 +3,7 @@ import { AvailabilityController } from './availability.controller';
 import { AvailabilityService } from './availability.service';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
 import { Availability } from './entities/availability.entity';
+import { PractitionerProfile } from '../practitioner_profile/entities/practitioner_profile.entity'
 
 describe('AvailabilityController', () => {
   let controller: AvailabilityController;
@@ -35,7 +36,7 @@ describe('AvailabilityController', () => {
   describe('create', () => {
     it('should create an availability', async () => {
       const createAvailabilityDto: CreateAvailabilityDto = {
-        practitionerId: 1,
+        practitionerProfile: new PractitionerProfile(),
         startTime: new Date(),
         endTime: new Date(),
         timezone: 'UTC',
