@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect , useRef} from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSocket } from '../../../context/SocketContext';
@@ -7,9 +7,13 @@ const WaitingRoomScreen = () => {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { socket, isConnected } = useSocket();
+  const initializedRef = useRef(false);
+
 
   useEffect(() => {
     console.log('WaitingRoomScreen useEffect triggered.');
+    if (initializedRef.current) return; // ⛔ stop le double call en dev
+  initializedRef.current = true;
     console.log(`Socket instance: ${socket ? 'available' : 'not available'}, Connected: ${isConnected}, Room ID: ${id}`);
 
     if (socket && isConnected && id) {

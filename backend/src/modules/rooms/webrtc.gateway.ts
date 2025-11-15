@@ -97,6 +97,11 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     let set = this.rooms.get(roomId);
+    if (set && set.has(user.userId)) {
+  this.logger.warn(`User ${user.userId} already in room ${roomId}`);
+  return;
+}
+
     if (!set) {
       set = new Set<number>();
       this.rooms.set(roomId, set);
@@ -126,11 +131,14 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.emit('joined', { roomId });
 
     if (set.size === 2) {
+      
       this.logger.log(`Room ${roomId} now has 2 participants. Emitting call_started.`);
       // If two users are in the room, signal both to start the call
       for (const userIdInRoom of set) {
         const socketIdInRoom = this.socketsByUser.get(userIdInRoom);
         if (socketIdInRoom) {
+          this.server.to(socketIdInRoom).emit('create_offer', { roomId });
+
           this.server.to(socketIdInRoom).emit('call_started', { roomId });
           this.logger.log(`Emitted call_started to user ${userIdInRoom} in room ${roomId}`);
         }

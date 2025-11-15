@@ -56,7 +56,7 @@ export default function RegisterProStepMeet() {
   useEffect(() => {
     const fetchAvailabilities = async () => {
       try {
-        const response = await api.get(`/practitioner-profile/by-email/userTest2@gmail.com`);
+        const response = await api.get(`/practitioner-profile/by-email/ftantely@gmail.com`);
         setAvailabilities(response.data.availabilities);
       } catch (e: any) {
         setError(e.message || 'Failed to fetch availabilities.');

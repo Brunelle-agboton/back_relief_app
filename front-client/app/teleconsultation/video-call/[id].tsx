@@ -90,10 +90,24 @@ const VideoCallScreen = () => {
         }
       };
 
-      peerConnection.current.ontrack = (event) => {
+      peerConnection.current.ontrack = (event: any ) => {
         if (event.streams && event.streams[0]) {
-          console.log('Remote stream received', event.streams[0]);
-          setRemoteStream(event.streams[0]);
+          const inbound = event.streams[0];
+    console.log('Remote stream received', inbound);
+
+    setRemoteStream(prev => {
+      // Première fois : pas de remote stream → on enregistre
+      if (!prev) return inbound;
+
+      // Même stream ID mais nouvelles tracks (audio puis vidéo)
+      if (prev._id === inbound._id) {
+        // On renvoie inbound pour forcer le rafraîchissement
+        return inbound;
+      }
+
+      // Nouveau stream (rare mais possible)
+      return inbound;
+    });
         }
       };
 
@@ -193,6 +207,7 @@ const VideoCallScreen = () => {
       <View style={styles.videoContainer}>
         {localStream && (
           <RTCView
+          
             streamURL={localStream.toURL()}
             style={styles.localVideo}
             objectFit={'cover'}
@@ -201,6 +216,7 @@ const VideoCallScreen = () => {
         )}
         {remoteStream && (
           <RTCView
+            key={remoteStream._id}
             streamURL={remoteStream.toURL()}
             style={styles.remoteVideo}
             objectFit={'cover'}
