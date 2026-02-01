@@ -257,31 +257,31 @@ if (existingSet?.has(user.userId)) {
     }
   }
 
-  // @SubscribeMessage('webrtc_ready')
-  // handleWebRtcReady(
-  //   @ConnectedSocket() client: Socket,
-  //   @MessageBody() payload: { roomId: string },
-  // ) {
-  //   const from = (client as any).user;
-  //   const { roomId } = payload;
-  //   const roomParticipants = this.rooms.get(roomId);
+  @SubscribeMessage('webrtc_ready')
+  handleWebRtcReady(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { roomId: string },
+  ) {
+    const from = (client as any).user;
+    const { roomId } = payload;
+    const roomParticipants = this.rooms.get(roomId);
 
-  //   if (!roomParticipants) {
-  //     return client.emit('error', 'Room not found');
-  //   }
+    if (!roomParticipants) {
+      return client.emit('error', 'Room not found');
+    }
 
-  //   // If there are two participants, and the other one is ready, 
-  //   // the initiator should send the offer.
-  //   if (roomParticipants.size === 2) {
-  //     for (const participantId of roomParticipants) {
-  //       if (participantId !== from.userId) {
-  //         const targetSock = this.socketsByUser.get(participantId);
-  //         if (targetSock) {
-  //           // Signal the other participant to create an offer
-  //           this.server.to(targetSock).emit('create_offer', { roomId });
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
+    // If there are two participants, and the other one is ready, 
+    // the initiator should send the offer.
+    if (roomParticipants.size === 2) {
+      for (const participantId of roomParticipants) {
+        if (participantId !== from.userId) {
+          const targetSock = this.socketsByUser.get(participantId);
+          if (targetSock) {
+            // Signal the other participant to create an offer
+            this.server.to(targetSock).emit('create_offer', { roomId });
+          }
+        }
+      }
+    }
+  }
 }

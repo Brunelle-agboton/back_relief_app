@@ -11,21 +11,24 @@ const WaitingRoomScreen = () => {
   const webRTCContext = useWebRTC();
   const setupWebRTC = webRTCContext?.setupWebRTC;
   const initializedRef = useRef(false);
+  const call_started = useRef(false);
 
 
   useEffect(() => {
     console.log('WaitingRoomScreen useEffect triggered.');
-    if (initializedRef.current) return; // ⛔ stop le double call en dev
-  initializedRef.current = true;
+    //if (initializedRef.current) return; // ⛔ stop le double call en dev
+    
+    initializedRef.current = true;
     console.log(`Socket instance: ${socket ? 'available' : 'not available'}, Connected: ${isConnected}, Room ID: ${id}`);
 
-    if (socket && isConnected && id) {
-      console.log(`Attempting to join room: ${id} via socket.emit('joinRoom').`);
+    if (socket && isConnected && id && !call_started.current) {
+      console.log(`1 :Attempting to join room: ${id} via socket.emit('joinRoom').`);
       socket.emit('joinRoom', { roomId: id });
 
+      setupWebRTC && setupWebRTC();
       socket.on('call_started', (data: { roomId: string }) => {
+        call_started.current = true;
         console.log(`Call started for room: ${data.roomId}`);
-          setupWebRTC && setupWebRTC();
           router.replace(`/teleconsultation/video-call/${id}`);
         }
       );
@@ -36,6 +39,11 @@ const WaitingRoomScreen = () => {
         socket.off('call_started');
         // Optional: Emit 'leave_room' if user navigates away before call starts
       };
+    }
+    if(socket && isConnected && id && call_started.current) {
+      console.log(`2 :Attempting to join room: ${id} via socket.emit('joinRoom').`);
+
+      router.replace(`/teleconsultation/video-call/${id}`);
     }
   }, [socket, isConnected, id, router, setupWebRTC]);
 
