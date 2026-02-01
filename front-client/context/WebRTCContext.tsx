@@ -86,7 +86,10 @@ export const WebRTCProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           router.replace('/');
           return;
         }
+        
+        
   
+
         console.log('Setting up WebRTC...');
         peerConnection.current = new RTCPeerConnection(configuration);
   
@@ -118,25 +121,17 @@ export const WebRTCProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           }
         };
   
-        // Get local media stream
-        try {
-          const stream = await mediaDevices.getUserMedia({
-            audio: true,
-            video: { 
-              width: 640, 
-              height: 480, 
-              frameRate: 30,
-              facingMode: 'user', // 'user' for front camera, 'environment' for back camera
-            },
-          });
-          setLocalStream(stream);
-          stream.getTracks().forEach(track => peerConnection.current!.addTrack(track, stream));
-          console.log('Local stream added', stream);
-        } catch (error) {
-          console.error('Error getting user media:', error);
-        }
-  
+       
         // Socket event listeners
+        
+        socket.on('create_offer', async () => {
+          console.log('Received create_offer, creating offer...');
+          const offer = await peerConnection.current!.createOffer();
+          await peerConnection.current!.setLocalDescription(offer);
+          socket.emit('offer', { sdp: offer, roomId });
+          console.log('Sent offer', offer);
+        });
+
         socket.on('offer', async (data: { sdp: any; roomId: string }) => {
           if (data.roomId === roomId) {
             console.log('Received offer', data.sdp);
@@ -162,16 +157,29 @@ export const WebRTCProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           }
         });
   
-        socket.on('create_offer', async () => {
-          console.log('Received create_offer, creating offer...');
-          const offer = await peerConnection.current!.createOffer();
-          await peerConnection.current!.setLocalDescription(offer);
-          socket.emit('offer', { sdp: offer, roomId });
-          console.log('Sent offer', offer);
-        });
   
         // Emit a ready event to the server to signal that this client is ready for WebRTC setup
         socket.emit('webrtc_ready', { roomId });
+
+           // Get local media stream
+        try {
+          const stream = await mediaDevices.getUserMedia({
+            audio: true,
+            video: { 
+              width: 640, 
+              height: 480, 
+              frameRate: 30,
+              facingMode: 'user', // 'user' for front camera, 'environment' for back camera
+            },
+          });
+          setLocalStream(stream);
+          stream.getTracks().forEach(track => peerConnection.current!.addTrack(track, stream));
+          console.log('Local stream added', stream);
+        } catch (error) {
+          console.error('Error getting user media:', error);
+        }
+
+
       };
   
       setupWebRTC();

@@ -29,13 +29,15 @@ const VideoCallScreen = () => {
       <Text style={styles.text}>Appel vidéo en cours - Salle: {roomId}</Text>
       <View style={styles.videoContainer}>
         {localStream && (
-          <RTCView
+                      <RTCView
           
             streamURL={localStream.toURL()}
             style={styles.localVideo}
             objectFit={'cover'}
             mirror={true}
+            zOrder={1}
           />
+          
         )}
         {remoteStream && (
           <RTCView
@@ -43,6 +45,7 @@ const VideoCallScreen = () => {
             streamURL={remoteStream.toURL()}
             style={styles.remoteVideo}
             objectFit={'cover'}
+            zOrder={0}
           />
         )}
       </View>
