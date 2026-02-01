@@ -15,7 +15,7 @@ type Presence = { userId: number; socketId: string; role?: string };
 
 @Injectable()
 @WebSocketGateway({
-  cors: { origin: '*' }, // adapte en prod
+  cors: { origin: '*' },
   namespace: '/webrtc',
 })
 export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -25,6 +25,7 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // simple in-memory stores
   private socketsByUser = new Map<number, string>(); // userId -> socketId
   private rooms = new Map<string, Set<number>>(); // roomId -> set(userId)
+  private initiatorByRoom = new Map<string, number>();
 
   constructor(private jwtService: JwtService) {}
 
@@ -82,13 +83,22 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleJoinRoom(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { roomId: string },
-  ) {
+  ) 
+  {
+    
     this.logger.log(`Received joinRoom event from socket ${client.id} for room ${payload.roomId}`);
     const user = (client as any).user;
     if (!user) {
       this.logger.warn(`Unauthorized joinRoom attempt from socket ${client.id}`);
       return client.emit('error', 'Unauthorized');
     }
+
+    const existingSet = this.rooms.get(payload.roomId);
+
+if (existingSet?.has(user.userId)) {
+  this.logger.warn(`User ${user.userId} already joined room ${payload.roomId}`);
+  return;
+}
 
     const { roomId } = payload;
     if (!roomId) {
@@ -98,8 +108,10 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     let set = this.rooms.get(roomId);
     if (set && set.has(user.userId)) {
-  this.logger.warn(`User ${user.userId} already in room ${roomId}`);
-  return;
+    this.logger.warn(`User ${user.userId} already in room ${roomId}`);
+      this.initiatorByRoom.set(roomId, user.userId);
+
+    return;
 }
 
     if (!set) {
@@ -131,18 +143,31 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.emit('joined', { roomId });
 
     if (set.size === 2) {
+      this.logger.log(`Room ${roomId} now has 2 participants. Designating an initiator.`);
       
-      this.logger.log(`Room ${roomId} now has 2 participants. Emitting call_started.`);
-      // If two users are in the room, signal both to start the call
-      for (const userIdInRoom of set) {
-        const socketIdInRoom = this.socketsByUser.get(userIdInRoom);
-        if (socketIdInRoom) {
-          this.server.to(socketIdInRoom).emit('create_offer', { roomId });
+      // Get user IDs from the room
+      const userIds = Array.from(set);
 
-          this.server.to(socketIdInRoom).emit('call_started', { roomId });
-          this.logger.log(`Emitted call_started to user ${userIdInRoom} in room ${roomId}`);
-        }
+      // Ensure we have an initiator id; fallback to the first participant and store it
+      let initiatorId = this.initiatorByRoom.get(roomId) ?? userIds[0];
+      this.initiatorByRoom.set(roomId, initiatorId);
+
+      // The receiver is the other participant
+      const receiverId = userIds.find((id) => id !== initiatorId)!;
+
+      const initiatorSocketId = this.socketsByUser.get(initiatorId);
+      const receiverSocketId = this.socketsByUser.get(receiverId);
+
+      if (initiatorSocketId) {
+        // Signal only the initiator to create the offer
+        this.server.to(initiatorSocketId).emit('create_offer', { roomId });
+        this.logger.log(`Emitted create_offer to initiator ${initiatorId}`);
       }
+
+      // Notify both that the call can start, which triggers navigation
+      if (initiatorSocketId) this.server.to(initiatorSocketId).emit('call_started', { roomId });
+      if (receiverSocketId) this.server.to(receiverSocketId).emit('call_started', { roomId });
+      this.logger.log(`Emitted call_started to both users in room ${roomId}`);
     }
   }
 
@@ -232,31 +257,31 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('webrtc_ready')
-  handleWebRtcReady(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { roomId: string },
-  ) {
-    const from = (client as any).user;
-    const { roomId } = payload;
-    const roomParticipants = this.rooms.get(roomId);
+  // @SubscribeMessage('webrtc_ready')
+  // handleWebRtcReady(
+  //   @ConnectedSocket() client: Socket,
+  //   @MessageBody() payload: { roomId: string },
+  // ) {
+  //   const from = (client as any).user;
+  //   const { roomId } = payload;
+  //   const roomParticipants = this.rooms.get(roomId);
 
-    if (!roomParticipants) {
-      return client.emit('error', 'Room not found');
-    }
+  //   if (!roomParticipants) {
+  //     return client.emit('error', 'Room not found');
+  //   }
 
-    // If there are two participants, and the other one is ready, 
-    // the initiator should send the offer.
-    if (roomParticipants.size === 2) {
-      for (const participantId of roomParticipants) {
-        if (participantId !== from.userId) {
-          const targetSock = this.socketsByUser.get(participantId);
-          if (targetSock) {
-            // Signal the other participant to create an offer
-            this.server.to(targetSock).emit('create_offer', { roomId });
-          }
-        }
-      }
-    }
-  }
+  //   // If there are two participants, and the other one is ready, 
+  //   // the initiator should send the offer.
+  //   if (roomParticipants.size === 2) {
+  //     for (const participantId of roomParticipants) {
+  //       if (participantId !== from.userId) {
+  //         const targetSock = this.socketsByUser.get(participantId);
+  //         if (targetSock) {
+  //           // Signal the other participant to create an offer
+  //           this.server.to(targetSock).emit('create_offer', { roomId });
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 }

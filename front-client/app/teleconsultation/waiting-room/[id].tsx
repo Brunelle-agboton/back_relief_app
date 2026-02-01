@@ -2,11 +2,14 @@ import React, { useEffect , useRef} from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSocket } from '../../../context/SocketContext';
+import { useWebRTC } from '@/context/WebRTCContext';
 
 const WaitingRoomScreen = () => {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { socket, isConnected } = useSocket();
+  const webRTCContext = useWebRTC();
+  const setupWebRTC = webRTCContext?.setupWebRTC;
   const initializedRef = useRef(false);
 
 
@@ -22,10 +25,10 @@ const WaitingRoomScreen = () => {
 
       socket.on('call_started', (data: { roomId: string }) => {
         console.log(`Call started for room: ${data.roomId}`);
-        if (data.roomId === id) {
+          setupWebRTC && setupWebRTC();
           router.replace(`/teleconsultation/video-call/${id}`);
         }
-      });
+      );
 
       // Optional: Handle other events like 'room_full', 'call_rejected', etc.
 
@@ -34,7 +37,7 @@ const WaitingRoomScreen = () => {
         // Optional: Emit 'leave_room' if user navigates away before call starts
       };
     }
-  }, [socket, isConnected, id, router]);
+  }, [socket, isConnected, id, router, setupWebRTC]);
 
   return (
     <View style={styles.container}>

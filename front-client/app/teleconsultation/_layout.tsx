@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Stack } from 'expo-router';
 import BackButton from '@/components/BackButton';
+import { WebRTCProvider } from '@/context/WebRTCContext';
 
 export default function TeleconsultationLayout() {
   return (
+            <WebRTCProvider>
+
     <Stack
       screenOptions={{
         headerLeft:  () => <BackButton />,
@@ -19,5 +22,7 @@ export default function TeleconsultationLayout() {
       <Stack.Screen name="waiting-room/[id]" options={{ title: 'waiting-room' }}/>
       <Stack.Screen name="video-call/[id]" options={{ title: 'video-call' }}/>
     </Stack>
+              </WebRTCProvider>
+    
   );
 }
