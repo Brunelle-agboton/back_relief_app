@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { DataSource } from 'typeorm';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { seedRestExercise } from './seed';
+import { runSeed } from './seedTF';
 import { Exercise } from './modules/exercise/entities/exercise.entity';
 import { Program } from './modules/program/entities/program.entity';
 import { ProgramLine } from './modules/program-line/entities/program-line.entity';
@@ -32,6 +33,10 @@ async function bootstrap() {
     } else {
       console.log('Database already seeded. Skipping seed.');
     }
+    
+    // Seed automatique après création des tables
+    await runSeed(dataSource);
+
   } catch (error) {
     console.error('failed', error);
   }

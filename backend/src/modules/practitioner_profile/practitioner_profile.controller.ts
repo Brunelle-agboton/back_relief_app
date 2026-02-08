@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, 
 import { PractitionerProfileService } from './practitioner_profile.service';
 import { CreatePractitionerProfileDto } from './dto/create-practitioner_profile.dto';
 import { UpdatePractitionerProfileDto } from './dto/update-practitioner_profile.dto';
+import { CompletePractitionerProfileDto } from './dto/complete-practitioner_profile.dto';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { AddAvailabilityToPractitionerDto } from './dto/add-availability-to-practitioner.dto';
 
@@ -18,6 +19,11 @@ export class PractitionerProfileController {
     return this.practitionerProfileService.findForUser(userId);
   }
 
+  @Get('by-email/:email')
+  getProfileByEmail(@Param('email') email: string) {
+    return this.practitionerProfileService.findByEmail(email);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('me/availability')
   addAvailability(@Request() req, @Body() addAvailabilityDto: AddAvailabilityToPractitionerDto) {
@@ -30,7 +36,13 @@ export class PractitionerProfileController {
     return this.practitionerProfileService.create(createPractitionerProfileDto);
   }
 
-@UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
+  @Patch('complete-profile/:id')
+  completePractionerProfile(@Param('id') id: string, @Body() completePractitionerProfileDto: CompletePractitionerProfileDto) {
+    return this.practitionerProfileService.completePractionerProfile(+id,completePractitionerProfileDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get()
   findAll() {
     return this.practitionerProfileService.findAll();
@@ -40,7 +52,7 @@ export class PractitionerProfileController {
   findOne(@Param('id') id: string) {
     return this.practitionerProfileService.findOne(+id);
   }
-@UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePractitionerProfileDto: UpdatePractitionerProfileDto) {
     return this.practitionerProfileService.update(+id, updatePractitionerProfileDto);

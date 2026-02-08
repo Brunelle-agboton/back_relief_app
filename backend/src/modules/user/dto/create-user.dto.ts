@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsNumber, IsBoolean } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -15,40 +15,40 @@ export class CreateUserDto {
   @IsString()
   @MinLength(3)
   role: string;
-
-  @IsString()
-  @MinLength(1)
-  age: number;
-
-  @IsString()
-  @MinLength(1)
-  poids: number;
-
-  @IsString()
-  @MinLength(1)
-  taille: number;               
-
-  @IsString()
-  @MinLength(1)
-  sexe: string;
-
-  @IsString()
-  @MinLength(1)
-  hourSit: number;
-
-  @IsString()
-  @MinLength(1)
-  isExercise: boolean;
-
-  @IsString()
-  @MinLength(1)
-  numberTraining: number;
-
-  @IsString()
-  @MinLength(1)
-  restReminder: boolean;
   
+  @IsOptional()
+  @IsNumber()
+  age?: number;
+
+  @IsOptional()
+  @IsNumber()
+  poids?: number;
+
+  @IsOptional()
+  @IsNumber()
+  taille?: number;               
+
+  @IsOptional()
   @IsString()
   @MinLength(1)
-  drinkReminder: boolean;
+  sexe?: string;
+
+  @IsNumber()
+  hourSit?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isExercise?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  numberTraining?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  restReminder?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  drinkReminder?: boolean;
 }

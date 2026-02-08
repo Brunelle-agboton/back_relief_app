@@ -1,37 +1,47 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import RegisterStep3Screen from '../RegisterStep3Screen';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
-// Mock navigation et route
-const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
-    navigate: mockNavigate,
+    navigate: jest.fn(),
+    goBack: jest.fn(),
   }),
   useRoute: () => ({
-    params: {
-      userName: 'John',
-      email: 'john@mail.com',
-      password: '123456',
-      age: '30',
-      sexe: 'Femme',
-      poids: '60',
-      taille: '170',
-    },
+    params: {},
   }),
+}));
+
+jest.mock('expo-router', () => ({
+  useRouter: jest.fn(),
+  useLocalSearchParams: jest.fn(),
 }));
 
 // Mock de l'API
-jest.mock('../../../services/api', () => ({
+jest.mock('@/services/api', () => ({
   post: jest.fn(),
 }));
 
-import api from '../../../services/api';
+import api from '@/services/api';
+import RegisterStep3Screen from '../step3';
 
 describe('RegisterStep3Screen', () => {
+   const mockPush = jest.fn();
+
   beforeEach(() => {
-    mockNavigate.mockClear();
+    jest.clearAllMocks();
+    (require('expo-router').useRouter as jest.Mock).mockReturnValue({ push: mockPush });
+    (useLocalSearchParams as jest.Mock).mockReturnValue({
+    userName: 'John',
+    email: 'john@mail.com',
+    password: '123456',
+    age: '30',
+    sexe: 'Femme',
+    poids: '60',
+    taille: '170',
+  }),
     (api.post as jest.Mock).mockClear();
+    // Removed useNavigation and useRoute calls from here
   });
 
   it('affiche le logo et les champs', () => {
@@ -44,7 +54,7 @@ describe('RegisterStep3Screen', () => {
   it('envoie les données et navigue vers LoginScreen', async () => {
     (api.post as jest.Mock).mockResolvedValue({});
 
-    const { getByText, getAllByText,getByTestId, findByTestId } = render(<RegisterStep3Screen />);
+    const { getByText, getAllByText,getByTestId, findByTestId, getByLabelText } = render(<RegisterStep3Screen />);
     // Sélectionne "10" heures assis
     fireEvent.press(getByText('10'));
     // Sélectionne "Oui" pour activité physique
@@ -57,7 +67,7 @@ describe('RegisterStep3Screen', () => {
     // Sélectionne "Non" pour rappel d'hydratation
     fireEvent.press(getByTestId('drink-no'));
     // Valide
-    fireEvent.press(getByText('Valider'));
+    fireEvent.press(getByLabelText('Suivant')); // Changed from 'Valider' to 'Suivant'
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith('/user/register', expect.objectContaining({
@@ -75,7 +85,7 @@ describe('RegisterStep3Screen', () => {
         drinkReminder: false,
         role: 'user',
       }));
-      expect(mockNavigate).toHaveBeenCalledWith('screens/LoginScreen');
+      expect(useRouter().push).toHaveBeenCalledWith('/login'); // Assert on useRouter().push
     });
   });
 
@@ -89,7 +99,7 @@ describe('RegisterStep3Screen', () => {
     fireEvent.press(training2Btn);
     fireEvent.press(getByTestId('reset-yes'));
     fireEvent.press(getByTestId('drink-no'));
-    fireEvent.press(getByText('Valider'));
+    fireEvent.press(getByText('Suivant')); // Changed from 'Valider' to 'Suivant'
 
     expect(await findByText(/Erreur lors de l'inscription/)).toBeTruthy();
   });

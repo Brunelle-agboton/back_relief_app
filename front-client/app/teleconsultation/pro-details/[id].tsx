@@ -31,28 +31,35 @@ const toLocalYYYYMMDD = (d: Date) => {
   return `${year}-${m}-${day}`;
 };
 
-const timeHHMM = (isoOrDate: string | Date) => {
-  const d = new Date(isoOrDate);
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  return `${hh}:${mm}`;
+const getSafeTimezone = (tz: string | null | undefined): string => {
+  if (tz === 'Canada/Québec') {
+    return 'America/Montreal';
+  }
+  return tz || 'UTC'; // Fallback to UTC if timezone is missing
+};
+
+const timeHHMM = (isoOrDate: string | Date, timeZone: string) => {
+  return new Date(isoOrDate).toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: getSafeTimezone(timeZone),
+  });
 };
 
 export default function ProBookingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-    const id = params.id ? Number(params.id) : undefined;
+  const id = params.id ? Number(params.id) : undefined;
   const { authState } = useAuth();
 
-  // const PRO = { ...params, years: 12,
-  // rating: 5.0,}
-    const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [PRO, setPRO] = useState<PractitionerProfile | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(formatDate());
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
-const [customReason, setCustomReason] = useState<string>(''); // edit text
-const [isCustomEditing, setIsCustomEditing] = useState(false);
-const REASON_MAX = 300;
+  const [selectedTime, setSelectedTime] = useState<Availability | null>(null); // <-- Refactored state
+  const [customReason, setCustomReason] = useState<string>('');
+  const [isCustomEditing, setIsCustomEditing] = useState(false);
+  const REASON_MAX = 300;
 
 
   useEffect(() => {
@@ -66,7 +73,6 @@ const REASON_MAX = 300;
     (async () => {
       try {
         setLoading(true);
-        // Adapte l'endpoint à ton API (ex: /practitioners/:id ou /teleconsultation/practitioners/:id)
         const res = await api.get(`/practitioner-profile/${id}`);
         if (!mounted) return;
         setPRO(res.data);
@@ -82,7 +88,6 @@ const REASON_MAX = 300;
     return () => { mounted = false; };
   }, [id]);
 
- // Grouper availabilities par date locale (YYYY-MM-DD)
   const groupedAvailabilities = useMemo(() => {
     if (!PRO?.availabilities) return {};
     return PRO.availabilities.reduce<Record<string, Availability[]>>((acc, slot) => {
@@ -94,11 +99,9 @@ const REASON_MAX = 300;
     }, {});
   }, [PRO?.availabilities]);
 
-  // marquer les dates (markedDates pour CalendarList)
   const markedDates = useMemo(() => {
     const marks: Record<string, any> = {};
     Object.keys(groupedAvailabilities).forEach(date => {
-      // dot + background possible : on ajoute marked + custom styles, et selection si égal selectedDate
       marks[date] = { marked: true, dotColor: '#1662A9' };
     });
     if (selectedDate) {
@@ -107,7 +110,6 @@ const REASON_MAX = 300;
     return marks;
   }, [groupedAvailabilities, selectedDate]);
 
-  // Quand on récupère le profil, si il y a des disponibilités on sélectionne la première date+heure.
   useEffect(() => {
     if (!PRO) return;
     const allSlots = [...(PRO.availabilities || [])]
@@ -115,93 +117,86 @@ const REASON_MAX = 300;
       .sort((a,b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
     if (allSlots.length === 0) {
-      // Pas de dispo du tout
       Alert.alert('Aucune disponibilité', 'Aucune dispo pour ce praticien.');
-      // tu peux router.back() si tu veux quitter l'écran automatiquement
-      // router.back();
       setSelectedDate(null);
       setSelectedTime(null);
       return;
     }
-    // premier créneau non-booké
+    
     const first = allSlots[0];
     const firstDate = toLocalYYYYMMDD(new Date(first.startTime));
-    const firstTime = timeHHMM(new Date(first.startTime));
 
-    setSelectedDate(prev => prev ?? firstDate); // si déjà sélectionné on garde, sinon preset
-    setSelectedTime(prev => prev ?? firstTime);
+    setSelectedDate(prev => prev ?? firstDate);
+    setSelectedTime(prev => prev ?? first); // <-- Refactored to store object
   }, [PRO]);
 
-  // Obtenir la liste des heures disponibles pour la date sélectionnée (triées, format HH:MM)
-  const availableTimesForSelectedDate: string[] = useMemo(() => {
+  // Returns full Availability objects for the selected date
+  const availableSlotsForSelectedDate: Availability[] = useMemo(() => {
     if (!selectedDate) return [];
     const slots = groupedAvailabilities[selectedDate] || [];
-    const times = slots
+    return slots
       .filter(s => !s.isBooked)
-      .sort((a,b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-      .map(s => timeHHMM(new Date(s.startTime)));
-    // remove duplicates (si jamais)
-    return Array.from(new Set(times));
+      .sort((a,b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
   }, [groupedAvailabilities, selectedDate]);
 
-  // Lorsqu'on clique sur un jour dans le calendrier
   const onDayPress = (day: { dateString: string }) => {
     setSelectedDate(day.dateString);
-    // automatiquement sélectionner la première dispo de ce jour (si existe)
     const times = (groupedAvailabilities[day.dateString] || [])
       .filter(s => !s.isBooked)
       .sort((a,b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    
     if (times.length > 0) {
-      setSelectedTime(timeHHMM(new Date(times[0].startTime)));
+      setSelectedTime(times[0]); // <-- Refactored to store object
     } else {
       setSelectedTime(null);
     }
   };
 
-  // Organisation Matin / Après-midi
-  const morningSlots = availableTimesForSelectedDate.filter(t => Number(t.split(':')[0]) < 12);
-  const afternoonSlots = availableTimesForSelectedDate.filter(t => Number(t.split(':')[0]) >= 12);
+  const morningSlots = availableSlotsForSelectedDate.filter(slot => {
+    const localHour = new Date(slot.startTime).toLocaleTimeString('en-GB', { hour: '2-digit', timeZone: getSafeTimezone(slot.timezone) });
+    return Number(localHour) < 12;
+  });
+  const afternoonSlots = availableSlotsForSelectedDate.filter(slot => {
+    const localHour = new Date(slot.startTime).toLocaleTimeString('en-GB', { hour: '2-digit', timeZone: getSafeTimezone(slot.timezone) });
+    return Number(localHour) >= 12;
+  });
 
-  // Render hour chip (tu avais déjà renderHourChip)
-  const renderHourChip = (time: string) => {
-    const selected = selectedTime === time;
+  const renderHourChip = (slot: Availability) => {
+    const isSelected = selectedTime?.id === slot.id;
+    const displayTime = timeHHMM(new Date(slot.startTime), slot.timezone);
     return (
       <Pressable
-        key={time}
-        onPress={() => setSelectedTime(time)}
-        style={[styles.hourChip, selected && styles.hourChipSelected]}
+        key={slot.id}
+        onPress={() => setSelectedTime(slot)}
+        style={[styles.hourChip, isSelected && styles.hourChipSelected]}
       >
-        <Text style={[styles.hourText, selected && styles.hourTextSelected]}>{time}</Text>
+        <Text style={[styles.hourText, isSelected && styles.hourTextSelected]}>{displayTime}</Text>
       </Pressable>
     );
   };
 
-const onConfirm = async () => {
-  if (!PRO || !selectedTime || !selectedDate) {
-    Alert.alert('Sélection manquante', 'Choisissez une date et une heure.');
-    return;
-  }
-  
-  // construit le note : priorise customReason s'il existe
-  const note = customReason || '';
+  const onConfirm = async () => {
+    if (!PRO || !selectedTime || !selectedDate) {
+      Alert.alert('Sélection manquante', 'Choisissez une date et une heure.');
+      return;
+    }
+    
+    const note = customReason || '';
 
-  try {
-    await api.post(`/appointments`, {
-      patientId: parseInt(authState?.user?.sub ?? '', 10),
-      practitionerId: PRO.id,
-      date: selectedDate,
-      time: selectedTime,
-      note: note?.trim() || undefined,
-    });
-    Alert.alert('Succès', `RDV demandé : ${selectedDate} ${selectedTime}`);
-    // rafraîchir / rediriger selon ton flow
-    router.push(`/(tabs)/my-space`);
-  } catch (err: any) {
-    console.error(err);
-    Alert.alert('Erreur', err?.response?.data?.message || 'Impossible de réserver pour le moment.');
-  }
-};
-
+    try {
+      await api.post(`/appointments`, {
+        patientId: parseInt(authState?.user?.sub ?? '', 10),
+        practitionerId: PRO.id,
+        startTime: selectedTime.startTime,
+        notes: note?.trim() || undefined,
+      });
+      Alert.alert('Succès', `RDV demandé : ${selectedDate} ${timeHHMM(new Date(selectedTime.startTime), selectedTime.timezone)}`);
+      router.push(`/(tabs)/my-space`);
+    } catch (err: any) {
+      console.error(err);
+      Alert.alert('Erreur', err?.response?.data?.message || 'Impossible de réserver pour le moment.');
+    }
+  };
 
    if (loading || !PRO) {
     return (
@@ -211,46 +206,31 @@ const onConfirm = async () => {
     );
   }
 
-
   return (
     <SafeAreaView style={styles.safe}>
-      {/* <Stack.Screen options={{ title: "" }} /> */}
-
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Title */}
         <Text style={styles.title}>Enchanté !</Text>
-
-        {/* Card */}
         <View style={styles.card}>
           <View style={styles.avatarWrap}>
-            {/* {PRO?.avatar ? (
-              <Image source={{ uri:  'https://images.unsplash.com/photo-1633332755192-727a05c4013d' }} style={styles.avatar} />
-            ) : ( */}
               <View style={styles.avatarPlaceholder}>
                 <Ionicons name="person" size={44} color="#fff" />
               </View>
-            {/* )} */}
           </View>
-
           <Text style={styles.proName} numberOfLines={2}>
-            {PRO?.user.userName}
+            {PRO?.user?.userName}
           </Text>
           <Text style={styles.specialty}>{PRO.professionalType}</Text>
-
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <MaterialCommunityIcons name="briefcase-check" size={18} color="#1662A9" />
               <Text style={styles.statLabel}>Expérience</Text>
-              {/* {PRO.years} */}
               <Text style={styles.statValue}>12 ans</Text>
             </View>
-
             <View style={styles.statItem}>
               <Ionicons name="star" size={18} color="#1662A9" />
               <Text style={styles.statLabel}>Note</Text>
               <Text style={styles.statValue}>{PRO?.rating?.toFixed(1)}4.5</Text>
             </View>
-
             <View style={styles.statItem}>
               <Localisation />
               <Text style={styles.statLabel}>Localisation</Text>
@@ -258,15 +238,13 @@ const onConfirm = async () => {
             </View>
           </View>
         </View>
-{/* Mes compétences */}
         <Text style={styles.sectionTitle}>Mes compétences</Text>
          <View style={styles.specialityContainerButton}>
             {PRO?.specialties?.map((s) => {
                       return (
                         <TouchableOpacity 
-                          key={s} // Toujours utiliser une clé unique pour les éléments de la liste
+                          key={s}
                           style={[styles.specialityBtn]}
-                    
                         >
                           <Text style={[styles.specialityBtnText]}>
                             {s}
@@ -275,10 +253,7 @@ const onConfirm = async () => {
                       );
                     })}
                     </View>
-        {/* Mes disponibilités */}
         <Text style={styles.sectionTitle}>Mes disponibilités</Text>
-
-        {/* Calendar (react-native-calendars) */}
         <View style={styles.calendarWrap}>
           <CalendarList
             horizontal
@@ -309,52 +284,37 @@ const onConfirm = async () => {
             showScrollIndicator={false}
           />
         </View>
-
-        {/* Heures */}
         <Text style={[styles.sectionTitle]}>Heures</Text>
-
         <View style={styles.hoursWrap}>
           <Text style={styles.subSectionTitle}>Matin</Text>
           <View style={styles.chipsRow}>
             {morningSlots.length > 0 ? morningSlots.map(renderHourChip) : <Text style={styles.noSlotText}>A créneau le matin</Text>}
           </View>
-
           <Text style={[styles.subSectionTitle, { marginTop: 12 }]}>Après-midi</Text>
           <View style={styles.chipsRow}>
-            {afternoonSlots.length > 0 ? afternoonSlots.map(renderHourChip) : <Text style={styles.noSlotText}>Aucun crén créneau l'après-midi</Text>}
+            {afternoonSlots.length > 0 ? afternoonSlots.map(renderHourChip) : <Text style={styles.noSlotText}>Aucun créneau l'après-midi</Text>}
           </View>
         </View>
-        {/* Motif */}
         <Text style={styles.sectionTitle}>Motif</Text>
-
-<View style={{ marginBottom: 8 }}>
-      <TextInput
-        value={customReason}
-        onChangeText={(t) => {
-          if (t.length <= REASON_MAX) setCustomReason(t);
-        }}
-        placeholder="Décris rapidement la raison (max 300 caractères)"
-        multiline
-        style={[styles.motifWrap,]}
-      />
-      </View>
-        {/* Confirm button */}
+        <View style={{ marginBottom: 8 }}>
+          <TextInput
+            value={customReason}
+            onChangeText={(t) => {
+              if (t.length <= REASON_MAX) setCustomReason(t);
+            }}
+            placeholder="Décris rapidement la raison (max 300 caractères)"
+            multiline
+            style={[styles.motifWrap,]}
+          />
+        </View>
         <Pressable
-          onPress={() => {
-          if (!selectedDate || !selectedTime) {
-              Alert.alert('Sélection manquante', 'Choisissez une date et une heure.');
-              return;
-            }
-            // ici ton comportement de confirmation (call API / navigation)
-            console.log('Confirm', { practitionerId: PRO.id, date: selectedDate, time: selectedTime });
-            Alert.alert('RDV demandé', `${selectedDate} ${selectedTime}`);
-          }}
+          onPress={onConfirm}
           style={({ pressed }) => [
             styles.confirmBtn,
-            !(selectedTime && selectedDate) && styles.confirmBtnDisabled,
+            !selectedTime && styles.confirmBtnDisabled,
             pressed && { opacity: 0.85 },
           ]}
-          disabled={!(selectedTime && selectedDate)}
+          disabled={!selectedTime}
         >
           <Text style={styles.confirmText}>Confirmer le rendez-vous</Text>
         </Pressable>
@@ -363,31 +323,25 @@ const onConfirm = async () => {
   );
 }
 
-/* --- Styles --- */
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F6F7F7" },
   container: {
     padding: 16,
     paddingBottom: 40,
   },
-
-  /* Title */
   title: {
     fontSize: 28,
     fontWeight: "800",
     color: "#0F1724",
     marginBottom: 12,
   },
-
-  /* Card */
   card: {
-    backgroundColor: "#DFFCEB", // mint pale
+    backgroundColor: "#DFFCEB",
     borderRadius: 24,
     paddingVertical: 20,
     paddingHorizontal: 18,
     alignItems: "center",
     marginBottom: 18,
-    // shadow
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.06,
@@ -411,10 +365,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   proName: { fontSize: 15, fontWeight: "700", textAlign: "center", marginTop: 6, color: "#0B2E20" },
   specialty: { fontSize: 13, color: "#6B7280", marginTop: 6 },
-
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -438,8 +390,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: "center",
   },
-
-  /* Sections */
   sectionTitle: {
     fontSize: 15,
     fontWeight: "700",
@@ -447,51 +397,44 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 8,
   },
-
   calendarWrap: {
     backgroundColor: "#EBF2F3",
     borderRadius: 24,
     padding: 10,
-    // drop shadow subtle
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.03,
     shadowRadius: 8,
     elevation: 1,
   },
-
-  /* Hours */
   hoursWrap: {
     backgroundColor: "#EBF2F3",
     borderRadius: 24,
     padding: 12,
     marginTop: 10,
-    // shadow subtle
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.02,
-    shadowRadius: 6,
-    elevation: 1,
-  },motifWrap: {
-     minHeight: 74,
-    backgroundColor: "#EBF2F3",
-    borderRadius: 24,
-    padding: 12,
-    marginTop: 10,
-    // shadow subtle
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.02,
     shadowRadius: 6,
     elevation: 1,
   },
-
+  motifWrap: {
+     minHeight: 74,
+    backgroundColor: "#EBF2F3",
+    borderRadius: 24,
+    padding: 12,
+    marginTop: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1,
+  },
   subSectionTitle: { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 8 },
-
   chipsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8, // ios/android newer RN support; fallback with margin
+    gap: 8,
   },
   hourChip: {
     paddingHorizontal: 12,
@@ -508,13 +451,10 @@ const styles = StyleSheet.create({
   },
   hourText: { color: "#374151" },
   hourTextSelected: { color: "#03694B" },
-  noSlotText: { color: '#666', fontStyle: 'italic' } as any,
-
-  /* Confirm */
+  noSlotText: { color: '#666', fontStyle: 'italic' },
   confirmBtn: {
     width: '80%',
     marginLeft: 42,
-
     marginTop: 18,
     backgroundColor: "#DFFCEB",
     borderRadius: 15,

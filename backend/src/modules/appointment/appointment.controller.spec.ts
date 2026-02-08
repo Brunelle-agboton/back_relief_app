@@ -11,6 +11,8 @@ describe('AppointmentController', () => {
   const mockAppointmentService = {
     create: jest.fn(),
     findAll: jest.fn(),
+    findByUserId: jest.fn(),
+    findByPractitionerId: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -37,9 +39,9 @@ describe('AppointmentController', () => {
       const createAppointmentDto: CreateAppointmentDto = {
         patientId: 1,
         practitionerId: 1,
-        start_at: new Date(),
-        end_at: new Date(),
-        notes: 'test note'
+        startTime: new Date().toISOString(),
+        // end_at: new Date().toISOString(),
+        // notes: 'test note'
       };
       const expectedAppointment = new Appointment();
       mockAppointmentService.create.mockResolvedValue(expectedAppointment);
@@ -59,6 +61,32 @@ describe('AppointmentController', () => {
       const result = await controller.findAll();
 
       expect(service.findAll).toHaveBeenCalled();
+      expect(result).toEqual(expectedAppointments);
+    });
+  });
+
+  describe('findByUserId', () => {
+    it('should return appointments for a given user ID', async () => {
+      const userId = '1';
+      const expectedAppointments = [new Appointment()];
+      mockAppointmentService.findByUserId.mockResolvedValue(expectedAppointments);
+
+      const result = await controller.findByUserId(userId);
+
+      expect(service.findByUserId).toHaveBeenCalledWith(+userId);
+      expect(result).toEqual(expectedAppointments);
+    });
+  });
+
+  describe('findByPractitionerId', () => {
+    it('should return appointments for a given practitioner ID', async () => {
+      const practitionerId = '1';
+      const expectedAppointments = [new Appointment()];
+      mockAppointmentService.findByPractitionerId.mockResolvedValue(expectedAppointments);
+
+      const result = await controller.findByPractitionerId(practitionerId);
+
+      expect(service.findByPractitionerId).toHaveBeenCalledWith(+practitionerId);
       expect(result).toEqual(expectedAppointments);
     });
   });

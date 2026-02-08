@@ -6,13 +6,16 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { UserModule } from '../user/user.module';
-import { UserService } from '../user/user.service';
+import { PractitionerProfileModule } from '../practitioner_profile/practitioner_profile.module';
+import { AppointmentModule } from '../appointment/appointment.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([]), // Add your entities here if needed
     forwardRef(() => UserModule),
-    PassportModule,
+     forwardRef(() =>PractitionerProfileModule),
+     forwardRef(() => AppointmentModule),
+     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secretKey',
       signOptions: { expiresIn: '1h' },

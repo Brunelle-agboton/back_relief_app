@@ -52,7 +52,7 @@ export default function LoginScreen() {
         source={require('@/assets/images/icon.png')}
         style={styles.logo}
       />
-      <Text style={styles.title}>Se connecter</Text>
+      <Text style={styles.title}>Connexion</Text>
 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Email</Text>
@@ -96,6 +96,7 @@ export default function LoginScreen() {
       </Link>
 
       <TouchableOpacity 
+        testID="login-button"
         style={styles.loginButton} 
         onPress={handleLogin}
       >

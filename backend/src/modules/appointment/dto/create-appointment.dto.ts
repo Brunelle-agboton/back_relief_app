@@ -1,4 +1,4 @@
-import { IsInt, IsString, IsOptional, IsDateString } from 'class-validator';
+import { IsInt, IsString, IsOptional, IsDateString, IsDate } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateAppointmentDto {
@@ -11,10 +11,7 @@ export class CreateAppointmentDto {
   practitionerId: number;
 
   @IsDateString()
-  date: string; // YYYY-MM-DD
-
-  @IsString()
-  time: string; // HH:MM
+  startTime: string; // ISO 8601 date string
 
   @IsOptional()
   @IsString()

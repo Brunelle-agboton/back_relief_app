@@ -53,12 +53,66 @@ export type SpecialtyCardProps = {
   isSelected: boolean;
 };
 
+// --- Updated Interfaces based on API response ---
+
 export interface User {
   id: number;
-  userName: string;
   email: string;
-};
+  userName: string;
+  role: 'practitioner' | 'user';
+  age?: number | null;
+  drinkReminder?: boolean | null;
+  hourSit?: number | null;
+  isExercise?: boolean | null;
+  numberTraining?: number | null;
+  poids?: number | null;
+  restReminder?: boolean | null;
+  sexe?: 'male' | 'female' | 'other' | null;
+  taille?: number | null;
+}
 
+export interface PractitionerProfile {
+  id: number;
+  bio: string | null;
+  city: string;
+  clinicAddress: string | null;
+  country: string;
+  createdAt: string;
+  establishmentType: string;
+  isActive: boolean;
+  licenseNumber: string;
+  phone: string;
+  postalCode: string;
+  professionalType: string;
+  qualifications: string[] | null; // Assuming it's an array of strings
+  rating: number | null;
+  specialties: string[];
+  teleconsultEnabled: boolean;
+  timezone: string;
+  updatedAt: string;
+  user?: User; // Practitioner is also a user
+  availabilities: Availability[];
+  appointments: Appointment[];
+}
+
+export interface Appointment {
+  id: number;
+  start_at: string;
+  end_at: string;
+  status: 'confirmed' | 'cancelled' | 'completed';
+  notes: string | null;
+  meeting_url: string | null;
+  cancellation_reason: string | null;
+  cancelled_byId: number | null;
+  created_at: string;
+  updated_at: string;
+  patient?: User;
+  practitionerProfile?: PractitionerProfile;
+  // Internal flag for UI logic
+  isInterview?: boolean;
+}
+
+// Kept for compatibility if used elsewhere, but Appointment is more accurate
 export interface Availability {
   id: number;
   startTime: string;
@@ -66,24 +120,3 @@ export interface Availability {
   timezone: string;
   isBooked: boolean;
 }
-
-export type PractitionerProfile = {
-  id: number;
-  user: User;
-  professionalType: string; // e.g., 'kinesiologue'
-  specialties?: string[];
-  bio?: string;
-  licenseNumber?: string;
-  phone?: string;
-  postalCode?: string;
-  city: string;
-  country: string;
-  establishmentType: string;
-  timezone: string;
-  teleconsultEnabled: boolean;
-  isActive: boolean;
-  rating?: number;
-  availabilities: Availability[];
-  createdAt: string;
-  updatedAt: string;
-};

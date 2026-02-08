@@ -3,11 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePractitionerProfileDto } from './dto/create-practitioner_profile.dto';
 import { UpdatePractitionerProfileDto } from './dto/update-practitioner_profile.dto';
-import { PractitionerProfile, EstablishmentType } from './entities/practitioner_profile.entity';
+import { CompletePractitionerProfileDto } from './dto/complete-practitioner_profile.dto';
+import { PractitionerProfile, EstablishmentType, ProfessionalType } from './entities/practitioner_profile.entity';
 import { UserService } from '../user/user.service';
 import { Availability } from '../availability/entities/availability.entity';
 import { AddAvailabilityToPractitionerDto } from './dto/add-availability-to-practitioner.dto';
 import { AvailabilityService } from '../availability/availability.service';
+import { PractitionerDiplome } from '../practitioner_diplome/entities/practitioner_diplome.entity';
 
 @Injectable()
 export class PractitionerProfileService {
@@ -28,6 +30,10 @@ export class PractitionerProfileService {
  // Vérification de la valeur
   if (!Object.values(EstablishmentType).includes(profileData.establishmentType)) {
     throw new BadRequestException(`Invalid establishmentType: ${profileData.establishmentType}`);
+  }
+  // Vérification de la valeur
+  if (!Object.values(ProfessionalType).includes(profileData.professionalType)) {
+    throw new BadRequestException(`Invalid professionalType: ${profileData.professionalType}`);
   }
     let specialtiesArray: string[];
     if (typeof proSpecialities === 'string') {
@@ -69,22 +75,107 @@ export class PractitionerProfileService {
     return this.practitionerProfileRepository.save(profile);
   }
 
+  async completePractionerProfile(id: number, completePractionerProfile: CompletePractitionerProfileDto): Promise<PractitionerProfile> {
+    const {availabilities: availabilitiesData, proSpecialities, diplomes } = completePractionerProfile;
+
+        const practitioner = await this.practitionerProfileRepository.findOne({ where: { id } });
+
+    if (!practitioner) {
+      throw new NotFoundException(`Practioner with ID ${id} not found`);
+    }
+    let specialtiesArray: string[];
+    if (typeof proSpecialities === 'string') {
+      try {
+        specialtiesArray = JSON.parse(proSpecialities as any);
+      } catch (e) {
+        throw new BadRequestException('proSpecialities must be a valid JSON array string');
+      }
+    } else {
+      specialtiesArray = proSpecialities ?? [];
+    } 
+
+    let diplomesArray: any[] = [];
+    if (typeof diplomes === 'string') {
+      try {
+        diplomesArray = JSON.parse(diplomes as any);
+      } catch (e) {
+        throw new BadRequestException('diplomes must be a valid JSON array string');
+      }
+    } else {
+      diplomesArray = diplomes ?? [];
+    }
+
+    const newDiplomes = diplomesArray.map(d => {
+      const newDiplome = new PractitionerDiplome();
+      newDiplome.diplome = d.diplome;
+      newDiplome.school = d.school;
+      newDiplome.country = d.country;
+      newDiplome.year = d.yearExperience ? parseInt(d.yearExperience, 10) : d.year;
+      newDiplome.practitionerProfile = practitioner;
+      return newDiplome;
+    });
+
+    practitioner.diplomes = newDiplomes;
+    practitioner.specialties = specialtiesArray;
+
+    const availabilities: Availability[] = [];
+    for (const date in availabilitiesData) {
+      for (const time of availabilitiesData[date]) {
+        const availability = new Availability();
+        const [hour, minute] = time.split(':').map(Number);
+        const startTime = new Date(date);
+        startTime.setHours(hour, minute);
+
+        const endTime = new Date(startTime.getTime() + 30 * 60000); // Add 30 minutes
+
+        availability.startTime = startTime;
+        availability.endTime = endTime;
+        availability.practitionerProfile = practitioner;
+        availability.timezone = 'Canada/Québec'; 
+        availabilities.push(availability);
+      }
+    }
+
+    practitioner.availabilities = availabilities;
+
+    return this.practitionerProfileRepository.save(practitioner);
+  }
   findAll() {
-    return this.practitionerProfileRepository.find({ relations: ['user', 'availabilities'] });
+    return this.practitionerProfileRepository.find({ relations: ['user', 'availabilities', 'appointments', 'appointments.patient', 'appointments.practitionerProfile'] });
   }
 
   findOne(id: number) {
-    return this.practitionerProfileRepository.findOne({ where: { id }, relations: ['user', 'availabilities'] });
+    return this.practitionerProfileRepository.findOne({ where: { id }, relations: ['user', 'availabilities', 'appointments', 'appointments.patient', 'appointments.practitionerProfile'] });
   }
 
   async findForUser(userId: number): Promise<PractitionerProfile> {
     const profile = await this.practitionerProfileRepository.findOne({
       where: { user: { id: userId} },
-      relations: ['user', 'availabilities'],
+      relations: ['user', 'availabilities', 'appointments', 'appointments.patient', 'appointments.practitionerProfile'],
     });
 
     if (!profile) {
       throw new NotFoundException(`Practitioner profile for user with ID ${userId} not found`);
+    }
+
+    return profile;
+  }
+
+  async findByEmail(email: string): Promise<PractitionerProfile> {
+    const profile = await this.practitionerProfileRepository
+      .createQueryBuilder('profile')
+      .leftJoinAndSelect('profile.user', 'user')
+      .leftJoinAndSelect(
+        'profile.availabilities',
+        'availability',
+        'availability.isBooked = :isBooked',
+        { isBooked: false },
+      )
+      .where('user.email = :email', { email })
+      .getOne();
+
+    if (!profile) {
+      throw new NotFoundException(`Practitioner profile for user with email ${email} not found`);
     }
 
     return profile;
@@ -131,11 +222,22 @@ export class PractitionerProfileService {
     return this.availabilityService.create(newAvailability); // Use the AvailabilityService to save
   }
 
-  update(id: number, updatePractitionerProfileDto: UpdatePractitionerProfileDto) {
-    return `This action updates a #${id} practitionerProfile`;
+  async update(id: number, updatePractitionerProfileDto: UpdatePractitionerProfileDto): Promise<PractitionerProfile> {
+    const profile = await this.practitionerProfileRepository.findOne({ where: { id } });
+    if (!profile) {
+      throw new NotFoundException(`PractitionerProfile with ID ${id} not found`);
+    }
+
+    Object.assign(profile, updatePractitionerProfileDto);
+
+    return this.practitionerProfileRepository.save(profile);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} practitionerProfile`;
+  async remove(id: number): Promise<{ message: string }> {
+    const result = await this.practitionerProfileRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`PractitionerProfile with ID ${id} not found`);
+    }
+    return { message: `PractitionerProfile with ID ${id} has been successfully removed` };
   }
 }

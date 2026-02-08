@@ -92,53 +92,118 @@ describe('HealthService', () => {
   describe('getPainsLatest', () => {
     it('should return latest pains', async () => {
       const user = new User();
-      mockPainRecordRepository.find.mockResolvedValue([]);
+      const painRecord = new PainRecord();
+      painRecord.painLocation = 'head';
+      painRecord.painLevel = 5;
+      painRecord.painDescription = 'headache';
+      mockPainRecordRepository.find.mockResolvedValue([painRecord]);
       mockActivityRepository.find.mockResolvedValue([]);
-      await service.getPainsLatest(user);
+      mockExerciseRepository.findOne.mockResolvedValue(null);
+
+      const result = await service.getPainsLatest(user);
+
       expect(painRecordRepository.find).toHaveBeenCalled();
       expect(activityRepository.find).toHaveBeenCalled();
+      expect(result.lastPainByLocation).toEqual({ head: { level: 5, desc: 'headache' } });
+    });
+
+    it('should return null for exercise if not found', async () => {
+      const user = new User();
+      const activity = new Activity();
+      activity.metadata = JSON.stringify({ exerciceId: 1 });
+      mockPainRecordRepository.find.mockResolvedValue([]);
+      mockActivityRepository.find.mockResolvedValue([activity]);
+      mockExerciseRepository.findOne.mockResolvedValue(null);
+
+      const result = await service.getPainsLatest(user);
+
+      expect(result.exercises).toEqual([null]);
+    });
+
+    it('should return exercise details if found', async () => {
+      const user = new User();
+      const activity = new Activity();
+      activity.metadata = JSON.stringify({ exerciceId: 1 });
+      const exercise = new Exercise();
+      exercise.id = 1;
+      exercise.title = 'test exercise';
+      exercise.image = 'test.jpg';
+      mockPainRecordRepository.find.mockResolvedValue([]);
+      mockActivityRepository.find.mockResolvedValue([activity]);
+      mockExerciseRepository.findOne.mockResolvedValue(exercise);
+
+      const result = await service.getPainsLatest(user);
+
+      expect(result.exercises).toEqual([{ id: 1, title: 'test exercise', image: 'test.jpg' }]);
     });
   });
 
   describe('setHydratation', () => {
     it('should save a hydration record', async () => {
       const size = '500ml';
-      await service.setHydratation(size);
-      expect(hydrationRecordRepository.save).toHaveBeenCalled();
+      const hydrationRecord = new HydrationRecord();
+      mockHydrationRecordRepository.save.mockResolvedValue(hydrationRecord);
+
+      const result = await service.setHydratation(size);
+
+      expect(hydrationRecordRepository.save).toHaveBeenCalledWith({
+        bottleSize: size,
+        recordedAt: expect.any(Date),
+      });
+      expect(result).toEqual(hydrationRecord);
     });
   });
 
   describe('latestHydratation', () => {
     it('should return latest hydratation', async () => {
       const user = new User();
+      const hydrationRecord = new HydrationRecord();
+      hydrationRecord.bottleSize = '500ml';
+      mockHydrationRecordRepository.find.mockResolvedValue([hydrationRecord]);
+
+      const result = await service.latestHydratation(user);
+
+      expect(hydrationRecordRepository.find).toHaveBeenCalledWith({
+        where: { user: { id: user.id } },
+        order: { recordedAt: 'DESC' },
+        take: 2,
+      });
+      expect(result).toEqual('500ml');
+    });
+
+    it('should return null if no hydration record is found', async () => {
+      const user = new User();
       mockHydrationRecordRepository.find.mockResolvedValue([]);
-      await service.latestHydratation(user);
+
+      const result = await service.latestHydratation(user);
+
       expect(hydrationRecordRepository.find).toHaveBeenCalled();
+      expect(result).toBeNull();
     });
   });
 
   describe('findAll', () => {
-    it('should return a string', () => {
-      expect(service.findAll()).toBe('This action returns all health');
+    it('should return "This action returns all health" ', async () => {
+      expect(await service.findAll()).toBe('This action returns all health');
     });
   });
 
   describe('findOne', () => {
-    it('should return a string', () => {
-      expect(service.findOne(1)).toBe('This action returns a #1 health');
+    it('should return "This action returns a #1 health" ', async () => {
+      expect(await service.findOne(1)).toBe('This action returns a #1 health');
     });
   });
 
   describe('update', () => {
-    it('should return a string', () => {
+    it('should return "This action updates a #1 health" ', async () => {
       const dto: PainInputDto = { painLocation: 'Bas du dos', painLevel: 5, painDescription: '', user: new User(), recordedAt: new Date() };
-      expect(service.update(1, dto)).toBe('This action updates a #1 health');
+      expect(await service.update(1, dto)).toBe('This action updates a #1 health');
     });
   });
 
   describe('remove', () => {
-    it('should return a string', () => {
-      expect(service.remove(1)).toBe('This action removes a #1 health');
+    it('should return "This action removes a #1 health" ', async () => {
+      expect(await service.remove(1)).toBe('This action removes a #1 health');
     });
   });
 });

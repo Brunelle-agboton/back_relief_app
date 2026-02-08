@@ -39,12 +39,14 @@ export default function RegisterStep2Screen() {
         testID="radio-homme"
         style={[styles.radioButton, sexe === 'Homme' && styles.selectedRadioButton]}
         onPress={() => setSexe('Homme')}
+        accessibilityRole="radio"
       />
         <Text style={styles.radioText}>Homme</Text>
       <TouchableOpacity
         testID="radio-femme"
         style={[styles.radioButton, sexe === 'Femme' && styles.selectedRadioButton]}
         onPress={() => setSexe('Femme')}
+        accessibilityRole="radio"
       />
         <Text style={styles.radioText}>Femme</Text>
 
@@ -52,6 +54,7 @@ export default function RegisterStep2Screen() {
         testID="radio-nonbinaire"
         style={[styles.radioButton, sexe === 'Non-binaire' && styles.selectedRadioButton]}
         onPress={() => setSexe('Non-binaire')}
+        accessibilityRole="radio"
       />
         <Text style={styles.radioText}>Non-binaire</Text>
     </View>

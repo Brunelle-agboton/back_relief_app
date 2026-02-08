@@ -4,6 +4,8 @@ import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { User } from '../user/entities/user.entity';
+import { PractitionerProfileService } from '../practitioner_profile/practitioner_profile.service';
+import { AppointmentService } from '../appointment/appointment.service';
 
 jest.mock('bcrypt');
 
@@ -20,6 +22,14 @@ describe('AuthService', () => {
     sign: jest.fn(),
   };
 
+  const mockPractitionerProfileService = {
+    findForUser: jest.fn(),
+  };
+
+  const mockAppointmentService = {
+    findAppointmentsForUser: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -31,6 +41,14 @@ describe('AuthService', () => {
         {
           provide: JwtService,
           useValue: mockJwtService,
+        },
+        {
+          provide: PractitionerProfileService,
+          useValue: mockPractitionerProfileService,
+        },
+        {
+          provide: AppointmentService,
+          useValue: mockAppointmentService,
         },
       ],
     }).compile();

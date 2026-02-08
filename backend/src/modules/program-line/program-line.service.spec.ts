@@ -12,6 +12,7 @@ const mockRepo = () => ({
   find: jest.fn(),
   findOne: jest.fn(),
   findOneBy: jest.fn(),
+  delete: jest.fn(),
 });
 
 describe('ProgramLineService', () => {
@@ -139,5 +140,98 @@ describe('ProgramLineService', () => {
   it('should throw if program line not found', async () => {
     programLineRepo.findOne.mockResolvedValue(null);
     await expect(service.findOne(42)).rejects.toThrow('ProgramLine with id 42 not found');
+  });
+
+  it('should update a program line', async () => {
+    const dto = {
+      repetitions: 15,
+      duration: 45,
+    };
+    const existingLine = {
+      id: 1,
+      order: 1,
+      repetitions: 10,
+      duration: 30,
+      calories: 50,
+      program: { id: 1, title: 'prog' },
+      exercise: { id: 2, title: 'ex', category: 'cat' },
+    } as any;
+    const updatedLine = { ...existingLine, ...dto };
+
+    programLineRepo.findOneBy.mockResolvedValue(existingLine);
+    programLineRepo.save.mockResolvedValue(updatedLine);
+
+    const result = await service.update(1, dto as any);
+
+    expect(programLineRepo.findOneBy).toHaveBeenCalledWith({ id: 1 });
+    expect(programLineRepo.save).toHaveBeenCalledWith(updatedLine);
+    expect(result).toBe(updatedLine);
+  });
+
+  it('should throw if program line to update not found', async () => {
+    programLineRepo.findOneBy.mockResolvedValue(null);
+    await expect(service.update(42, {} as any)).rejects.toThrow('ProgramLine with id 42 not found');
+  });
+
+  it('should throw if program not found during update', async () => {
+    const dto = { programId: 99 } as any;
+    const existingLine = { id: 1 } as any;
+    programLineRepo.findOneBy.mockResolvedValue(existingLine);
+    programRepo.findOneBy.mockResolvedValue(null);
+
+    await expect(service.update(1, dto)).rejects.toThrow('Program #99 not found');
+  });
+
+  it('should throw if exercise not found during update', async () => {
+    const dto = { exerciseId: 99 } as any;
+    const existingLine = { id: 1 } as any;
+    programLineRepo.findOneBy.mockResolvedValue(existingLine);
+    exerciseRepo.findOneBy.mockResolvedValue(null);
+
+    await expect(service.update(1, dto)).rejects.toThrow('Exercise #99 not found');
+  });
+
+  it('should update a program line with programId', async () => {
+    const dto = { programId: 2 } as any;
+    const existingLine = { id: 1, program: { id: 1 } } as any;
+    const newProgram = { id: 2 } as any;
+    programLineRepo.findOneBy.mockResolvedValue(existingLine);
+    programRepo.findOneBy.mockResolvedValue(newProgram);
+    programLineRepo.save.mockResolvedValue({ ...existingLine, program: newProgram });
+
+    const result = await service.update(1, dto);
+
+    expect(programLineRepo.findOneBy).toHaveBeenCalledWith({ id: 1 });
+    expect(programRepo.findOneBy).toHaveBeenCalledWith({ id: 2 });
+    expect(programLineRepo.save).toHaveBeenCalledWith({ ...existingLine, program: newProgram });
+    expect(result.program).toEqual(newProgram);
+  });
+
+  it('should update a program line with exerciseId', async () => {
+    const dto = { exerciseId: 3 } as any;
+    const existingLine = { id: 1, exercise: { id: 1 } } as any;
+    const newExercise = { id: 3 } as any;
+    programLineRepo.findOneBy.mockResolvedValue(existingLine);
+    exerciseRepo.findOneBy.mockResolvedValue(newExercise);
+    programLineRepo.save.mockResolvedValue({ ...existingLine, exercise: newExercise });
+
+    const result = await service.update(1, dto);
+
+    expect(programLineRepo.findOneBy).toHaveBeenCalledWith({ id: 1 });
+    expect(exerciseRepo.findOneBy).toHaveBeenCalledWith({ id: 3 });
+    expect(programLineRepo.save).toHaveBeenCalledWith({ ...existingLine, exercise: newExercise });
+    expect(result.exercise).toEqual(newExercise);
+  });
+
+  it('should remove a program line', async () => {
+    programLineRepo.delete.mockResolvedValue({ affected: 1, raw: {} });
+    const result = await service.remove(1);
+    expect(programLineRepo.delete).toHaveBeenCalledWith(1);
+    expect(result).toEqual({ message: 'ProgramLine with ID 1 has been successfully removed' });
+  });
+
+  it('should throw if program line to remove not found', async () => {
+    programLineRepo.delete.mockResolvedValue({ affected: 0, raw: {} });
+    await expect(service.remove(42)).rejects.toThrow('ProgramLine with ID 42 not found');
   });
 });

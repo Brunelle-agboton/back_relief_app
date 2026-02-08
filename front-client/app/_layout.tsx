@@ -10,19 +10,19 @@ import {
   Pressable
 } from 'react-native';
 import { useFonts } from 'expo-font';
-import { Stack, Slot } from 'expo-router';
+import { Stack } from 'expo-router';
 import { AuthProvider } from '../context/AuthContext';
+import { SocketProvider } from '../context/SocketContext';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import * as Notifications from 'expo-notifications';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import NotificationBanner from '../components/NotificationBanner';
+import { useRouter } from 'expo-router';
 import NotificationService from '../services/NotificationService';
-import { useState } from 'react';
 import BackButton from '../components/BackButton';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { SafeAreaView } from 'react-native-safe-area-context'; // Importation ajoutée
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -42,23 +42,22 @@ export default function RootLayout() {
     }
 
     (async () => {
-      // Demande de permissions
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== 'granted') {
         console.warn("Permission notifications non accordée");
         return;
       }
 
-      // Handler pour afficher les notifs en foreground
       Notifications.setNotificationHandler({
         handleNotification: async () => ({
           shouldShowAlert: true,
           shouldPlaySound: false,
           shouldSetBadge: false,
+          shouldShowBanner: true,
+          shouldShowList: true,
         }),
       });
 
-      // Création du canal Android (sinon pas de notif sur Android ≥8)
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
           name: 'Default',
@@ -69,13 +68,11 @@ export default function RootLayout() {
       const settings = await NotificationService.loadSettings();
       if (settings) {
         await NotificationService.scheduleReminders(settings);}
-       // Listener pour le tap sur une notification
+      
       Notifications.addNotificationResponseReceivedListener(response => {
-        // Extraire les données custom que tu as passé dans scheduleNotificationAsync
         const data = response.notification.request.content;
         console.log("Notification tapée:", data);
         const type = 'pause';
-       // const {type} = data as {type?: string};
 
         if(type === 'pause') {
           router.push('/(tabs)/pauseActive')
@@ -83,10 +80,8 @@ export default function RootLayout() {
       });
     })();
 
-    // listener pour afficher une bannière en foreground
     const sub = Notifications.addNotificationReceivedListener(notification => {
       setLastNotification(notification);
-      // on peut effacer la bannière au bout de 5s, par exemple
       setTimeout(() => setLastNotification(null), 5000);
     });
     return () => sub.remove();
@@ -97,71 +92,64 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={ DefaultTheme}>
-      <AuthProvider>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(patient)" options={{ headerShown: false }} />   
-          <Stack.Screen name="(pro)" options={{ headerShown: false }} />   
-          <Stack.Screen name="teleconsultation" options={{ headerShown: false }} />
-       
-          {/* <Stack.Screen name="screens/LoginScreen" options={{ headerShown: false }} /> */}
-          <Stack.Screen name="_home/index" options={{ headerShown: false }} />
-          <Stack.Screen name="screens/LogoutScreen" options={{ headerShown: false }} />
-          <Stack.Screen name="screens/ActivityLogScreen" options={{ headerShown: false }} />
-          {/* <Stack.Screen name="screens/RegisterStep1Screen" options={{ headerShown: false }} />
-          <Stack.Screen name="screens/RegisterStep2Screen" options={{ headerShown: false }} />
-          <Stack.Screen name="screens/RegisterStep3Screen" options={{ headerShown: false }} />
-          <Stack.Screen name="screens/ForgotPasswordScreen" options={{headerShown: false }}/> */}
-          <Stack.Screen name="screens/mine" options={{ headerLeft:  () => <BackButton />, headerTitle: 'Compte', headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>
-          <Stack.Screen 
-            name="screens/UserInfos1" 
-            options={{
-              headerLeft: () => <></>,
-              headerTitle: 'Compte', 
-              headerTitleAlign: 'center', 
-              headerStyle: { backgroundColor: '#CDFBE2' } }}/>
-          <Stack.Screen 
-            name="screens/UserInfos2" 
-            options={{
-              headerLeft: () => <></>,
-              headerTitle: 'Informations', 
-              headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>
-          <Stack.Screen name="screens/ReminderSettingsScreen" 
-            options={{ 
-              headerLeft: () => <></>,
-              headerTitle: 'Notifications', 
-              headerTitleAlign: 'center', 
-              headerStyle: { backgroundColor: '#CDFBE2' }}}/>      
-          <Stack.Screen 
-            name="screens/ArticlePauseActive" 
-            options={{ 
-              headerLeft:  () => <BackButton />, 
-              headerTitle: 'Articles', 
-              headerTitleAlign: 'center', 
-              headerStyle: { backgroundColor: '#CDFBE2' }
-              }}
-          />
-          <Stack.Screen 
-            name="screens/ArticleHydratation" 
-            options={{ 
-              headerLeft:  () => <BackButton />, 
-              headerTitle: 'Articles', 
-              headerTitleAlign: 'center', 
-              headerStyle: { backgroundColor: '#CDFBE2' }
-              }}
-          />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
-            {/* {lastNotification && (
-          <NotificationBanner
-            message={lastNotification.request.content.body || ''}
-          />
-        )} */}
-      </AuthProvider>
-
-    </ThemeProvider>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ThemeProvider value={ DefaultTheme}>
+        <AuthProvider>
+          <SocketProvider>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(patient)" options={{ headerShown: false }} />   
+            <Stack.Screen name="(pro)" options={{ headerShown: false }} />   
+            <Stack.Screen name="teleconsultation" options={{ headerShown: false }} />
+        
+            <Stack.Screen name="_home/index" options={{ headerShown: false }} />
+            <Stack.Screen name="screens/LogoutScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="screens/ActivityLogScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="screens/mine" options={{ headerLeft:  () => <BackButton />, headerTitle: 'Compte', headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>
+            <Stack.Screen 
+              name="screens/UserInfos1" 
+              options={{
+                headerLeft: () => <></>,
+                headerTitle: 'Compte', 
+                headerTitleAlign: 'center', 
+                headerStyle: { backgroundColor: '#CDFBE2' } }}/>
+            <Stack.Screen 
+              name="screens/UserInfos2" 
+              options={{
+                headerLeft: () => <></>,
+                headerTitle: 'Informations', 
+                headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>
+            <Stack.Screen name="screens/ReminderSettingsScreen" 
+              options={{ 
+                headerLeft: () => <></>,
+                headerTitle: 'Notifications', 
+                headerTitleAlign: 'center', 
+                headerStyle: { backgroundColor: '#CDFBE2' }}}/>      
+            <Stack.Screen 
+              name="screens/ArticlePauseActive" 
+              options={{ 
+                headerLeft:  () => <BackButton />, 
+                headerTitle: 'Articles', 
+                headerTitleAlign: 'center', 
+                headerStyle: { backgroundColor: '#CDFBE2' }
+                }}
+            />
+            <Stack.Screen 
+              name="screens/ArticleHydratation" 
+              options={{ 
+                headerLeft:  () => <BackButton />, 
+                headerTitle: 'Articles', 
+                headerTitleAlign: 'center', 
+                headerStyle: { backgroundColor: '#CDFBE2' }
+                }}
+            />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style="auto" />
+        </SocketProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaView>
   );
 }

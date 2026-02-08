@@ -2,6 +2,7 @@
 NEW_PROJECT_STRUCTURE.md
 # dependencies
 node_modules/
+coverage/
 
 # Expo
 .expo/
@@ -82,3 +83,6 @@ android/local.properties
 ios/
 
 # @end expo-cli
+
+
+consultation_*

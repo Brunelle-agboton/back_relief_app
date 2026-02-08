@@ -42,7 +42,7 @@ services:
     image: adminer
     restart: always
     ports:
-      - 8060:8080
+      - 8070:8080
   frontend:
       build:
         context: ./front-client

@@ -1,16 +1,7 @@
 import { IsString, IsOptional, IsInt, Min, IsArray, IsEnum, IsObject, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProfessionalType, EstablishmentType } from '../entities/practitioner_profile.entity';
-
-class AvailabilityDto {
-    @IsString()
-    date: string;
-
-    @IsArray()
-    @IsString({ each: true })
-    times: string[];
-}
-
+import { AddAvailabilityToPractitionerDto } from './add-availability-to-practitioner.dto'
 export class CreatePractitionerProfileDto {
     @IsInt()
     userId: number;
