@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Button, Platform, PermissionsAndroid, TouchableOpacity } from 'react-native';
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
+import { View, Text, StyleSheet, ActivityIndicator, Button, Platform, PermissionsAndroid, TouchableOpacity } from "react-native";
 
-import { useSocket } from '@/context/SocketContext';
-import { useAuth } from '@/context/AuthContext';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSocket } from "@/context/SocketContext";
+import { useAuth } from "@/context/AuthContext";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 import {
   RTCPeerConnection,
@@ -11,16 +11,16 @@ import {
   RTCSessionDescription,
   RTCView,
   mediaDevices,
-} from 'react-native-webrtc';
+} from "react-native-webrtc";
 
 const configuration = {
   iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun.services.mozilla.com:3478' },
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun.services.mozilla.com:3478" },
     {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject",
     },
   ],
 };
@@ -41,34 +41,35 @@ export const WebRTCProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const peerConnection = useRef<RTCPeerConnection | null>(null);
     const { id: roomId} = useLocalSearchParams();
     let setupWebRTC = async () => {}
+
     useEffect(() => {
       if (!isConnected) {
-        console.log('Socket not connected, returning...');
+        console.log("Socket not connected, returning...");
         return;
       }
   
       if (!roomId) {
-        console.log('Room ID not found, returning...');
-        router.replace('/'); // Redirect if no room ID
+        console.log("Room ID not found, returning...");
+        router.replace("/"); // Redirect if no room ID
         return;
       }
   
       console.log(`WebRTCContext: Connected to socket, Room ID: ${roomId}`);
   
       const requestPermissions = async () => {
-        if (Platform.OS === 'android') {
+        if (Platform.OS === "android") {
           try {
             const granted = await PermissionsAndroid.requestMultiple([
               PermissionsAndroid.PERMISSIONS.CAMERA,
               PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
             ]);
             if (
-              granted['android.permission.CAMERA'] === PermissionsAndroid.RESULTS.GRANTED &&
-              granted['android.permission.RECORD_AUDIO'] === PermissionsAndroid.RESULTS.GRANTED
+              granted["android.permission.CAMERA"] === PermissionsAndroid.RESULTS.GRANTED &&
+              granted["android.permission.RECORD_AUDIO"] === PermissionsAndroid.RESULTS.GRANTED
             ) {
               return true;
             } else {
-              console.log('Permissions denied');
+              console.log("Permissions denied");
               return false;
             }
           } catch (err) {
@@ -83,27 +84,27 @@ export const WebRTCProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const permissionsGranted = await requestPermissions();
         if (!permissionsGranted) {
           // Handle permission denial, maybe show a message to the user
-          router.replace('/');
+          router.replace("/");
           return;
         }
         
         
   
 
-        console.log('Setting up WebRTC...');
+        console.log("Setting up WebRTC...");
         peerConnection.current = new RTCPeerConnection(configuration);
   
         peerConnection.current.onicecandidate = (event) => {
           if (event.candidate) {
-            console.log('Sending ICE candidate', event.candidate);
-            socket.emit('ice_candidate', { candidate: event.candidate, roomId });
+            console.log("Sending ICE candidate", event.candidate);
+            socket.emit("ice_candidate", { candidate: event.candidate, roomId });
           }
         };
   
         peerConnection.current.ontrack = (event: any ) => {
           if (event.streams && event.streams[0]) {
             const inbound = event.streams[0];
-      console.log('Remote stream received', inbound);
+      console.log("Remote stream received", inbound);
   
       setRemoteStream((prev : any) => {
         // Première fois : pas de remote stream → on enregistre
@@ -124,42 +125,42 @@ export const WebRTCProvider: React.FC<{ children: React.ReactNode }> = ({ childr
        
         // Socket event listeners
         
-        socket.on('create_offer', async () => {
-          console.log('Received create_offer, creating offer...');
+        socket.on("create_offer", async () => {
+          console.log("Received create_offer, creating offer...");
           const offer = await peerConnection.current!.createOffer();
           await peerConnection.current!.setLocalDescription(offer);
-          socket.emit('offer', { sdp: offer, roomId });
-          console.log('Sent offer', offer);
+          socket.emit("offer", { sdp: offer, roomId });
+          console.log("Sent offer", offer);
         });
 
-        socket.on('offer', async (data: { sdp: any; roomId: string }) => {
+        socket.on("offer", async (data: { sdp: any; roomId: string }) => {
           if (data.roomId === roomId) {
-            console.log('Received offer', data.sdp);
+            console.log("Received offer", data.sdp);
             await peerConnection.current!.setRemoteDescription(new RTCSessionDescription(data.sdp));
             const answer = await peerConnection.current!.createAnswer();
             await peerConnection.current!.setLocalDescription(answer);
-            socket.emit('answer', { sdp: answer, roomId });
-            console.log('Sent answer', answer);
+            socket.emit("answer", { sdp: answer, roomId });
+            console.log("Sent answer", answer);
           }
         });
   
-        socket.on('answer', async (data: { sdp: any; roomId: string }) => {
+        socket.on("answer", async (data: { sdp: any; roomId: string }) => {
           if (data.roomId === roomId) {
-            console.log('Received answer', data.sdp);
+            console.log("Received answer", data.sdp);
             await peerConnection.current!.setRemoteDescription(new RTCSessionDescription(data.sdp));
           }
         });
   
-        socket.on('ice_candidate', async (data: { candidate: any; roomId: string }) => {
+        socket.on("ice_candidate", async (data: { candidate: any; roomId: string }) => {
           if (data.roomId === roomId && data.candidate) {
-            console.log('Received ICE candidate', data.candidate);
+            console.log("Received ICE candidate", data.candidate);
             await peerConnection.current!.addIceCandidate(new RTCIceCandidate(data.candidate));
           }
         });
   
   
         // Emit a ready event to the server to signal that this client is ready for WebRTC setup
-        socket.emit('webrtc_ready', { roomId });
+        socket.emit("webrtc_ready", { roomId });
 
            // Get local media stream
         try {
@@ -169,14 +170,14 @@ export const WebRTCProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               width: 640, 
               height: 480, 
               frameRate: 30,
-              facingMode: 'user', // 'user' for front camera, 'environment' for back camera
+              facingMode: "user", // "user" for front camera, "environment" for back camera
             },
           });
           setLocalStream(stream);
           stream.getTracks().forEach(track => peerConnection.current!.addTrack(track, stream));
-          console.log('Local stream added', stream);
+          console.log("Local stream added", stream);
         } catch (error) {
-          console.error('Error getting user media:', error);
+          console.error("Error getting user media:", error);
         }
 
 
@@ -185,26 +186,21 @@ export const WebRTCProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setupWebRTC();
   
       return () => {
-        console.log('Cleaning up WebRTC...');
+        console.log("Cleaning up WebRTC...");
         if (localStream) {
           localStream.getTracks().forEach((track: any) => track.stop());
         }
         if (peerConnection.current) {
           peerConnection.current.close();
         }
-        socket.off('offer');
-        socket.off('answer');
-        socket.off('ice_candidate');
+        socket.off("offer");
+        socket.off("answer");
+        socket.off("ice_candidate");
       };
     }, [socket, isConnected, roomId, router]);
   
     const handleEndCall = () => {
-      if(authState.user?.role === "user") {
-            router.replace('/(tabs)');
-        } 
-        else if(authState.user?.role === "practitioner"){
-          router.replace('/(pro)');
-        }
+      
     }
   
 
@@ -218,7 +214,7 @@ export const WebRTCProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   export const useWebRTC = () => {
     const context = useContext(WebRTCContext);
     if (context === undefined) {
-      throw new Error('WebRTCContext must be used within a WebRTCProvider');
+      throw new Error("WebRTCContext must be used within a WebRTCProvider");
     }
     return context;
   };

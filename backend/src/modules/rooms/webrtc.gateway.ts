@@ -186,6 +186,7 @@ if (existingSet?.has(user.userId)) {
       if (otherSocket) this.server.to(otherSocket).emit('peer-left', { roomId, userId: user.userId });
     }
     if (set.size === 0) this.rooms.delete(roomId);
+    
   }
 
   @SubscribeMessage('offer')
