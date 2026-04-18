@@ -1,0 +1,24 @@
+databases:
+  - name: healthtracker_51um
+    databaseName: healthtracker_51um
+    user: backrelief
+
+services:
+ - type: pserv
+   name: pgbouncer
+   runtime: docker
+   plan: standard
+   repo: https://github.com/render-oss/docker-pgbouncer
+   envVars:
+   - key: postgresql://backrelief:8oZsluEUgSDZr4vcETo5sjTcnyYj9KV0@dpg-d7h6ve67r5hc73duiu1g-a/healthtracker_51um
+     fromDatabase:
+       name: healthtracker_51um
+       property: connectionString
+   - key: POOL_MODE
+     value: transaction
+   - key: SERVER_RESET_QUERY
+     value: DISCARD ALL
+   - key: MAX_CLIENT_CONN
+     value: 500
+   - key: DEFAULT_POOL_SIZE
+     value: 50
