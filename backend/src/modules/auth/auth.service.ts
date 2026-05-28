@@ -7,6 +7,8 @@ import { AppointmentService } from '../appointment/appointment.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { CreatePractitionerProfileDto } from '../practitioner_profile/dto/create-practitioner_profile.dto';
 import { CreateAppointmentDto } from '../appointment/dto/create-appointment.dto';
+import { RegisterPractitionerDto } from './dto/register-practitioner.dto';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +19,7 @@ export class AuthService {
     private appointmentService: AppointmentService,
   ) {}
 
-  async validateUser(email: string, pass: string): Promise<any> {
+  async validateUser(email: string, pass: string): Promise<Omit<User, 'password'> | null> {
     const user = await this.usersService.findByEmail(email);
     if (user && await bcrypt.compare(pass, user.password)) {
       const { password, ...result } = user;
@@ -26,14 +28,14 @@ export class AuthService {
     return null;
   }
 
-  async login(user: any) {
+  async login(user: Omit<User, 'password'>): Promise<{ access_token: string }> {
     const payload = { email: user.email, sub: user.id, role: user.role };
     return {
       access_token: this.jwtService.sign(payload),
     };
   }
 
-  async registerPractitioner(dto: any): Promise<any> {
+  async registerPractitioner(dto: RegisterPractitionerDto): Promise<{ user: User; profile: unknown; appointment: unknown }> {
     const { email, password, userName, ...profileData } = dto;
 
     // Create user

@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { configService } from './config/config.service';
@@ -39,6 +41,7 @@ const imagesPath = join(__dirname, '..', '..', 'front-client', 'assets', 'images
 console.log('→ Serving images from:', imagesPath);
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }]),
     TypeOrmModule.forRootAsync({
       useFactory: () => {
         return configService.getTypeOrmConfig();
@@ -77,7 +80,10 @@ console.log('→ Serving images from:', imagesPath);
   controllers: [AppController, UserController, HealthController, AuthController, NotificationController, RoomsController,
     ExerciseController, ProgramController, ProgramLineController, ActivityController, SummaryController, 
     AppointmentController,AvailabilityController, PractitionerProfileController, PractitionerDiplomeController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {
   constructor(private dataSource: DataSource) {
