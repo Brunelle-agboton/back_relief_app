@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne, Index } from 'typeorm';
 import { PainRecord, HydrationRecord } from '../../health/entities/health.entity';
 import { Notification } from '../../notification/entities/notification.entity';
 import { Activity } from '../../activity/entities/activity.entity';
@@ -12,6 +12,7 @@ export class User {
   @Column()
   userName: string;
 
+  @Index()
   @Column({ unique: true })
   email: string;
 
