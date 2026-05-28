@@ -1,26 +1,58 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Notification } from './entities/notification.entity';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 
 @Injectable()
 export class NotificationService {
-  create(createNotificationDto: CreateNotificationDto) {
-    return 'This action adds a new notification';
+  constructor(
+    @InjectRepository(Notification)
+    private readonly repo: Repository<Notification>,
+  ) {}
+
+  async create(dto: CreateNotificationDto): Promise<Notification> {
+    const notification = this.repo.create({
+      title: dto.title,
+      description: dto.description,
+      date: new Date(dto.date),
+      user: { id: dto.userId } as any,
+    });
+    return this.repo.save(notification);
   }
 
-  findAll() {
-    return `This action returns all notification`;
+  async findAll(): Promise<Notification[]> {
+    return this.repo.find({ relations: ['user'] });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} notification`;
+  async findByUser(userId: number): Promise<Notification[]> {
+    return this.repo.find({
+      where: { user: { id: userId } },
+      order: { date: 'DESC' },
+    });
   }
 
-  update(id: number, updateNotificationDto: UpdateNotificationDto) {
-    return `This action updates a #${id} notification`;
+  async findOne(id: number): Promise<Notification> {
+    const notification = await this.repo.findOne({ where: { id }, relations: ['user'] });
+    if (!notification) throw new NotFoundException(`Notification #${id} not found`);
+    return notification;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} notification`;
+  async update(id: number, dto: UpdateNotificationDto): Promise<Notification> {
+    const notification = await this.findOne(id);
+    Object.assign(notification, dto);
+    return this.repo.save(notification);
+  }
+
+  async markAsRead(id: number): Promise<Notification> {
+    const notification = await this.findOne(id);
+    notification.isRead = true;
+    return this.repo.save(notification);
+  }
+
+  async remove(id: number): Promise<void> {
+    const notification = await this.findOne(id);
+    await this.repo.remove(notification);
   }
 }

@@ -4,6 +4,7 @@ import { SummaryService } from './summary.service';
 import { UserService } from '../user/user.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { User } from '../user/entities/user.entity';
+import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
 
 describe('SummaryController', () => {
   let controller: SummaryController;
@@ -52,7 +53,7 @@ describe('SummaryController', () => {
       const user = new User();
       user.id = userId;
       const summary = { healthHistory: [], exercises: [], notifications: [] };
-      const req = { user: { userId } };
+      const req = { user: { userId } } as unknown as AuthenticatedRequest;
 
       mockUserService.findOne.mockResolvedValue(user);
       mockSummaryService.getSummaryForUser.mockResolvedValue(summary);
@@ -66,7 +67,7 @@ describe('SummaryController', () => {
 
     it('should throw an error if user is not found', async () => {
         const userId = 1;
-        const req = { user: { userId } };
+        const req = { user: { userId } } as unknown as AuthenticatedRequest;
   
         mockUserService.findOne.mockResolvedValue(null);
   
@@ -80,7 +81,7 @@ describe('SummaryController', () => {
       const user = new User();
       user.id = userId;
       const healthDetails = { painLevel: 5, nbExercises: 10, streakDays: 3 };
-      const req = { user: { userId } };
+      const req = { user: { userId } } as unknown as AuthenticatedRequest;
 
       mockUserService.findOne.mockResolvedValue(user);
       mockSummaryService.getUserHealth.mockResolvedValue(healthDetails);
@@ -94,7 +95,7 @@ describe('SummaryController', () => {
 
     it('should throw an error if user is not found', async () => {
         const userId = 1;
-        const req = { user: { userId } };
+        const req = { user: { userId } } as unknown as AuthenticatedRequest;
   
         mockUserService.findOne.mockResolvedValue(null);
   

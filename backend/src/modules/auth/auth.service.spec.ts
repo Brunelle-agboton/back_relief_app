@@ -106,13 +106,13 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should return an access token', async () => {
-      const user = { email: 'test@example.com', id: 1 };
+      const user = { email: 'test@example.com', id: 1, role: 'user' } as unknown as Omit<User, 'password'>;
       const token = 'some_token';
       mockJwtService.sign.mockReturnValue(token);
 
       const result = await service.login(user);
 
-      expect(jwtService.sign).toHaveBeenCalledWith({ email: 'test@example.com', sub: 1 });
+      expect(jwtService.sign).toHaveBeenCalledWith({ email: 'test@example.com', sub: 1, role: 'user' });
       expect(result).toEqual({ access_token: token });
     });
   });
