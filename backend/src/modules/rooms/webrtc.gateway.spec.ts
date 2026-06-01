@@ -257,6 +257,39 @@ describe('WebrtcGateway', () => {
     });
   });
 
+  // ─── handleWebRtcReady ───────────────────────────────────────────────────
+
+  describe('handleWebRtcReady', () => {
+    it('émet une erreur si la room n\'existe pas', async () => {
+      jwtService.verify.mockReturnValue(validPayload);
+      const client = makeSocket();
+      await gateway.handleConnection(client);
+
+      gateway.handleWebRtcReady(client, { roomId: 'room-inexistante' });
+
+      expect(client.emit).toHaveBeenCalledWith('error', 'Room not found');
+    });
+
+    it('envoie create_offer à l\'autre participant quand la room a 2 utilisateurs', async () => {
+      jwtService.verify.mockReturnValue({ sub: 1, email: 'a@a.com', role: 'user' });
+      const client1 = makeSocket({ id: 'socket-ready-1' });
+      await gateway.handleConnection(client1);
+      await gateway.handleJoinRoom(client1, { roomId: 'room-ready' });
+
+      jwtService.verify.mockReturnValue({ sub: 2, email: 'b@b.com', role: 'user' });
+      const client2 = makeSocket({ id: 'socket-ready-2' });
+      await gateway.handleConnection(client2);
+      await gateway.handleJoinRoom(client2, { roomId: 'room-ready' });
+
+      // Reset pour isoler les appels de handleWebRtcReady
+      (gateway.server.to as jest.Mock).mockClear();
+
+      gateway.handleWebRtcReady(client2, { roomId: 'room-ready' });
+
+      expect(gateway.server.to).toHaveBeenCalledWith('socket-ready-1');
+    });
+  });
+
   // ─── handleIce ───────────────────────────────────────────────────────────
 
   describe('handleIce', () => {
