@@ -4,7 +4,6 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Activity } from './entities/activity.entity';
 import { Repository } from 'typeorm';
 import { CreateActivityDto } from './dto/create-activity.dto';
-import { UpdateActivityDto } from './dto/update-activity.dto';
 import { User } from '../user/entities/user.entity';
 
 describe('ActivityService', () => {
@@ -75,33 +74,25 @@ describe('ActivityService', () => {
     });
   });
 
-  describe('create', () => {
-    it('should return a string', () => {
-      const createActivityDto: CreateActivityDto = {
-        type: 'test' as any,
-        metadata: '{}',
-        user: new User(),
-      };
-      expect(service.create(createActivityDto)).toBe('This action adds a new activity');
-    });
-  });
-
   describe('findAll', () => {
-    it('should return a string', () => {
-      expect(service.findAll()).toBe('This action returns all activity');
-    });
-  });
+    it('should return all activities ordered by date desc', async () => {
+      const activities = [new Activity(), new Activity()];
+      mockRepository.find.mockResolvedValue(activities);
 
-  describe('update', () => {
-    it('should return a string', () => {
-      const updateActivityDto: UpdateActivityDto = {};
-      expect(service.update(1, updateActivityDto)).toBe('This action updates a #1 activity');
+      const result = await service.findAll();
+
+      expect(repository.find).toHaveBeenCalledWith({ order: { createdAt: 'DESC' } });
+      expect(result).toEqual(activities);
     });
   });
 
   describe('remove', () => {
-    it('should return a string', () => {
-      expect(service.remove(1)).toBe('This action removes a #1 activity');
+    it('should delete the activity by id', async () => {
+      mockRepository.delete.mockResolvedValue({ affected: 1 });
+
+      await service.remove(1);
+
+      expect(repository.delete).toHaveBeenCalledWith(1);
     });
   });
 });

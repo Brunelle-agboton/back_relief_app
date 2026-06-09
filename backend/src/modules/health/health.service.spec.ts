@@ -107,6 +107,30 @@ describe('HealthService', () => {
       expect(result.lastPainByLocation).toEqual({ head: { level: 5, desc: 'headache' } });
     });
 
+    it('utilise une chaîne vide quand painDescription est null', async () => {
+      const user = new User();
+      const painRecord = new PainRecord();
+      painRecord.painLocation = 'épaule';
+      painRecord.painLevel = 3;
+      painRecord.painDescription = null;
+      mockPainRecordRepository.find.mockResolvedValue([painRecord]);
+      mockActivityRepository.find.mockResolvedValue([]);
+
+      const result = await service.getPainsLatest(user);
+
+      expect(result.lastPainByLocation['épaule'].desc).toBe('');
+    });
+
+    it('retourne un objet vide quand aucune douleur enregistrée', async () => {
+      const user = new User();
+      mockPainRecordRepository.find.mockResolvedValue([]);
+      mockActivityRepository.find.mockResolvedValue([]);
+
+      const result = await service.getPainsLatest(user);
+
+      expect(result.lastPainByLocation).toEqual({});
+    });
+
     it('should return null for exercise if not found', async () => {
       const user = new User();
       const activity = new Activity();

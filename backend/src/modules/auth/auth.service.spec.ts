@@ -16,6 +16,7 @@ describe('AuthService', () => {
 
   const mockUserService = {
     findByEmail: jest.fn(),
+    create: jest.fn(),
   };
 
   const mockJwtService = {
@@ -24,10 +25,12 @@ describe('AuthService', () => {
 
   const mockPractitionerProfileService = {
     findForUser: jest.fn(),
+    create: jest.fn(),
   };
 
   const mockAppointmentService = {
     findAppointmentsForUser: jest.fn(),
+    create: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -104,15 +107,59 @@ describe('AuthService', () => {
     });
   });
 
+  describe('registerPractitioner', () => {
+    it('crée un utilisateur, un profil et un rendez-vous d\'onboarding', async () => {
+      const dto = {
+        email: 'pro@test.com',
+        password: 'secret123',
+        userName: 'DrTest',
+        professionalType: 'kinesiologue' as any,
+        licenseNumber: 'LIC-001',
+        proSpecialities: ['dos'],
+        establishmentType: 'canadian_health_facility' as any,
+        phone: '514-000-0000',
+        city: 'Montréal',
+        postalCode: 'H1H 1H1',
+        country: 'Canada',
+        availabilities: {},
+        appointment: { startTime: '2027-01-10T09:00:00.000Z' },
+      };
+
+      const createdUser = { id: 5, email: dto.email, role: 'practitioner' } as any;
+      const createdProfile = { id: 10 } as any;
+      const createdAppointment = { id: 20 } as any;
+
+      mockUserService.create.mockResolvedValue(createdUser);
+      mockPractitionerProfileService.create.mockResolvedValue(createdProfile);
+      mockAppointmentService.create.mockResolvedValue(createdAppointment);
+
+      const result = await service.registerPractitioner(dto);
+
+      expect(mockUserService.create).toHaveBeenCalledWith({
+        email: dto.email,
+        password: dto.password,
+        userName: dto.userName,
+        role: 'practitioner',
+      });
+      expect(mockPractitionerProfileService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: createdUser.id }),
+      );
+      expect(mockAppointmentService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ patientId: createdUser.id, practitionerId: 1 }),
+      );
+      expect(result).toEqual({ user: createdUser, profile: createdProfile, appointment: createdAppointment });
+    });
+  });
+
   describe('login', () => {
     it('should return an access token', async () => {
-      const user = { email: 'test@example.com', id: 1 };
+      const user = { email: 'test@example.com', id: 1, role: 'user' } as unknown as Omit<User, 'password'>;
       const token = 'some_token';
       mockJwtService.sign.mockReturnValue(token);
 
       const result = await service.login(user);
 
-      expect(jwtService.sign).toHaveBeenCalledWith({ email: 'test@example.com', sub: 1 });
+      expect(jwtService.sign).toHaveBeenCalledWith({ email: 'test@example.com', sub: 1, role: 'user' });
       expect(result).toEqual({ access_token: token });
     });
   });
