@@ -2,7 +2,7 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ test_and_ci ]
+    branches: [ test_and_ci, fixing_backend, backend_tests, deploy ]
   pull_request:
     branches: [ main ]
 
@@ -47,21 +47,26 @@ jobs:
       run: |
         echo "MODE=DEV" >> backend/.env
         echo "POSTGRES_HOST=localhost" >> backend/.env
-        echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> backend/.env
+        echo "POSTGRES_PORT=5432" >> backend/.env
         echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> backend/.env
         echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> backend/.env
         echo "POSTGRES_DATABASE=${{ secrets.POSTGRES_DATABASE }}" >> backend/.env
+        echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> backend/.env
 
-    - name: Run backend tests
+    - name: Run backend unit tests
       working-directory: ./backend
       run: npm run test
 
     - name: Healthcheck backend
       working-directory: ./backend
       run: |
-        npm run start:dev &
-        sleep 10
-        curl --fail http://localhost:3000/health || exit 1
+        node dist/main.js &
+        until curl --silent --fail http://localhost:3000/health; do sleep 2; done
+        echo "Backend is up"
+
+    - name: Run backend E2E tests
+      working-directory: ./backend
+      run: npm run test:e2e
 
   build-frontend:
     runs-on: ubuntu-latest
