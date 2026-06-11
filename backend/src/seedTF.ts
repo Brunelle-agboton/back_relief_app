@@ -51,9 +51,9 @@ export async function runSeed(dataSource: DataSource) {
       "practitioner_profile_id"
     )
     VALUES 
-      ('2025-12-12 15:00:00-05', '2025-12-12 15:30:00-05', 'America/Montreal', false, NULL, 'Consultation à Québec', false, 1),
-      ('2025-12-12 15:00:00-05', '2025-12-12 15:30:00-05', 'America/Montreal', false, NULL, 'Consultation à Québec', false, 1),
-      ('2025-12-12 15:00:00-05', '2025-12-12 15:30:00-05', 'America/Montreal', false, NULL, 'Consultation à Québec', false, 1);
+      ('2026-06-12 15:00:00-05', '2026-06-12 15:30:00-05', 'America/Montreal', false, NULL, 'Consultation à Québec', false, 1),
+      ('2026-06-12 05:00:00-05', '2026-06-12 05:30:00-05', 'America/Montreal', false, NULL, 'Consultation à Québec', false, 1),
+      ('2026-10-12 15:00:00-05', '2026-10-12 15:30:00-05', 'America/Montreal', false, NULL, 'Consultation à Québec', false, 1);
   `);
 
   console.log("Seed completed ✔️");
