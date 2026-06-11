@@ -145,7 +145,7 @@ export default function RegisterHealthScreen() {
         selectedId={selectedBottle || undefined}
         onSelect={handleSelectHydration} 
     />
-          </ScrollView>
+    </ScrollView>
       <Text style={styles.title}>Douleur</Text>      
       <View style={styles.bodyMapContainer}>        
         <MaterialCommunityIcons name="ellipse" size={79} color="#D9D9D9" style={styles.ellipse} />        
