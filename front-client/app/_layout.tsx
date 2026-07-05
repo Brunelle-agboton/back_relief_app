@@ -1,14 +1,15 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { 
-  Platform, 
-  TouchableOpacity, 
-  Image, 
-  Modal, 
-  View, 
-  Text, 
+import {
+  Platform,
+  TouchableOpacity,
+  Image,
+  Modal,
+  View,
+  Text,
   StyleSheet,
   Pressable
 } from 'react-native';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { AuthProvider } from '../context/AuthContext';
@@ -92,6 +93,7 @@ export default function RootLayout() {
   }
 
   return (
+    <ErrorBoundary>
     <SafeAreaView style={{ flex: 1 }}>
       <ThemeProvider value={ DefaultTheme}>
         <AuthProvider>
@@ -151,5 +153,6 @@ export default function RootLayout() {
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaView>
+    </ErrorBoundary>
   );
 }
