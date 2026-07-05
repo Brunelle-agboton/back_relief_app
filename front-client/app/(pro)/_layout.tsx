@@ -6,6 +6,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BackButton from '@/components/BackButton';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { isEnabled } from '@/config/featureFlags';
 const Date= require('@/assets/images/Consultation/Date.svg');
 
 /**
@@ -99,15 +100,16 @@ const ProLayout = () => {
             }}
           />
 
-          {/* Messages */}
+          {/* Messages — masqué V1.0 (UI mock, backend non finalisé) */}
           <Tabs.Screen
             name="messages"
-            options={{
+            options={isEnabled('proMessaging') ? {
               title: "Messages",
               tabBarIcon: ({ color, focused }) => (
                 <MaterialCommunityIcons name={focused ? "message-badge" : "message-badge-outline"} size={22} color={color} />
-                
               ),
+            } : {
+              href: null,
             }}
           />
 
