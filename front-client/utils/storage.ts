@@ -18,6 +18,6 @@ export const removeToken = async (): Promise<void> => {
 export const getUserId = async (): Promise<string | null> => {
   const token = await SecureStore.getItemAsync(TOKEN_KEY);
   if (!token) return null;
-  const decoded: { sub: string } = jwtDecode(token);
-  return decoded.sub ?? null;
+  const decoded: { sub: number | string } = jwtDecode(token);
+  return decoded.sub != null ? String(decoded.sub) : null;
 };

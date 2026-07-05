@@ -7,8 +7,7 @@ import { setOnUnauthorized } from '../services/api';
 type UserRole = 'user' | 'practitioner';
 
 interface UserProfile {
-  sub: string;
-  name: string;
+  sub: number;
   email: string;
   role: UserRole;
 }
@@ -36,7 +35,7 @@ const AuthContext = createContext<AuthContextData>({
 function decodeAndValidateToken(token: string): UserProfile {
   const decoded = jwtDecode<Record<string, unknown>>(token);
   if (
-    typeof decoded.sub !== 'string' ||
+    decoded.sub == null ||
     typeof decoded.email !== 'string' ||
     typeof decoded.role !== 'string'
   ) {
@@ -107,8 +106,8 @@ export const getUserId = async (): Promise<string | null> => {
   try {
     const token = await SecureStore.getItemAsync('auth_token');
     if (!token) return null;
-    const decoded: { sub: string } = jwtDecode(token);
-    return decoded.sub ?? null;
+    const decoded: { sub: number | string } = jwtDecode(token);
+    return decoded.sub != null ? String(decoded.sub) : null;
   } catch {
     return null;
   }
