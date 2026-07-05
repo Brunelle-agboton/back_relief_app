@@ -18,6 +18,7 @@ import Fontisto from '@expo/vector-icons/Fontisto';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../context/AuthContext';
+import { isEnabled } from '@/config/featureFlags';
 
 // Liste des tabs avec leurs informations
 const TAB_ITEMS = [
@@ -71,6 +72,7 @@ export default function TabLayout() {
               }
 
               if (name === 'my-space') {
+                if (!isEnabled('asyncConsultation')) return null;
                 return (
                   <TouchableOpacity
                     onPress={() => router.push('/teleconsultation/async-request')}
@@ -107,9 +109,8 @@ export default function TabLayout() {
     borderRadius: 25,
 
             freezeOnBlur: true,
-          
-            // custom button wrapper
-          tabBarButton: props => {
+
+            tabBarButton: props => {
             const { accessibilityState, style, children, onPress,  delayLongPress, testID } = props;
             const focused = accessibilityState?.selected ?? false;
             return (
@@ -129,6 +130,9 @@ export default function TabLayout() {
           },
           };
         }}>
+
+        {/* Masquer l'onglet settings du tab bar — accessible via router.push si besoin */}
+        <Tabs.Screen name="settings" options={{ href: null }} />
 
         {TAB_ITEMS.map((tab) => (
           <Tabs.Screen
