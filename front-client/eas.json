@@ -15,7 +15,7 @@
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://your-production-api.com/",
-        "EXPO_PUBLIC_SENTRY_DSN": "https://xxxxx@oxxxxx.ingest.sentry.io/xxxxx"
+        "EXPO_PUBLIC_SENTRY_DSN": "https://defe433d23a9b3d242e9299f7b2cb45b@o4511683342696448.ingest.us.sentry.io/4511683350953984"
       },
       "android": {
         "buildType": "app-bundle"

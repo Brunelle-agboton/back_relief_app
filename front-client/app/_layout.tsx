@@ -26,6 +26,8 @@ import { useRouter } from 'expo-router';
 import NotificationService from '../services/NotificationService';
 import BackButton from '../components/BackButton';
 import { useColorScheme } from '@/hooks/useColorScheme';
+
+
 import { SafeAreaView } from 'react-native-safe-area-context'; // Importation ajoutée
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.

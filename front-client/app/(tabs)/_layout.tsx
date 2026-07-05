@@ -131,9 +131,6 @@ export default function TabLayout() {
           };
         }}>
 
-        {/* Masquer l'onglet settings du tab bar — accessible via router.push si besoin */}
-        <Tabs.Screen name="settings" options={{ href: null }} />
-
         {TAB_ITEMS.map((tab) => (
           <Tabs.Screen
             key={tab.name}
@@ -153,7 +150,6 @@ export default function TabLayout() {
                   return <Ionicons name={tab.icon} size={24} color={color} />;
                 }
               },
-              ...(tab.name === 'settings' && { headerShown: false }),
               ...(tab.name === 'pauseActive' && { headerShown: false }),
             }}
           />
