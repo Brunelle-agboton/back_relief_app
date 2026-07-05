@@ -1,4 +1,7 @@
+import { initSentry, Sentry } from '../utils/sentry';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+
+initSentry();
 import {
   Platform,
   TouchableOpacity,
@@ -28,7 +31,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'; // Importation aj
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayout() {
     const router = useRouter();
     const [lastNotification, setLastNotification] = useState<Notifications.Notification | null>(null);
 
@@ -156,3 +159,5 @@ export default function RootLayout() {
     </ErrorBoundary>
   );
 }
+
+export default Sentry.wrap(RootLayout);
