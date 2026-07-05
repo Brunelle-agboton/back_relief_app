@@ -86,3 +86,4 @@ ios/
 
 
 consultation_*
+.env.local

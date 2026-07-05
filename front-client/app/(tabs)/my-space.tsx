@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import useAppointments from '@/hooks/useAppointments'; // Import the hook
 import NextMeetingCard from '@/components/NextMeetingCard';
 import api from '@/services/api';
+import { isEnabled } from '@/config/featureFlags';
 
 export default function MySpace() {
   const router = useRouter();
@@ -29,50 +30,54 @@ export default function MySpace() {
   return (
     <View style={styles.container}>
       <View style={{ flex: 1, marginTop: 0, justifyContent: 'flex-start' }}>
-        <Text style={[styles.subtitle, { paddingHorizontal: 6, marginBottom: 25 }]}>Mon prochain rendez-vous</Text>
-        {loading ? (
-          <Text>Chargement...</Text>
-        ) : isMeeting && nextAppointment && nextAppointment.practitionerProfile ? (
-          <NextMeetingCard
-            isMeeting={!isMeeting}
-            date={new Date(nextAppointment.start_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
-            time={new Date(nextAppointment.start_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-            item={{
-              id: nextAppointment.id,
-              imageUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d', // Placeholder, replace with actual image URL if available
-              location: nextAppointment.practitionerProfile.city,
-              name: nextAppointment.practitionerProfile.user?.userName || 'N/A',
-              specialty: nextAppointment.practitionerProfile.specialties.join(', '),
-            }}
-            reason={nextAppointment.notes || ''}
-            onCancel={handleCancel}
-          />
-        ) : (
-          <Text>Aucun rendez-vous à venir.</Text>
-        )}
-        
-         <Text style={[styles.subtitle, { paddingHorizontal: 5,  paddingVertical: 16, marginTop: 20}]}>Consulter</Text>
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={styles.buttonShadow}
-          onPress={() =>
-            router.push({
-              pathname: '/teleconsultation/pro-list',
-              params: { article: 5 },
-            })
-          }
-        >
-          <LinearGradient
-            colors={['#39df87', '#6ee7b7']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.button}
-          >
-            <Text style={styles.buttonText}>Téléconsultation</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+        {isEnabled('teleconsultation') && (
+          <>
+            <Text style={[styles.subtitle, { paddingHorizontal: 6, marginBottom: 25 }]}>Mon prochain rendez-vous</Text>
+            {loading ? (
+              <Text>Chargement...</Text>
+            ) : isMeeting && nextAppointment && nextAppointment.practitionerProfile ? (
+              <NextMeetingCard
+                isMeeting={!isMeeting}
+                date={new Date(nextAppointment.start_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                time={new Date(nextAppointment.start_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                item={{
+                  id: nextAppointment.id,
+                  imageUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d',
+                  location: nextAppointment.practitionerProfile.city,
+                  name: nextAppointment.practitionerProfile.user?.userName || 'N/A',
+                  specialty: nextAppointment.practitionerProfile.specialties.join(', '),
+                }}
+                reason={nextAppointment.notes || ''}
+                onCancel={handleCancel}
+              />
+            ) : (
+              <Text>Aucun rendez-vous à venir.</Text>
+            )}
 
-       <Text style={[styles.subtitle, { paddingHorizontal: 5, marginTop: 20}]}>En savoir plus</Text>
+            <Text style={[styles.subtitle, { paddingHorizontal: 5, paddingVertical: 16, marginTop: 20 }]}>Consulter</Text>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.buttonShadow}
+              onPress={() =>
+                router.push({
+                  pathname: '/teleconsultation/pro-list',
+                  params: { article: 5 },
+                })
+              }
+            >
+              <LinearGradient
+                colors={['#39df87', '#6ee7b7']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.button}
+              >
+                <Text style={styles.buttonText}>Téléconsultation</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </>
+        )}
+
+       <Text style={[styles.subtitle, { paddingHorizontal: 5, marginTop: isEnabled('teleconsultation') ? 20 : 0 }]}>En savoir plus</Text>
         <TouchableOpacity
           activeOpacity={0.85}
           style={[styles.buttonShadow, { marginTop: 28 }]}

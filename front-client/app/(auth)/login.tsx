@@ -43,6 +43,7 @@ export default function LoginScreen() {
       }
         
     } catch (e) {
+      console.log(e);
       setError('Identifiants invalides');
     }
   };
