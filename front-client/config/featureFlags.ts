@@ -10,7 +10,6 @@
  * Sections :
  *   V1.0 OPEN       — ouvertes au public dès le lancement
  *   V1.0 HIDDEN     — développées mais non exposées pour le lancement
- *   FUTUR PREMIUM   — réservées au modèle freemium (V1.5+)
  */
 
 export const FEATURES = {
@@ -23,19 +22,15 @@ export const FEATURES = {
   reminders: true,
   contentCatalog: true,   // articles statiques (validés médicalement)
 
-  proDashboard: true,
-  proAgenda: true,
-  proProfile: true,
-
   // ─── V1.0 HIDDEN ───────────────────────────────────────────────────────────
   // Passer à `true` pour exposer au public (pas de recompilation nécessaire).
   teleconsultation: false,      // attente : RGPD + disponibilité praticiens
   asyncConsultation: false,     // dépend de la téléconsultation
   proMessaging: false,          // UI mock — backend non finalisé
-
-  // ─── FUTUR PREMIUM (V1.5+) ─────────────────────────────────────────────────
-  advancedAnalytics: false,
-  unlimitedPrograms: false,
+  
+  proDashboard: true,
+  proAgenda: true,
+  proProfile: true,
 } as const;
 
 export type Feature = keyof typeof FEATURES;
