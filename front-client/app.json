@@ -25,9 +25,7 @@
         "backgroundColor": "#ffffff"
       },
       "permissions": [
-          "NOTIFICATIONS",
-          "CAMERA",
-          "RECORD_AUDIO"
+          "NOTIFICATIONS"
         ],
       "package": "back.relief.app"
     },
