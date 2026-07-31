@@ -1,9 +1,9 @@
 name: Deploy privacy policy to GitHub Pages
 
 on:
-  # Déploie automatiquement à chaque mise à jour de la politique sur main
+  # Déploie automatiquement à chaque mise à jour de la politique sur deploy_on_play
   push:
-    branches: [main]
+    branches: [deploy_on_play]
     paths:
       - "docs/**"
       - ".github/workflows/pages.yml"
