@@ -3,10 +3,10 @@ import { ActivityController } from './activity.controller';
 import { ActivityService } from './activity.service';
 import { UserService } from '../user/user.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
-import { UpdateActivityDto } from './dto/update-activity.dto';
 import { User } from '../user/entities/user.entity';
 import { Activity } from './entities/activity.entity';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
 
 describe('ActivityController', () => {
   let controller: ActivityController;
@@ -17,7 +17,6 @@ describe('ActivityController', () => {
     log: jest.fn(),
     findByUser: jest.fn(),
     findAll: jest.fn(),
-    update: jest.fn(),
     remove: jest.fn(),
   };
 
@@ -57,7 +56,7 @@ describe('ActivityController', () => {
         user: user,
       };
       const activity = new Activity();
-      const req = { user: { userId } };
+      const req = { user: { userId } } as unknown as AuthenticatedRequest;
 
       mockUserService.findOne.mockResolvedValue(user);
       mockActivityService.log.mockResolvedValue(activity);
@@ -76,7 +75,7 @@ describe('ActivityController', () => {
         metadata: '{}',
         user: new User(),
       };
-      const req = { user: { userId } };
+      const req = { user: { userId } } as unknown as AuthenticatedRequest;
 
       mockUserService.findOne.mockResolvedValue(null);
 
@@ -88,7 +87,7 @@ describe('ActivityController', () => {
     it('should return activities for a user', async () => {
       const userId = 1;
       const activities = [new Activity()];
-      const req = { user: { userId } };
+      const req = { user: { userId } } as unknown as AuthenticatedRequest;
 
       mockActivityService.findByUser.mockResolvedValue(activities);
 
@@ -108,20 +107,6 @@ describe('ActivityController', () => {
 
       expect(activityService.findAll).toHaveBeenCalled();
       expect(result).toEqual(activities);
-    });
-  });
-
-  describe('update', () => {
-    it('should update an activity', async () => {
-      const id = '1';
-      const updateActivityDto: UpdateActivityDto = {};
-      const activity = new Activity();
-      mockActivityService.update.mockResolvedValue(activity);
-
-      const result = await controller.update(id, updateActivityDto);
-
-      expect(activityService.update).toHaveBeenCalledWith(+id, updateActivityDto);
-      expect(result).toEqual(activity);
     });
   });
 

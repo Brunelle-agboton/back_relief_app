@@ -923,7 +923,7 @@
     debug "^3.1.0"
     glob "^10.4.2"
 
-"@expo/env@~1.0.7":
+"@expo/env@*", "@expo/env@~1.0.7":
   version "1.0.7"
   resolved "https://registry.npmjs.org/@expo/env/-/env-1.0.7.tgz"
   integrity sha512-qSTEnwvuYJ3umapO9XJtrb1fAqiPlmUUg78N0IZXXGwQRt+bkp0OBls+Y5Mxw/Owj8waAM0Z3huKKskRADR5ow==
@@ -1948,6 +1948,108 @@
   dependencies:
     "@react-navigation/elements" "^2.6.4"
     color "^4.2.3"
+
+"@sentry/babel-plugin-component-annotate@5.3.0":
+  version "5.3.0"
+  resolved "https://registry.npmjs.org/@sentry/babel-plugin-component-annotate/-/babel-plugin-component-annotate-5.3.0.tgz"
+  integrity sha512-p4q8gn8wcFqZGP/s2MnJCAAd8fTikaU6A0mM97RDHQgStcrYiaS0Sc5zUNfb1V+UOLPuvdEdL6MwyxfzjYJQTA==
+
+"@sentry/browser-utils@10.63.0":
+  version "10.63.0"
+  resolved "https://registry.npmjs.org/@sentry/browser-utils/-/browser-utils-10.63.0.tgz"
+  integrity sha512-DhUGNN+CH8fzAs6qAsueKPU70qShyTX3NxLhIP+l5DbGXDSXpYXBT6s8ubZus0/LhxpLvI0iSyNIDvZRD/gZaA==
+  dependencies:
+    "@sentry/core" "10.63.0"
+
+"@sentry/browser@10.63.0":
+  version "10.63.0"
+  resolved "https://registry.npmjs.org/@sentry/browser/-/browser-10.63.0.tgz"
+  integrity sha512-0mi56YOkwgyjdLOcN5cB1//EcYzEOt3NZ2GLygE92B3zAAwVM1WgbmibZCXToKFClH7z1uH3VWVfBffmkwIMYw==
+  dependencies:
+    "@sentry/browser-utils" "10.63.0"
+    "@sentry/core" "10.63.0"
+    "@sentry/feedback" "10.63.0"
+    "@sentry/replay" "10.63.0"
+    "@sentry/replay-canvas" "10.63.0"
+
+"@sentry/cli-linux-x64@3.6.0":
+  version "3.6.0"
+  resolved "https://registry.npmjs.org/@sentry/cli-linux-x64/-/cli-linux-x64-3.6.0.tgz"
+  integrity sha512-c+7xNg5BAaPE8N2Q6pg3Q/kt97JSaskuQIjRxHaFuDbCkJvww4VozY6mW5NUMJaW48rEs3mahWKamTLqJsO3wQ==
+
+"@sentry/cli@3.6.0":
+  version "3.6.0"
+  resolved "https://registry.npmjs.org/@sentry/cli/-/cli-3.6.0.tgz"
+  integrity sha512-79XC8o59G/i3VqmnoQD74a/QD/422eQQlUqiPd3sEvcYCxnaZialRVAsxuNEFd6sx4aVGpqt775MMDT9cV/lMg==
+  dependencies:
+    progress "^2.0.3"
+    proxy-from-env "^1.1.0"
+    undici "^6.22.0"
+    which "^2.0.2"
+  optionalDependencies:
+    "@sentry/cli-darwin" "3.6.0"
+    "@sentry/cli-linux-arm" "3.6.0"
+    "@sentry/cli-linux-arm64" "3.6.0"
+    "@sentry/cli-linux-i686" "3.6.0"
+    "@sentry/cli-linux-x64" "3.6.0"
+    "@sentry/cli-win32-arm64" "3.6.0"
+    "@sentry/cli-win32-i686" "3.6.0"
+    "@sentry/cli-win32-x64" "3.6.0"
+
+"@sentry/core@10.63.0":
+  version "10.63.0"
+  resolved "https://registry.npmjs.org/@sentry/core/-/core-10.63.0.tgz"
+  integrity sha512-OtUbsrnbEHffOF2S2+M5zXa3HIM0U2b4CDVLKMY1dgS0J3ivRF8XvkjvyIcEG/y8JXnwXbnprLyjhG+AqMdUZQ==
+
+"@sentry/expo-upload-sourcemaps@8.17.1":
+  version "8.17.1"
+  resolved "https://registry.npmjs.org/@sentry/expo-upload-sourcemaps/-/expo-upload-sourcemaps-8.17.1.tgz"
+  integrity sha512-whzQnfATgqn6z5NK0/hZhYSp/9RnSMc3iad7ckck2zsozBiXUrNEQpi80UQZGsywvNkEhrRdV2HVeG5+TiwfqQ==
+  dependencies:
+    "@sentry/cli" "3.6.0"
+
+"@sentry/feedback@10.63.0":
+  version "10.63.0"
+  resolved "https://registry.npmjs.org/@sentry/feedback/-/feedback-10.63.0.tgz"
+  integrity sha512-If/+72xFg9ylz4twUo3U9gUpZ+Ys+T/3Y09WH7r2gGhWEOF9bp+ta94+Pg7Lb0M2nVD7waz4OxIvB49GEvtLDA==
+  dependencies:
+    "@sentry/core" "10.63.0"
+
+"@sentry/react-native@^8.17.1":
+  version "8.17.1"
+  resolved "https://registry.npmjs.org/@sentry/react-native/-/react-native-8.17.1.tgz"
+  integrity sha512-vp7dTN7MdSxHcFUg/w9/p8rj6xvwVoa/AgjX1ngimIG2eddkHeXQAxoC9j6gTjFAH5XiFYoqEgfIPqJem/j3Ug==
+  dependencies:
+    "@sentry/babel-plugin-component-annotate" "5.3.0"
+    "@sentry/browser" "10.63.0"
+    "@sentry/cli" "3.6.0"
+    "@sentry/core" "10.63.0"
+    "@sentry/expo-upload-sourcemaps" "8.17.1"
+    "@sentry/react" "10.63.0"
+
+"@sentry/react@10.63.0":
+  version "10.63.0"
+  resolved "https://registry.npmjs.org/@sentry/react/-/react-10.63.0.tgz"
+  integrity sha512-+/Y0dd4EMqyqYBJ1D3bAYYuG+ccIx5+IFcbTZ9p+XWnW6nNIVjy5zttVftYo6xOmtTQbzRuPT/vO4dqDHKKmfw==
+  dependencies:
+    "@sentry/browser" "10.63.0"
+    "@sentry/core" "10.63.0"
+
+"@sentry/replay-canvas@10.63.0":
+  version "10.63.0"
+  resolved "https://registry.npmjs.org/@sentry/replay-canvas/-/replay-canvas-10.63.0.tgz"
+  integrity sha512-1Dg6yo+KDNZcE9M6V2EP4DGgTDJMcUgg5ui69w/E96ZZPWErS/bibK2bGj20H3qwpJXlnEwXB5YAJ2fZ620T1A==
+  dependencies:
+    "@sentry/core" "10.63.0"
+    "@sentry/replay" "10.63.0"
+
+"@sentry/replay@10.63.0":
+  version "10.63.0"
+  resolved "https://registry.npmjs.org/@sentry/replay/-/replay-10.63.0.tgz"
+  integrity sha512-u4fDaLbd4QmJbU0qGzV5g2B2hjw5utdeZzpTrmq565AS5o6mfaZdCz30zF9R2Unkn0g9SJr90piTN2RMwvDrkw==
+  dependencies:
+    "@sentry/browser-utils" "10.63.0"
+    "@sentry/core" "10.63.0"
 
 "@sideway/address@^4.1.5":
   version "4.1.5"
@@ -3678,7 +3780,7 @@ dotenv-expand@~11.0.6:
   dependencies:
     dotenv "^16.4.5"
 
-dotenv@^16.4.5, dotenv@~16.4.5:
+dotenv@*, dotenv@^16.4.5, dotenv@~16.4.5:
   version "16.4.7"
   resolved "https://registry.npmjs.org/dotenv/-/dotenv-16.4.7.tgz"
   integrity sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==
@@ -4174,7 +4276,7 @@ expo-web-browser@~14.2.0:
   resolved "https://registry.npmjs.org/expo-web-browser/-/expo-web-browser-14.2.0.tgz"
   integrity sha512-6S51d8pVlDRDsgGAp8BPpwnxtyKiMWEFdezNz+5jVIyT+ctReW42uxnjRgtsdn5sXaqzhaX+Tzk/CWaKCyC0hw==
 
-expo@*, expo@^53, expo@^53.0.22, expo@>=52.0.0:
+expo@*, expo@^53, expo@^53.0.22, expo@>=49.0.0, expo@>=52.0.0:
   version "53.0.22"
   resolved "https://registry.npmjs.org/expo/-/expo-53.0.22.tgz"
   integrity sha512-sJ2I4W/e5iiM4u/wYCe3qmW4D7WPCRqByPDD0hJcdYNdjc9HFFFdO4OAudZVyC/MmtoWZEIH5kTJP1cw9FjzYA==
@@ -5494,6 +5596,11 @@ lightningcss-linux-x64-gnu@1.27.0:
   version "1.27.0"
   resolved "https://registry.npmjs.org/lightningcss-linux-x64-gnu/-/lightningcss-linux-x64-gnu-1.27.0.tgz"
   integrity sha512-Dk/jovSI7qqhJDiUibvaikNKI2x6kWPN79AQiD/E/KeQWMjdGe9kw51RAgoWFDi0coP4jinaH14Nrt/J8z3U4A==
+
+lightningcss-linux-x64-musl@1.27.0:
+  version "1.27.0"
+  resolved "https://registry.npmjs.org/lightningcss-linux-x64-musl/-/lightningcss-linux-x64-musl-1.27.0.tgz"
+  integrity sha512-QKjTxXm8A9s6v9Tg3Fk0gscCQA1t/HMoF7Woy1u68wCk5kS4fR+q3vXa1p3++REW784cRAtkYKrPy6JKibrEZA==
 
 lightningcss@~1.27.0:
   version "1.27.0"
@@ -6914,7 +7021,7 @@ react-test-renderer@^19.0.0, react-test-renderer@>=16.0.0, react-test-renderer@>
     react-is "^19.0.0"
     scheduler "^0.25.0"
 
-react@*, "react@^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc", "react@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react@^18.0.0 || ^19.0.0", react@^19.0.0, "react@> 16.7.0", "react@>= 15.2.1", "react@>= 18.2.0", react@>=16.0.0, react@>=16.8, react@>=16.8.0, react@>=17.0.0, react@>=18.2.0, react@19.0.0:
+react@*, "react@^16.14.0 || 17.x || 18.x || 19.x", "react@^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc", "react@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react@^18.0.0 || ^19.0.0", react@^19.0.0, "react@> 16.7.0", "react@>= 15.2.1", "react@>= 18.2.0", react@>=16.0.0, react@>=16.8, react@>=16.8.0, react@>=17.0.0, react@>=18.2.0, react@19.0.0:
   version "19.0.0"
   resolved "https://registry.npmjs.org/react/-/react-19.0.0.tgz"
   integrity sha512-V8AVnmPIICiWpGfm6GLzCR/W5FXLchHop40W4nXBmdlEceh16rCN8O8LNWm5bh5XUX91fh7KpA+W0TgMKmgTpQ==
@@ -7868,10 +7975,10 @@ undici-types@~7.12.0:
   resolved "https://registry.npmjs.org/undici-types/-/undici-types-7.12.0.tgz"
   integrity sha512-goOacqME2GYyOZZfb5Lgtu+1IDmAlAEu5xnD3+xTzS10hT0vzpf0SPjkXwAw9Jm+4n/mQGDP3LO8CPbYROeBfQ==
 
-undici@^6.18.2, "undici@^6.18.2 || ^7.0.0":
-  version "6.21.3"
-  resolved "https://registry.npmjs.org/undici/-/undici-6.21.3.tgz"
-  integrity sha512-gBLkYIlEnSp8pFbT64yFgGE6UIB9tAkhukC23PmMDCe5Nd+cRqKxSjw5y54MK2AZMgZfJWMaNE4nYUHgi1XEOw==
+undici@^6.18.2, "undici@^6.18.2 || ^7.0.0", undici@^6.22.0:
+  version "6.27.0"
+  resolved "https://registry.npmjs.org/undici/-/undici-6.27.0.tgz"
+  integrity sha512-YmfV3YnEDzXRC5lZ2jWtWWHKGUm1zIt8AhesR1tens+HTNv+YZlN/dp6G727LOvMJ8xjP9Be7Y2Sdr96LDm+pg==
 
 unicode-canonical-property-names-ecmascript@^2.0.0:
   version "2.0.1"
@@ -8146,7 +8253,7 @@ which-typed-array@^1.1.16, which-typed-array@^1.1.2:
     gopd "^1.2.0"
     has-tostringtag "^1.0.2"
 
-which@^2.0.1:
+which@^2.0.1, which@^2.0.2:
   version "2.0.2"
   resolved "https://registry.npmjs.org/which/-/which-2.0.2.tgz"
   integrity sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==

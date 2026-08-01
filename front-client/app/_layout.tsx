@@ -1,14 +1,18 @@
+import { initSentry, Sentry } from '../utils/sentry';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { 
-  Platform, 
-  TouchableOpacity, 
-  Image, 
-  Modal, 
-  View, 
-  Text, 
+
+initSentry();
+import {
+  Platform,
+  TouchableOpacity,
+  Image,
+  Modal,
+  View,
+  Text,
   StyleSheet,
   Pressable
 } from 'react-native';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { AuthProvider } from '../context/AuthContext';
@@ -22,12 +26,14 @@ import { useRouter } from 'expo-router';
 import NotificationService from '../services/NotificationService';
 import BackButton from '../components/BackButton';
 import { useColorScheme } from '@/hooks/useColorScheme';
+
+
 import { SafeAreaView } from 'react-native-safe-area-context'; // Importation ajoutée
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayout() {
     const router = useRouter();
     const [lastNotification, setLastNotification] = useState<Notifications.Notification | null>(null);
 
@@ -92,6 +98,7 @@ export default function RootLayout() {
   }
 
   return (
+    <ErrorBoundary>
     <SafeAreaView style={{ flex: 1 }}>
       <ThemeProvider value={ DefaultTheme}>
         <AuthProvider>
@@ -151,5 +158,8 @@ export default function RootLayout() {
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaView>
+    </ErrorBoundary>
   );
 }
+
+export default Sentry.wrap(RootLayout);

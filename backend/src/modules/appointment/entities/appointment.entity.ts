@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { PractitionerProfile } from '../../practitioner_profile/entities/practitioner_profile.entity';
 
@@ -13,6 +13,7 @@ export class Appointment {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
+  @Index()
   @ManyToOne(() => User)
   @JoinColumn({ name: 'patient_id' })
   patient: User;

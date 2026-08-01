@@ -20,8 +20,8 @@ async function bootstrap() {
 
   const dataSource = app.get(DataSource);
   try {
-     // Vérification si les données ont déjà été seed
-     const ExerciseRepository = dataSource.getRepository(Exercise);
+    // Vérification si les données ont déjà été seed
+    const ExerciseRepository = dataSource.getRepository(Exercise);
     const ProgramRepository = dataSource.getRepository(Program);
     const ProgramLineRepository = dataSource.getRepository(ProgramLine);
 

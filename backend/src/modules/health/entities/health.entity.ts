@@ -15,8 +15,8 @@ export class PainRecord  {
     @Column()
     painLevel: number;
     
-    @Column({default: false})
-    painDescription: string;
+    @Column({ type: 'varchar', length: 255, nullable: true, default: null })
+    painDescription: string | null;
 
     @Column({type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP'})
     recordedAt: Date;

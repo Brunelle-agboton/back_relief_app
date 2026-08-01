@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { PractitionerProfile } from '../../practitioner_profile/entities/practitioner_profile.entity';
 import { Exclude } from 'class-transformer';
 
@@ -7,6 +7,7 @@ export class Availability {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
+  @Index()
   @ManyToOne(() => PractitionerProfile, (profile) => profile.availabilities)
   @JoinColumn({ name: 'practitioner_profile_id' })
   @Exclude({ toPlainOnly: true })

@@ -25,19 +25,11 @@ export class ActivityService {
     });
   }
 
-  create(createactivityDto: CreateActivityDto) {
-    return 'This action adds a new activity';
+  async findAll(): Promise<Activity[]> {
+    return this.repo.find({ order: { createdAt: 'DESC' } });
   }
 
-  findAll() {
-    return `This action returns all activity`;
-  }
-
-  update(id: number, updateactivityDto: UpdateActivityDto) {
-    return `This action updates a #${id} activity`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} activity`;
+  async remove(id: number): Promise<void> {
+    await this.repo.delete(id);
   }
 }

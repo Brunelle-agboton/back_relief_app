@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Logger   } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Req, Logger } from '@nestjs/common';
 import { ActivityService } from './activity.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
-import { UpdateActivityDto } from './dto/update-activity.dto';
 import { JwtAuthGuard }  from '../auth/jwt.guard';
+import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
 
 
 import { UserService } from '../user/user.service';
@@ -15,7 +15,7 @@ export class ActivityController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  async logAction(@Req() req, @Body() dto: CreateActivityDto) {
+  async logAction(@Req() req: AuthenticatedRequest, @Body() dto: CreateActivityDto) {
      try {
         const userId = req.user.userId; 
         
@@ -37,7 +37,7 @@ export class ActivityController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async getForUser(@Param('id') id: string, @Req() req) {
+  async getForUser(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.ActivityService.findByUser(+id);
   }
 
@@ -46,11 +46,7 @@ export class ActivityController {
     return this.ActivityService.findAll();
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateActivityDto: UpdateActivityDto) {
-    return this.ActivityService.update(+id, updateActivityDto);
-  }
-
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.ActivityService.remove(+id);

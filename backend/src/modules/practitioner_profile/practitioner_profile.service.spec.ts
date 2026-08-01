@@ -442,5 +442,72 @@ describe('PractitionerProfileService', () => {
 
       await expect(service.addAvailability(dto)).rejects.toThrow('This availability slot already exists.');
     });
+
+    it('utilise une chaîne vide si note est undefined', async () => {
+      const dto: AddAvailabilityToPractitionerDto = {
+        userId: 1,
+        startTime: new Date('2027-06-01T10:00:00.000Z').toISOString(),
+        endTime: new Date('2027-06-01T10:30:00.000Z').toISOString(),
+        timezone: 'Canada/Québec',
+        note: undefined,
+      };
+      const profile = new PractitionerProfile();
+      profile.availabilities = [];
+      mockRepository.findOne.mockResolvedValue(profile);
+      const saved = new Availability();
+      mockAvailabilityService.create.mockResolvedValue(saved);
+
+      await service.addAvailability(dto);
+
+      const created = mockAvailabilityService.create.mock.calls[0][0] as Availability;
+      expect(created.note).toBe('');
+    });
+  });
+
+  describe('completePractionerProfile — branches nullish', () => {
+    it('utilise un tableau vide si proSpecialities est null', async () => {
+      const dto: any = {
+        availabilities: {},
+        proSpecialities: null,
+        diplomes: [],
+      };
+      const profile = new PractitionerProfile();
+      mockRepository.findOne.mockResolvedValue(profile);
+      mockRepository.save.mockResolvedValue(profile);
+
+      await service.completePractionerProfile(1, dto);
+
+      expect(profile.specialties).toEqual([]);
+    });
+
+    it('utilise un tableau vide si diplomes est null', async () => {
+      const dto: any = {
+        availabilities: {},
+        proSpecialities: [],
+        diplomes: null,
+      };
+      const profile = new PractitionerProfile();
+      mockRepository.findOne.mockResolvedValue(profile);
+      mockRepository.save.mockResolvedValue(profile);
+
+      await service.completePractionerProfile(1, dto);
+
+      expect(profile.diplomes).toEqual([]);
+    });
+
+    it('utilise yearExperience si présent pour l\'année du diplôme', async () => {
+      const dto: any = {
+        availabilities: {},
+        proSpecialities: [],
+        diplomes: [{ diplome: 'Master', school: 'Paris', country: 'FR', yearExperience: '2019' }],
+      };
+      const profile = new PractitionerProfile();
+      mockRepository.findOne.mockResolvedValue(profile);
+      mockRepository.save.mockResolvedValue(profile);
+
+      await service.completePractionerProfile(1, dto);
+
+      expect(profile.diplomes[0].year).toBe(2019);
+    });
   });
 });

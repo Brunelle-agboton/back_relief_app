@@ -2,6 +2,7 @@ import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { SummaryService }                  from './summary.service';
 import { JwtAuthGuard }                    from '../auth/jwt.guard';
 import { UserService } from '../user/user.service';
+import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
 
 @Controller('summary')
 export class SummaryController {
@@ -10,7 +11,7 @@ export class SummaryController {
   ) {}
   @UseGuards(JwtAuthGuard)
   @Get()
-  async getSummary(@Req() req) {
+  async getSummary(@Req() req: AuthenticatedRequest) {
     const userId = req.user.userId; 
     
     const user = await this.userService.findOne(userId);
@@ -24,7 +25,7 @@ export class SummaryController {
 
   @UseGuards(JwtAuthGuard)
   @Get("details")
-  async getUserHealthDetails(@Req() req) {
+  async getUserHealthDetails(@Req() req: AuthenticatedRequest) {
     const userId = req.user.userId; 
     
     const user = await this.userService.findOne(userId);

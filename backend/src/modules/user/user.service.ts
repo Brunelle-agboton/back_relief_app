@@ -35,25 +35,29 @@ export class UserService {
     }
     return user;
   }
-  findAll() {
-    return `This action returns all user`;
+  async findAll(): Promise<User[]> {
+    return this.usersRepository.find();
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.findOne(id);
+    Object.assign(user, updateUserDto);
+    return this.usersRepository.save(user);
   }
 
   async updateUserSetting(id: number, restReminder: boolean, drinkReminder: boolean): Promise<string> {
-     const user = await this.usersRepository.findOne({ where: { id } });
+    const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
       throw new Error(`User with id ${id} not found`);
     }
     user.restReminder = restReminder;
     user.drinkReminder = drinkReminder;
-
-    return "ok";
+    await this.usersRepository.save(user);
+    return 'ok';
   }
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+
+  async remove(id: number): Promise<void> {
+    const user = await this.findOne(id);
+    await this.usersRepository.remove(user);
   }
 }

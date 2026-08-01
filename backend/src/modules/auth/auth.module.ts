@@ -17,7 +17,7 @@ import { AppointmentModule } from '../appointment/appointment.module';
      forwardRef(() => AppointmentModule),
      PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'secretKey',
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },
     }),
   ],

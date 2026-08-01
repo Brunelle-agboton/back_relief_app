@@ -1,4 +1,6 @@
 import { View, ActivityIndicator } from 'react-native';
+import { Sentry } from '../utils/sentry';
+Sentry.captureMessage('Test Sentry OK');
 
 export default function LoadingScreen() {
   return (
