@@ -6,6 +6,7 @@ import { saveToken } from '../../utils/storage';
 import {useNavigation, NavigationProp } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
+import { isEnabled } from '../../config/featureFlags';
 
 type RootStackParamList = {
   'screens/RegisterHealthScreen': undefined;
@@ -21,7 +22,7 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
-  const { login, authState } = useAuth();
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     try {
@@ -31,17 +32,19 @@ export default function LoginScreen() {
         throw new Error('Token manquant dans la réponse');
       }
   
-      // Stocke le token pour les prochains appels API
-      login(token);
-      await saveToken(token);  
+      // Stocke le token pour les prochains appels API. `login` retourne le
+      // profil décodé : `authState` n'est pas encore à jour à cet instant.
+      const user = login(token);
+      await saveToken(token);
 
-      if(authState.user?.role === "user") {
-          router.replace('/(tabs)');
-      } 
-      else if(authState.user?.role === "practitioner"){
+      // L'espace praticien n'est ouvert que si la feature est activée ;
+      // sinon un praticien est renvoyé vers l'espace patient.
+      if (user.role === 'practitioner' && isEnabled('proDashboard')) {
         router.replace('/(pro)');
+      } else {
+        router.replace('/(tabs)');
       }
-        
+
     } catch (e) {
       console.log(e);
       setError('Identifiants invalides');

@@ -20,14 +20,21 @@ interface AuthState {
 
 interface AuthContextData {
   authState: AuthState;
-  login: (token: string) => void;
+  /**
+   * Authentifie l'utilisateur et retourne son profil décodé.
+   * Le retour est indispensable : `authState` n'est mis à jour qu'au rendu
+   * suivant, il ne peut donc pas être lu juste après l'appel.
+   */
+  login: (token: string) => UserProfile;
   logout: () => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextData>({
   authState: { token: null, isAuthenticated: false, user: null },
-  login: () => {},
+  login: () => {
+    throw new Error('login appelé hors AuthProvider');
+  },
   logout: () => {},
   isLoading: true,
 });
@@ -83,11 +90,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadToken();
   }, []);
 
-  const login = (token: string) => {
+  const login = (token: string): UserProfile => {
     try {
       const user = decodeAndValidateToken(token);
       setAuthState({ token, isAuthenticated: true, user });
       SecureStore.setItemAsync('auth_token', token).catch(() => {});
+      return user;
     } catch {
       throw new Error('Impossible de traiter le token reçu du serveur.');
     }

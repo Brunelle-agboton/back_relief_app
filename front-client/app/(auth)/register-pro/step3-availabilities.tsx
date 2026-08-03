@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Calendar } from "react-native-calendars";
 import { LocaleConfig } from 'react-native-calendars';
 import { usePractitioner } from '@/context/PractitionerContext';
+import { isEnabled } from '@/config/featureFlags';
 import api from '@/services/api';
 
 LocaleConfig.locales['fr'] = {
@@ -100,7 +101,9 @@ export default function RegisterProStep3Screen() {
     try {
         const res = await api.patch(`/practitioner-profile/complete-profile/${profile?.id}`, payload);
         await refetchProfile();
-        router.replace('/(pro)');
+        // Même garde qu'à la connexion : sans l'espace praticien, on renvoie
+        // vers l'espace patient plutôt que sur des écrans non exposés.
+        router.replace(isEnabled('proDashboard') ? '/(pro)' : '/(tabs)');
     } catch (e) {
         setError('Erreur: ' + e.message);
         console.error('Erreur', e);

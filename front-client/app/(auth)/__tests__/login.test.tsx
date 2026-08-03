@@ -20,14 +20,17 @@ jest.mock('@react-navigation/native', () => ({
 // Mock du contexte d'auth (adapter le path à ton projet)
 jest.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
-    authState: { user: { role: 'user' } }, // <-- force role 'user' ici
-    login: jest.fn(), // on peut spy si besoin
+    authState: { user: { role: mockRole } },
+    // `login` retourne le profil décodé : c'est lui qui pilote la redirection.
+    login: jest.fn(() => ({ role: mockRole })),
   }),
 }));
 
 // Mock API
    const mockReplace = jest.fn();
    const mockPush = jest.fn();
+   // Rôle renvoyé par le mock de `login`, ajustable par test.
+   let mockRole: 'user' | 'practitioner' = 'user';
 jest.mock('@/services/api', () => ({
   post: jest.fn(),
 }));
@@ -44,6 +47,7 @@ describe('LoginScreen', () => {
 
   beforeEach(() => {
       jest.clearAllMocks();
+      mockRole = 'user';
        (useNavigation as jest.Mock).mockReturnValue({ navigate: jest.fn() });
   });
 
@@ -74,6 +78,21 @@ describe('LoginScreen', () => {
       expect(saveToken).toHaveBeenCalledWith('token123');
       expect(mockReplace).toHaveBeenCalledWith('/(tabs)');
     });
+  });
+
+  it("renvoie un praticien vers l'espace patient tant que proDashboard est désactivé", async () => {
+    mockRole = 'practitioner';
+    (api.post as jest.Mock).mockResolvedValue({ data: { access_token: 'token123' } });
+    render(<LoginScreen />);
+
+    fireEvent.changeText(screen.getByPlaceholderText('Email'), 'pro@mail.com');
+    fireEvent.changeText(screen.getByPlaceholderText('Mot de passe'), '123456');
+    fireEvent.press(screen.getByTestId('login-button'));
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/(tabs)');
+    });
+    expect(mockReplace).not.toHaveBeenCalledWith('/(pro)');
   });
 
   it('affiche une erreur si le login échoue', async () => {
