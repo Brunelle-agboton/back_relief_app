@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSocket } from '../context/SocketContext';
+import { isEnabled } from '../config/featureFlags';
 import { useRouter } from 'expo-router';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Divider } from 'react-native-elements';
@@ -92,12 +93,14 @@ const NextMeetingCard: React.FC<NextMeetingCardProps> = ({ isMeeting, date, time
             <Text style={{ color: '#ED6A5E', fontWeight: '600', fontSize: 14 }}>Annuler le RDV</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.startCallBtn} onPress={onJoin}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Appel width={20} style={{ marginRight: 16 }} />
-            <Text style={{ color: '#000', fontWeight: '600', fontSize: 15 }}>Rejoindre l’appel</Text>
-          </View>
-        </TouchableOpacity>
+        {isEnabled('teleconsultation') && (
+          <TouchableOpacity style={styles.startCallBtn} onPress={onJoin}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Appel width={20} style={{ marginRight: 16 }} />
+              <Text style={{ color: '#000', fontWeight: '600', fontSize: 15 }}>Rejoindre l’appel</Text>
+            </View>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

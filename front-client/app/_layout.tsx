@@ -107,9 +107,8 @@ function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(patient)" options={{ headerShown: false }} />   
-            <Stack.Screen name="(pro)" options={{ headerShown: false }} />   
-            <Stack.Screen name="teleconsultation" options={{ headerShown: false }} />
-        
+            <Stack.Screen name="(pro)" options={{ headerShown: false }} />
+
             <Stack.Screen name="_home/index" options={{ headerShown: false }} />
             <Stack.Screen name="screens/LogoutScreen" options={{ headerShown: false }} />
             <Stack.Screen name="screens/ActivityLogScreen" options={{ headerShown: false }} />
