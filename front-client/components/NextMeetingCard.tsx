@@ -34,6 +34,11 @@ const NextMeetingCard: React.FC<NextMeetingCardProps> = ({ isMeeting, date, time
   const { socket } = useSocket();
   const router = useRouter();
 
+  // La carte n'a de sens qu'avec la téléconsultation : sans elle, rien à afficher.
+  if (!isEnabled('teleconsultation')) {
+    return null;
+  }
+
   const onJoin = () => {
     if (socket) {
       socket.emit('joinRoom', { roomId: item.id }); // Assuming item.id is the room ID
@@ -93,14 +98,12 @@ const NextMeetingCard: React.FC<NextMeetingCardProps> = ({ isMeeting, date, time
             <Text style={{ color: '#ED6A5E', fontWeight: '600', fontSize: 14 }}>Annuler le RDV</Text>
           </View>
         </TouchableOpacity>
-        {isEnabled('teleconsultation') && (
-          <TouchableOpacity style={styles.startCallBtn} onPress={onJoin}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Appel width={20} style={{ marginRight: 16 }} />
-              <Text style={{ color: '#000', fontWeight: '600', fontSize: 15 }}>Rejoindre l’appel</Text>
-            </View>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={styles.startCallBtn} onPress={onJoin}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Appel width={20} style={{ marginRight: 16 }} />
+            <Text style={{ color: '#000', fontWeight: '600', fontSize: 15 }}>Rejoindre l’appel</Text>
+          </View>
+        </TouchableOpacity>
       </View>
     </View>
   );

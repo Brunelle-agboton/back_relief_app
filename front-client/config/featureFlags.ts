@@ -23,9 +23,9 @@ export const FEATURES = {
   reminders: true,
   contentCatalog: true,   // articles statiques (validés médicalement)
 
-  proDashboard: true,
-  proAgenda: true,
-  proProfile: true,
+  proDashboard: false,
+  proAgenda: false,
+  proProfile: false,
 
   // ─── V1.0 HIDDEN ───────────────────────────────────────────────────────────
   // Passer à `true` pour exposer au public (pas de recompilation nécessaire).
