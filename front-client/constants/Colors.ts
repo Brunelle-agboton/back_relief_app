@@ -1,26 +1,28 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Compatibilité ascendante.
+ *
+ * Ce fichier était le jeu de couleurs par défaut d'Expo, jamais aligné sur
+ * l'identité du produit. Il est désormais **dérivé du système de thèmes**
+ * (`theme/`) afin que `useThemeColor`, `ThemedText` et `ThemedView`
+ * continuent de fonctionner sans modification tout en affichant les bonnes
+ * couleurs.
+ *
+ * Pour tout nouveau code, ne pas importer d'ici : utiliser `useTheme()` /
+ * `makeStyles()` depuis `@/theme`, qui exposent l'ensemble des rôles.
  */
+import { darkTheme, lightTheme } from '@/theme';
+import type { Theme } from '@/theme';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+const toLegacyPalette = (theme: Theme) => ({
+  text: theme.colors.ink,
+  background: theme.colors.bg,
+  tint: theme.colors.accent,
+  icon: theme.colors.ink2,
+  tabIconDefault: theme.colors.tabBar.inactive,
+  tabIconSelected: theme.colors.tabBar.active,
+});
 
 export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-  },
+  light: toLegacyPalette(lightTheme),
+  dark: toLegacyPalette(darkTheme),
 };

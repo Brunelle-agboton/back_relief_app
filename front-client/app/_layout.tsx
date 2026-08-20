@@ -1,5 +1,5 @@
 import { initSentry, Sentry } from '../utils/sentry';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 
 initSentry();
 import {
@@ -19,16 +19,34 @@ import { AuthProvider } from '../context/AuthContext';
 import { SocketProvider } from '../context/SocketContext';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import 'react-native-reanimated';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import NotificationService from '../services/NotificationService';
 import BackButton from '../components/BackButton';
-import { useColorScheme } from '@/hooks/useColorScheme';
 
 
 import { SafeAreaView } from 'react-native-safe-area-context'; // Importation ajoutée
+import { ThemeProvider, toNavigationTheme, useTheme } from '@/theme';
+
+/**
+ * Relaie le thème applicatif vers React Navigation (fonds d'écran, en-têtes,
+ * transitions) et vers la barre d'état système.
+ *
+ * Ce composant est distinct de `RootLayout` parce qu'il doit être *sous* le
+ * `ThemeProvider` pour pouvoir appeler `useTheme()`.
+ */
+function ThemedChrome({ children }: { children: ReactNode }) {
+  const theme = useTheme();
+
+  return (
+    <NavigationThemeProvider value={toNavigationTheme(theme)}>
+      {children}
+      <StatusBar style={theme.statusBarStyle} />
+    </NavigationThemeProvider>
+  );
+}
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -37,7 +55,6 @@ function RootLayout() {
     const router = useRouter();
     const [lastNotification, setLastNotification] = useState<Notifications.Notification | null>(null);
 
-  const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -100,7 +117,8 @@ function RootLayout() {
   return (
     <ErrorBoundary>
     <SafeAreaView style={{ flex: 1 }}>
-      <ThemeProvider value={ DefaultTheme}>
+      <ThemeProvider>
+        <ThemedChrome>
         <AuthProvider>
           <SocketProvider>
           <Stack>
@@ -152,9 +170,9 @@ function RootLayout() {
             />
             <Stack.Screen name="+not-found" />
           </Stack>
-          <StatusBar style="auto" />
         </SocketProvider>
         </AuthProvider>
+        </ThemedChrome>
       </ThemeProvider>
     </SafeAreaView>
     </ErrorBoundary>
