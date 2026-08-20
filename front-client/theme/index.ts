@@ -12,6 +12,10 @@ export { makeStyles } from './makeStyles';
 export { toNavigationTheme } from './navigation';
 export { ambianceNames, createTheme, defaultTheme, getTheme, themes } from './themes';
 export { defaultAmbiance } from './tokens/ambiances';
+// Mise à l'échelle des mesures du design : utile aux primitives d'interface,
+// qui transcrivent des valeurs de la maquette. Les écrans, eux, s'appuient sur
+// `theme.spacing` et `theme.radius`.
+export { DESIGN_SCALE, px } from './tokens/scale';
 export type {
   AmbianceName,
   CharacterPart,
