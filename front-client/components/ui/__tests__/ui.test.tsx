@@ -6,8 +6,11 @@ import {
   Checkbox,
   Chip,
   FormError,
+  OptionRow,
   Radio,
   Segmented,
+  StepHeader,
+  StepProgress,
   Text,
   TextField,
 } from '@/components/ui';
@@ -82,6 +85,77 @@ describe('TextField', () => {
   it('affiche l’indication en l’absence d’erreur', () => {
     render(<TextField label="Email" hint="Votre adresse professionnelle" />);
     expect(screen.getByText('Votre adresse professionnelle')).toBeTruthy();
+  });
+});
+
+describe('TextField — révélation du mot de passe', () => {
+  it('masque la saisie par défaut et la révèle sur demande', () => {
+    render(<TextField label="Mot de passe" placeholder="Mot de passe" secureTextEntry />);
+
+    const input = screen.getByPlaceholderText('Mot de passe');
+    expect(input.props.secureTextEntry).toBe(true);
+
+    fireEvent.press(screen.getByLabelText('Afficher le mot de passe'));
+
+    expect(screen.getByPlaceholderText('Mot de passe').props.secureTextEntry).toBe(false);
+    expect(screen.getByLabelText('Masquer le mot de passe')).toBeTruthy();
+  });
+
+  it('n’affiche pas le révélateur sur un champ ordinaire', () => {
+    render(<TextField label="Email" placeholder="Email" />);
+    expect(screen.queryByLabelText('Afficher le mot de passe')).toBeNull();
+  });
+
+  it('permet de désactiver le révélateur', () => {
+    render(<TextField placeholder="Code" secureTextEntry showVisibilityToggle={false} />);
+    expect(screen.queryByLabelText('Afficher le mot de passe')).toBeNull();
+  });
+});
+
+describe('parcours par étapes', () => {
+  it('décrit l’avancement aux technologies d’assistance', () => {
+    render(<StepProgress step={1} count={3} />);
+
+    const bar = screen.getByRole('progressbar');
+    expect(bar.props.accessibilityValue).toEqual({ min: 1, max: 3, now: 2 });
+  });
+
+  it('affiche la position dans le parcours', () => {
+    render(<StepHeader step={0} count={3} />);
+    expect(screen.getByText(/Étape 1 \/ 3/)).toBeTruthy();
+  });
+
+  it('n’expose le retour que lorsqu’il est possible', () => {
+    const onBack = jest.fn();
+    const { rerender } = render(<StepHeader step={0} count={3} />);
+    expect(screen.queryByLabelText('Précédent')).toBeNull();
+
+    rerender(<StepHeader step={1} count={3} onBack={onBack} />);
+    fireEvent.press(screen.getByLabelText('Précédent'));
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('OptionRow', () => {
+  it('annonce un choix exclusif, libellé et précision réunis', () => {
+    const onPress = jest.fn();
+    render(
+      <OptionRow
+        label="Modéré"
+        description="3 à 4 séances / semaine"
+        selected
+        onPress={onPress}
+        testID="act-modere"
+      />,
+    );
+
+    const row = screen.getByTestId('act-modere');
+    expect(row.props.accessibilityRole).toBe('radio');
+    expect(row.props.accessibilityLabel).toBe('Modéré, 3 à 4 séances / semaine');
+    expect(row).toHaveAccessibilityState({ selected: true });
+
+    fireEvent.press(row);
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 });
 

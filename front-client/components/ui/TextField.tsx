@@ -1,22 +1,31 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useState } from 'react';
-import { TextInput, View, type TextInputProps } from 'react-native';
+import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
 
 import { makeStyles, px, useTheme } from '@/theme';
 
 import { Text } from './Text';
 
+const TOGGLE_SIZE = px(30);
+
 const useStyles = makeStyles((theme) => ({
   root: {
-    gap: theme.spacing.sm,
+    gap: px(6),
   },
-  // Dérivé de `.pa-card-line` : surface, rayon `--radius`, contour `--line`.
+  // `onbInputStyle` : rayon 14, rembourrage 13 / 14, contour de 1.5 px.
   field: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.field,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
+    borderRadius: px(14),
+    borderWidth: 1.5,
     borderColor: theme.colors.line,
-    paddingVertical: px(11),
-    paddingHorizontal: px(14),
+    paddingVertical: px(13),
+    paddingLeft: px(14),
+    paddingRight: px(14),
+  },
+  fieldWithToggle: {
+    paddingRight: px(6),
   },
   focused: {
     borderColor: theme.colors.focus,
@@ -28,11 +37,22 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.colors.fieldDisabled,
   },
   input: {
-    ...theme.typography.body,
+    flex: 1,
+    fontSize: px(14),
     color: theme.colors.ink,
     // Neutralise la hauteur minimale que le moteur de texte Android impose,
     // afin que le rembourrage du champ reste celui du design.
     padding: 0,
+  },
+  toggle: {
+    width: TOGGLE_SIZE,
+    height: TOGGLE_SIZE,
+    borderRadius: TOGGLE_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  togglePressed: {
+    opacity: 0.6,
   },
 }));
 
@@ -42,20 +62,29 @@ export interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   error?: string;
   /** Indication sous le champ, masquée lorsqu'une erreur est affichée. */
   hint?: string;
+  /**
+   * Bouton de révélation du mot de passe. Actif par défaut dès que
+   * `secureTextEntry` est demandé.
+   */
+  showVisibilityToggle?: boolean;
 }
 
 /**
  * Champ de saisie du design system.
  *
- * Le design ne spécifie pas de champ de formulaire : l'apparence est dérivée de
- * `.pa-card-line` — surface, rayon `--radius`, contour `--line` — le contour
- * passant à `--accent` au focus et à `--danger` en erreur.
+ * Le design ne définit pas de composant de formulaire réutilisable, mais fixe
+ * l'apparence des champs du parcours d'inscription (`onbInputStyle`) et le
+ * libellé en petites capitales qui les surmonte (`OnbField`) : c'est cette
+ * apparence qui est reprise ici, le contour passant à `--accent` au focus et à
+ * `--danger` en erreur.
  */
 export function TextField({
   label,
   error,
   hint,
   editable = true,
+  secureTextEntry = false,
+  showVisibilityToggle = true,
   onFocus,
   onBlur,
   ...rest
@@ -63,18 +92,18 @@ export function TextField({
   const styles = useStyles();
   const theme = useTheme();
   const [focused, setFocused] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+
+  const withToggle = secureTextEntry && showVisibilityToggle;
 
   return (
     <View style={styles.root}>
-      {label ? (
-        <Text variant="label" color="ink2">
-          {label}
-        </Text>
-      ) : null}
+      {label ? <Text variant="meta">{label}</Text> : null}
 
       <View
         style={[
           styles.field,
+          withToggle && styles.fieldWithToggle,
           focused && styles.focused,
           !!error && styles.errored,
           !editable && styles.disabled,
@@ -83,6 +112,7 @@ export function TextField({
         <TextInput
           style={styles.input}
           editable={editable}
+          secureTextEntry={secureTextEntry && !revealed}
           placeholderTextColor={theme.colors.muted}
           accessibilityLabel={label}
           accessibilityState={{ disabled: !editable }}
@@ -96,6 +126,21 @@ export function TextField({
           }}
           {...rest}
         />
+
+        {withToggle ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={revealed ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+            onPress={() => setRevealed((value) => !value)}
+            style={({ pressed }) => [styles.toggle, pressed && styles.togglePressed]}
+          >
+            <Ionicons
+              name={revealed ? 'eye-off-outline' : 'eye-outline'}
+              size={px(16)}
+              color={theme.colors.muted}
+            />
+          </Pressable>
+        ) : null}
       </View>
 
       {error ? (
