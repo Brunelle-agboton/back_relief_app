@@ -221,12 +221,23 @@ const terracotta: Ambiance = {
   },
 };
 
-/** C · Brume — serein, sauge bleuté froid, beaucoup d'air. */
+/**
+ * C · Brume — serein, beaucoup d'air.
+ *
+ * L'accent suit le panneau de tweaks du design (`accentBrume: #1662A9`) et non
+ * le `--accent: #5e8f86` de la feuille de style : c'est le bleu déjà présent
+ * dans l'app, et c'est le choix retenu par le client. Le tweak ne fournissant
+ * que l'accent, `accentDeep` et `accentSoft` sont dérivés dans la même teinte
+ * et vérifiés en contraste.
+ *
+ * `good` conserve en revanche le vert de l'ambiance : une couleur de réussite
+ * confondue avec la couleur de marque n'est plus lisible comme un statut.
+ */
 const brume: Ambiance = {
   light: {
     bg: '#eef2f1',
     surface: '#ffffff',
-    surfaceSoft: '#deebe7',
+    surfaceSoft: '#dce8f4',
     surfaceRaised: '#ffffff',
     overlay: 'rgba(24, 20, 16, 0.42)',
 
@@ -235,9 +246,9 @@ const brume: Ambiance = {
     muted: '#94a29d',
     onAccent: '#ffffff',
 
-    accent: '#5e8f86',
-    accentDeep: '#467068',
-    accentSoft: '#deebe7',
+    accent: '#1662a9',
+    accentDeep: '#0f4c85',
+    accentSoft: '#dce8f4',
 
     line: '#e1e7e5',
 
@@ -261,7 +272,7 @@ const brume: Ambiance = {
   dark: {
     bg: '#131917',
     surface: '#1a211f',
-    surfaceSoft: '#1f2c29',
+    surfaceSoft: '#16283a',
     surfaceRaised: '#27312e',
     overlay: 'rgba(0, 0, 0, 0.62)',
 
@@ -270,9 +281,9 @@ const brume: Ambiance = {
     muted: '#8d9c97',
     onAccent: '#131917',
 
-    accent: '#7fb0a6',
-    accentDeep: '#a6ccc3',
-    accentSoft: '#1f2c29',
+    accent: '#5ea4de',
+    accentDeep: '#93c4ec',
+    accentSoft: '#16283a',
 
     line: '#2b3533',
 
@@ -307,10 +318,7 @@ export const ambiances: Readonly<Record<AmbianceName, Ambiance>> = Object.freeze
  * Le panneau de tweaks du design (`__TWEAK_DEFAULTS.visible`) est positionné
  * sur « brume », c'est donc l'ambiance que le client a sous les yeux.
  *
- * À noter : ce même panneau force `accentBrume` à `#1662A9` — un bleu franc,
- * déjà très présent dans l'app — là où la feuille de style de l'ambiance
- * définit `#5e8f86`. Les deux valeurs divergent nettement et le tweak ne
- * fournit ni `accent-deep` ni `accent-soft` assortis : c'est la valeur de la
- * feuille de style, cohérente avec le reste de l'ambiance, qui est retenue.
+ * Son accent suit la valeur du panneau de tweaks (`#1662A9`) plutôt que celle
+ * de la feuille de style — voir le commentaire de l'ambiance.
  */
 export const defaultAmbiance: AmbianceName = 'brume';

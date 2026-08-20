@@ -85,7 +85,12 @@ describe('RegisterStep3Screen', () => {
         drinkReminder: false,
         role: 'user',
       }));
-      expect(useRouter().push).toHaveBeenCalledWith('/login'); // Assert on useRouter().push
+      // Le parcours ne mène plus directement à la connexion : il se termine sur
+      // l'écran de confirmation (étape 6/6 du design), d'où l'utilisateur
+      // rejoint ensuite la connexion.
+      expect(useRouter().push).toHaveBeenCalledWith(
+        expect.objectContaining({ pathname: '/register/done' }),
+      );
     });
   });
 

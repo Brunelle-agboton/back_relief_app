@@ -17,6 +17,7 @@ export default function AuthLayout() {
             <Stack.Screen name="register/step1" />
             <Stack.Screen name="register/step2" />
             <Stack.Screen name="register/step3" />
+            <Stack.Screen name="register/done" />
             <Stack.Screen name="register-pro/step1-infos"
               options={{
                 headerLeft:  () => <BackButton />

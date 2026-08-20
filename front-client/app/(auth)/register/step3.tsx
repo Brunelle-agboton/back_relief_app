@@ -14,6 +14,7 @@ import {
 } from '@/components/ui';
 import api from '@/services/api';
 import { makeStyles, px } from '@/theme';
+import { toNumber, toText } from '@/utils/searchParams';
 
 import { REGISTER_STEP_COUNT } from './step1';
 
@@ -38,18 +39,6 @@ const YES_NO = [
   { label: 'Oui', value: true },
   { label: 'Non', value: false },
 ];
-
-/**
- * Les paramètres de navigation arrivent en `string | string[]` selon qu'ils ont
- * été passés une ou plusieurs fois : on ne retient que la première occurrence.
- */
-function toNumber(value: string | string[] | undefined): number {
-  return parseInt(Array.isArray(value) ? value[0] : (value ?? ''), 10);
-}
-
-function toText(value: string | string[] | undefined): string {
-  return Array.isArray(value) ? value[0] : (value ?? '');
-}
 
 const useStyles = makeStyles((theme) => ({
   section: {
@@ -98,7 +87,18 @@ export default function RegisterStep3Screen() {
         restReminder,
         drinkReminder,
       });
-      router.push('/login');
+      router.push({
+        pathname: '/register/done',
+        params: {
+          email: toText(email),
+          age: toText(age),
+          poids: toText(poids),
+          taille: toText(taille),
+          hourSit: String(hourSit),
+          isExercise: String(isExercise),
+          numberTraining: String(numberTraining),
+        },
+      });
     } catch (e) {
       setError("Erreur lors de l'inscription");
     } finally {
