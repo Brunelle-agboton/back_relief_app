@@ -3,68 +3,74 @@ import type { TextStyle, ViewStyle } from 'react-native';
 /**
  * Contrat du système de thèmes.
  *
- * Les noms de rôles reprennent volontairement le vocabulaire des tokens du
- * design « Pause Active × Companion » (`--accent`, `--accent-deep`, `--ink`,
- * `--ink-2`, `--muted`, `--line`, `--bg`, `--t1..t6`, `--char-*`) afin qu'une
- * mise à jour du design se traduise par un simple remappage de
- * `theme/tokens/palette.ts`, sans toucher au moindre écran.
+ * Les rôles reprennent un pour un les variables CSS du design « Pause Active ×
+ * Companion » (`--accent`, `--accent-deep`, `--accent-soft`, `--ink`,
+ * `--ink-2`, `--muted`, `--line`, `--bg`, `--surface`, `--good`, `--warn`,
+ * `--danger`, `--streak`, `--streak-bg`, `--t1`…`--t5`, `--char-*`). Une mise à
+ * jour du design se traduit donc par l'édition de `tokens/ambiances.ts` seul.
  */
+
+/** Les trois ambiances définies par le design. */
+export type AmbianceName = 'sauge' | 'terracotta' | 'brume';
 
 export type ColorScheme = 'light' | 'dark';
 
 /** Préférence utilisateur : un schéma figé, ou le suivi du réglage système. */
 export type ThemeMode = ColorScheme | 'system';
 
-/** Teintes pastel des vignettes de catégorie (`--t1` … `--t6` côté design). */
-export type TintName = 't1' | 't2' | 't3' | 't4' | 't5' | 't6';
+/** Teintes des vignettes de catégorie (`--t1` … `--t5`). */
+export type TintName = 't1' | 't2' | 't3' | 't4' | 't5';
 
-/** Pièces du personnage illustré (`--char-*` côté design). */
+/** Pièces du personnage illustré (`--char-*`). */
 export type CharacterPart = 'skin' | 'hair' | 'shirt' | 'pants' | 'shoe';
 
 export interface ThemeColors {
-  /** Fond d'écran général, sous les cartes. */
+  /** `--bg` — fond d'écran général, sous les cartes. */
   bg: string;
-  /** Surface d'une carte posée sur `bg`. */
+  /** `--surface` — surface d'une carte posée sur `bg`. */
   surface: string;
-  /** Carte teintée (mise en avant douce). */
+  /** `.pa-card-soft` — carte teintée à l'accent (mise en avant douce). */
   surfaceSoft: string;
-  /** Surface surélevée : modale, bottom sheet, popover. */
+  /** Surface surélevée : bottom sheet, modale. */
   surfaceRaised: string;
-  /** Voile derrière une modale. */
+  /** `.pa-scrim` — voile derrière une modale. */
   overlay: string;
 
-  /** Texte principal. */
+  /** `--ink` — texte principal. */
   ink: string;
-  /** Texte secondaire. */
+  /** `--ink-2` — texte secondaire. */
   ink2: string;
-  /** Texte tertiaire, placeholders, libellés désactivés. */
+  /** `--muted` — texte tertiaire, sur-titres, libellés d'onglet inactifs. */
   muted: string;
-  /** Texte/icône posé sur `accent`. Bascule en clair/sombre selon le schéma. */
+  /** Texte et icônes posés sur `accent`. Bascule selon le schéma. */
   onAccent: string;
 
-  /** Couleur de marque, pour les aplats : boutons, jauges, anneaux. */
+  /** `--accent` — aplats de marque : bouton primaire, jauges, anneaux. */
   accent: string;
-  /** Variante contrastée de la marque, pour le texte et les grands chiffres. */
+  /** `--accent-deep` — variante contrastée, pour le texte de marque. */
   accentDeep: string;
-  /** Aplat de marque très clair : fonds de puces, états sélectionnés. */
+  /** `--accent-soft` — aplat très clair : puces de catégorie, bouton doux. */
   accentSoft: string;
 
-  /** Bordures et séparateurs. */
+  /** `--line` — bordures, séparateurs, contours en `inset`. */
   line: string;
-  /** Bordure appuyée : champ au repos, contour de contrôle. */
-  lineStrong: string;
   /** Bordure d'un champ actif, halo de focus. */
   focus: string;
 
+  /** `--good` — validation, réussite. */
+  good: string;
+  goodSoft: string;
+  /** `--warn` — avertissement. */
+  warn: string;
+  warnSoft: string;
+  /** `--danger` — erreur, action destructive. */
   danger: string;
   dangerSoft: string;
   onDanger: string;
-  warn: string;
-  warnSoft: string;
-  success: string;
-  successSoft: string;
-  info: string;
-  infoSoft: string;
+
+  /** `--streak` / `--streak-bg` — pastille de série de jours. */
+  streak: string;
+  streakBg: string;
 
   /** Fond des champs de saisie. */
   field: string;
@@ -91,20 +97,23 @@ export interface ThemeRadius {
   none: 0;
   xs: number;
   sm: number;
+  /** `--radius` du design. */
   md: number;
+  /** `--radius-lg` du design — rayon des cartes. */
   lg: number;
+  /** Rayon des bottom sheets. */
   xl: number;
-  xxl: number;
-  /** Rayon « pilule » : boutons arrondis, puces, pastilles. */
+  /** `--radius-pill` — boutons, puces, pastilles. */
   pill: number;
 }
 
 export interface ThemeFonts {
   /**
    * Familles typographiques. `undefined` = police système de la plateforme.
-   * Le design prévoit une famille display distincte (`--font-display`) : le
-   * jour où les fichiers de police sont embarqués, il suffit de renseigner ces
-   * deux clés et de les charger dans `useFonts` (`app/_layout.tsx`).
+   *
+   * Le design s'appuie sur Lexend (display) et Atkinson Hyperlegible (corps),
+   * deux polices non embarquées dans l'app. Le jour où elles le seront, il
+   * suffit de renseigner ces clés et de les charger dans `useFonts`.
    */
   display: string | undefined;
   body: string | undefined;
@@ -129,20 +138,25 @@ export type TypographyVariant =
   | 'meta'
   | 'caption'
   | 'button'
+  | 'buttonLg'
   | 'num';
 
 export type ThemeTypography = Readonly<Record<TypographyVariant, TextStyle>>;
 
 export type ThemeShadows = Readonly<{
   none: ViewStyle;
-  sm: ViewStyle;
-  md: ViewStyle;
-  lg: ViewStyle;
+  /** `--shadow-card`. */
+  card: ViewStyle;
+  /** Élévation intermédiaire : bouton primaire, segment actif. */
+  raised: ViewStyle;
+  /** `--shadow-pop` — modales. */
+  pop: ViewStyle;
 }>;
 
 export interface Theme {
-  /** Identifiant lisible, ex. `sauge-light`. Utile en debug et en snapshot. */
+  /** Identifiant lisible, ex. `brume-light`. Utile en debug et en snapshot. */
   readonly name: string;
+  readonly ambiance: AmbianceName;
   readonly scheme: ColorScheme;
   readonly colors: ThemeColors;
   readonly spacing: Readonly<ThemeSpacing>;

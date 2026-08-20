@@ -3,23 +3,32 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 
-import { defaultTheme, getTheme } from './themes';
-import type { ColorScheme, Theme, ThemeMode } from './types';
+import { defaultAmbiance } from './tokens/ambiances';
+import { ambianceNames, defaultTheme, getTheme } from './themes';
+import type { AmbianceName, ColorScheme, Theme, ThemeMode } from './types';
 
-const STORAGE_KEY = '@backrelief/theme-mode';
+const MODE_KEY = '@backrelief/theme-mode';
+const AMBIANCE_KEY = '@backrelief/theme-ambiance';
 
 function isThemeMode(value: unknown): value is ThemeMode {
   return value === 'light' || value === 'dark' || value === 'system';
 }
 
+function isAmbiance(value: unknown): value is AmbianceName {
+  return typeof value === 'string' && (ambianceNames as readonly string[]).includes(value);
+}
+
 export interface ThemeContextValue {
   theme: Theme;
+  /** Ambiance active parmi les trois du design. */
+  ambiance: AmbianceName;
   /** Préférence exprimée : `'system'` suit le réglage de l'OS. */
   mode: ThemeMode;
   /** Schéma effectivement appliqué, une fois `'system'` résolu. */
   scheme: ColorScheme;
   setMode: (mode: ThemeMode) => void;
-  /** `true` tant que la préférence persistée n'a pas été relue. */
+  setAmbiance: (ambiance: AmbianceName) => void;
+  /** `true` tant que les préférences persistées n'ont pas été relues. */
   isHydrating: boolean;
 }
 
@@ -31,9 +40,11 @@ export interface ThemeContextValue {
  */
 const ThemeContext = createContext<ThemeContextValue>({
   theme: defaultTheme,
+  ambiance: defaultTheme.ambiance,
   mode: defaultTheme.scheme,
   scheme: defaultTheme.scheme,
   setMode: () => undefined,
+  setAmbiance: () => undefined,
   isHydrating: false,
 });
 
@@ -45,9 +56,11 @@ export interface ThemeProviderProps {
    * Volontairement `'light'` et non `'system'` : les écrans encore non migrés
    * codent leurs couleurs en dur (texte sombre sur fond supposé blanc). Passer
    * cette valeur à `'system'` suffira à ouvrir le sombre une fois la migration
-   * terminée — le thème sombre, lui, est déjà complet.
+   * terminée — les trois ambiances sombres, elles, sont déjà complètes.
    */
   initialMode?: ThemeMode;
+  /** Ambiance appliquée avant relecture de la préférence persistée. */
+  initialAmbiance?: AmbianceName;
   /** Désactive la persistance. Utile en test et en preview. */
   persist?: boolean;
 }
@@ -55,10 +68,12 @@ export interface ThemeProviderProps {
 export function ThemeProvider({
   children,
   initialMode = 'light',
+  initialAmbiance = defaultAmbiance,
   persist = true,
 }: ThemeProviderProps) {
   const systemScheme = useColorScheme();
   const [mode, setModeState] = useState<ThemeMode>(initialMode);
+  const [ambiance, setAmbianceState] = useState<AmbianceName>(initialAmbiance);
   const [isHydrating, setIsHydrating] = useState(persist);
 
   useEffect(() => {
@@ -67,15 +82,23 @@ export function ThemeProvider({
     }
     let cancelled = false;
 
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((stored) => {
-        if (!cancelled && isThemeMode(stored)) {
-          setModeState(stored);
+    AsyncStorage.multiGet([MODE_KEY, AMBIANCE_KEY])
+      .then((entries) => {
+        if (cancelled) {
+          return;
+        }
+        for (const [key, value] of entries) {
+          if (key === MODE_KEY && isThemeMode(value)) {
+            setModeState(value);
+          }
+          if (key === AMBIANCE_KEY && isAmbiance(value)) {
+            setAmbianceState(value);
+          }
         }
       })
       .catch(() => {
         // Une préférence illisible n'est pas une erreur bloquante : on reste
-        // sur `initialMode`.
+        // sur les valeurs initiales.
       })
       .finally(() => {
         if (!cancelled) {
@@ -92,7 +115,17 @@ export function ThemeProvider({
     (next: ThemeMode) => {
       setModeState(next);
       if (persist) {
-        AsyncStorage.setItem(STORAGE_KEY, next).catch(() => undefined);
+        AsyncStorage.setItem(MODE_KEY, next).catch(() => undefined);
+      }
+    },
+    [persist],
+  );
+
+  const setAmbiance = useCallback(
+    (next: AmbianceName) => {
+      setAmbianceState(next);
+      if (persist) {
+        AsyncStorage.setItem(AMBIANCE_KEY, next).catch(() => undefined);
       }
     },
     [persist],
@@ -101,19 +134,27 @@ export function ThemeProvider({
   const scheme: ColorScheme = mode === 'system' ? (systemScheme ?? 'light') : mode;
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme: getTheme(scheme), mode, scheme, setMode, isHydrating }),
-    [scheme, mode, setMode, isHydrating],
+    () => ({
+      theme: getTheme(ambiance, scheme),
+      ambiance,
+      mode,
+      scheme,
+      setMode,
+      setAmbiance,
+      isHydrating,
+    }),
+    [ambiance, scheme, mode, setMode, setAmbiance, isHydrating],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
-/** Accès au thème courant. Fonctionne sans provider (repli sur le thème clair). */
+/** Accès au thème courant. Fonctionne sans provider (repli sur l'ambiance par défaut, en clair). */
 export function useTheme(): Theme {
   return useContext(ThemeContext).theme;
 }
 
-/** Accès au contrôleur de thème : lecture du mode et bascule. */
+/** Accès au contrôleur : lecture du mode et de l'ambiance, et bascule. */
 export function useThemeController(): ThemeContextValue {
   return useContext(ThemeContext);
 }

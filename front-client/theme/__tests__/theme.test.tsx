@@ -2,7 +2,17 @@ import { render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { Text, View } from 'react-native';
 
-import { ThemeProvider, darkTheme, lightTheme, makeStyles, toNavigationTheme, useTheme } from '@/theme';
+import {
+  ThemeProvider,
+  ambianceNames,
+  defaultAmbiance,
+  getTheme,
+  makeStyles,
+  themes,
+  toNavigationTheme,
+  useTheme,
+} from '@/theme';
+import type { AmbianceName, ColorScheme, Theme } from '@/theme';
 
 // Le repo fournit un mock manuel global de `@react-navigation/native`
 // (`__mocks__/@react-navigation/native.tsx`) que Jest applique automatiquement
@@ -11,9 +21,13 @@ import { ThemeProvider, darkTheme, lightTheme, makeStyles, toNavigationTheme, us
 jest.unmock('@react-navigation/native');
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
-  getItem: jest.fn(() => Promise.resolve(null)),
+  multiGet: jest.fn(() => Promise.resolve([])),
   setItem: jest.fn(() => Promise.resolve()),
 }));
+
+const allThemes: Theme[] = ambianceNames.flatMap((ambiance) =>
+  (['light', 'dark'] as ColorScheme[]).map((scheme) => getTheme(ambiance, scheme)),
+);
 
 function Probe() {
   const theme = useTheme();
@@ -21,45 +35,83 @@ function Probe() {
 }
 
 describe('système de thèmes', () => {
-  it('expose exactement les mêmes rôles de couleur en clair et en sombre', () => {
-    // Garde-fou d'exécution en complément du typage : un rôle ajouté au clair
-    // et oublié au sombre doit se voir immédiatement.
-    expect(Object.keys(darkTheme.colors).sort()).toEqual(Object.keys(lightTheme.colors).sort());
-    expect(Object.keys(darkTheme.colors.tints).sort()).toEqual(
-      Object.keys(lightTheme.colors.tints).sort(),
-    );
-    expect(Object.keys(darkTheme.colors.character).sort()).toEqual(
-      Object.keys(lightTheme.colors.character).sort(),
-    );
+  it('expose les 3 ambiances du design dans les 2 schémas', () => {
+    expect(ambianceNames).toEqual(['sauge', 'terracotta', 'brume']);
+    expect(allThemes.map((t) => t.name)).toEqual([
+      'sauge-light',
+      'sauge-dark',
+      'terracotta-light',
+      'terracotta-dark',
+      'brume-light',
+      'brume-dark',
+    ]);
   });
 
-  it("n'expose aucune couleur vide", () => {
+  it('expose exactement les mêmes rôles dans tous les thèmes', () => {
+    // Garde-fou d'exécution en complément du typage : un rôle ajouté à une
+    // ambiance et oublié dans une autre doit se voir immédiatement.
+    const reference = Object.keys(themes[defaultAmbiance].light.colors).sort();
+
+    for (const theme of allThemes) {
+      expect(Object.keys(theme.colors).sort()).toEqual(reference);
+      expect(Object.keys(theme.colors.tints).sort()).toEqual(['t1', 't2', 't3', 't4', 't5']);
+      expect(Object.keys(theme.colors.character).sort()).toEqual([
+        'hair',
+        'pants',
+        'shirt',
+        'shoe',
+        'skin',
+      ]);
+    }
+  });
+
+  it("n'expose aucune couleur invalide", () => {
     const flatten = (input: object): string[] =>
       Object.values(input).flatMap((value) =>
         typeof value === 'object' && value !== null ? flatten(value) : [String(value)],
       );
 
-    for (const theme of [lightTheme, darkTheme]) {
+    for (const theme of allThemes) {
       for (const value of flatten(theme.colors)) {
-        expect(value).toMatch(/^(#|rgba?\()/);
+        expect(value).toMatch(/^(#[0-9a-f]{6}|rgba?\()/i);
       }
     }
   });
 
-  it('retombe sur le thème clair sans provider', () => {
+  it('habille le personnage avec l’accent de son ambiance', () => {
+    // Règle explicite du design : l'identité du personnage est constante,
+    // seul le t-shirt suit l'accent.
+    for (const theme of allThemes) {
+      expect(theme.colors.character.shirt).toBe(theme.colors.accent);
+      expect(theme.colors.character.hair).toBe('#2b3340');
+    }
+  });
+
+  it('met les mesures du design à l’échelle de l’appareil', () => {
+    // Le design est maquetté dans un cadre de 300 px de large : sans mise à
+    // l'échelle, l'interface serait 25 % trop petite sur appareil réel.
+    const { typography, radius } = themes[defaultAmbiance].light;
+
+    expect(typography.body.fontSize).toBe(16.5); // 13 px du design
+    expect(typography.h1.fontSize).toBe(31.5); // 25 px du design
+    expect(radius.lg).toBe(25); // --radius-lg: 20px
+    expect(radius.pill).toBe(999);
+  });
+
+  it('retombe sur l’ambiance par défaut en clair sans provider', () => {
     // Contrat indispensable : les tests d'écrans rendent les composants isolés,
     // sans ThemeProvider au-dessus.
     render(<Probe />);
-    expect(screen.getByTestId('probe')).toHaveTextContent('sauge-light');
+    expect(screen.getByTestId('probe')).toHaveTextContent(`${defaultAmbiance}-light`);
   });
 
-  it('applique le mode demandé au provider', () => {
+  it('applique le mode et l’ambiance demandés au provider', () => {
     render(
-      <ThemeProvider initialMode="dark" persist={false}>
+      <ThemeProvider initialMode="dark" initialAmbiance="terracotta" persist={false}>
         <Probe />
       </ThemeProvider>,
     );
-    expect(screen.getByTestId('probe')).toHaveTextContent('sauge-dark');
+    expect(screen.getByTestId('probe')).toHaveTextContent('terracotta-dark');
   });
 
   it('démarre en clair par défaut tant que les écrans ne sont pas migrés', () => {
@@ -68,11 +120,11 @@ describe('système de thèmes', () => {
         <Probe />
       </ThemeProvider>,
     );
-    expect(screen.getByTestId('probe')).toHaveTextContent('sauge-light');
+    expect(screen.getByTestId('probe')).toHaveTextContent(`${defaultAmbiance}-light`);
   });
 
   it('mémoïse la feuille de styles par thème', () => {
-    const factory = jest.fn((theme: typeof lightTheme) => ({
+    const factory = jest.fn((theme: Theme) => ({
       box: { backgroundColor: theme.colors.surface },
     }));
     const useStyles = makeStyles(factory);
@@ -86,18 +138,33 @@ describe('système de thèmes', () => {
     rerender(<Box />);
     rerender(<Box />);
 
-    // Une seule construction malgré trois rendus, et zéro construction par instance.
+    // Une seule construction malgré trois rendus, et zéro par instance.
     expect(factory).toHaveBeenCalledTimes(1);
   });
 
-  it('projette le thème vers React Navigation', () => {
-    const nav = toNavigationTheme(darkTheme);
+  it('projette chaque thème vers React Navigation', () => {
+    for (const theme of allThemes) {
+      const nav = toNavigationTheme(theme);
 
-    expect(nav.dark).toBe(true);
-    expect(nav.colors.background).toBe(darkTheme.colors.bg);
-    expect(nav.colors.primary).toBe(darkTheme.colors.accent);
-    expect(nav.colors.text).toBe(darkTheme.colors.ink);
-    // React Navigation 7 exige une clé `fonts` : elle doit survivre au mapping.
-    expect(nav.fonts).toBeDefined();
+      expect(nav.dark).toBe(theme.scheme === 'dark');
+      expect(nav.colors.background).toBe(theme.colors.bg);
+      expect(nav.colors.primary).toBe(theme.colors.accent);
+      expect(nav.colors.text).toBe(theme.colors.ink);
+      // React Navigation 7 exige une clé `fonts` : elle doit survivre au mapping.
+      expect(nav.fonts).toBeDefined();
+    }
+  });
+
+  it('conserve la teinte de marque entre clair et sombre', () => {
+    // Le sombre est dérivé, pas repris du design : on vérifie qu'il éclaircit
+    // l'accent au lieu de le remplacer, et qu'il inverse bien `onAccent`.
+    for (const ambiance of ambianceNames as AmbianceName[]) {
+      const light = getTheme(ambiance, 'light');
+      const dark = getTheme(ambiance, 'dark');
+
+      expect(dark.colors.accent).not.toBe(light.colors.accent);
+      expect(light.colors.onAccent).toBe('#ffffff');
+      expect(dark.colors.onAccent).toBe(dark.colors.bg);
+    }
   });
 });

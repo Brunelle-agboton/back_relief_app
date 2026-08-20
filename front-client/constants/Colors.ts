@@ -10,7 +10,7 @@
  * Pour tout nouveau code, ne pas importer d'ici : utiliser `useTheme()` /
  * `makeStyles()` depuis `@/theme`, qui exposent l'ensemble des rôles.
  */
-import { darkTheme, lightTheme } from '@/theme';
+import { defaultAmbiance, getTheme } from '@/theme';
 import type { Theme } from '@/theme';
 
 const toLegacyPalette = (theme: Theme) => ({
@@ -23,6 +23,6 @@ const toLegacyPalette = (theme: Theme) => ({
 });
 
 export const Colors = {
-  light: toLegacyPalette(lightTheme),
-  dark: toLegacyPalette(darkTheme),
+  light: toLegacyPalette(getTheme(defaultAmbiance, 'light')),
+  dark: toLegacyPalette(getTheme(defaultAmbiance, 'dark')),
 };

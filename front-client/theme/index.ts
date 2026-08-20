@@ -10,8 +10,10 @@ export { ThemeProvider, useTheme, useThemeController } from './ThemeContext';
 export type { ThemeContextValue, ThemeProviderProps } from './ThemeContext';
 export { makeStyles } from './makeStyles';
 export { toNavigationTheme } from './navigation';
-export { darkTheme, defaultTheme, getTheme, lightTheme, themes } from './themes';
+export { ambianceNames, createTheme, defaultTheme, getTheme, themes } from './themes';
+export { defaultAmbiance } from './tokens/ambiances';
 export type {
+  AmbianceName,
   CharacterPart,
   ColorScheme,
   Theme,
