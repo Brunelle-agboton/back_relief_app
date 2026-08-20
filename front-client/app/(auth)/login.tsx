@@ -1,37 +1,69 @@
+import { Link, useRouter } from 'expo-router';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image } from 'react-native';
-import { Link } from 'expo-router';
+import { Image, Pressable, View } from 'react-native';
+
+import { Button, FormError, ScrollScreen, Text, TextField } from '@/components/ui';
+import { makeStyles, px } from '@/theme';
+
+import { isEnabled } from '../../config/featureFlags';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { saveToken } from '../../utils/storage';
-import {useNavigation, NavigationProp } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
-import { useAuth } from '../../context/AuthContext';
-import { isEnabled } from '../../config/featureFlags';
 
 type RootStackParamList = {
   'screens/RegisterHealthScreen': undefined;
-  'register-pro/step1-infos' : undefined;
-  'register/step1' : undefined;
+  'register-pro/step1-infos': undefined;
+  'register/step1': undefined;
 };
+
+const useStyles = makeStyles((theme) => ({
+  // Reprend le médaillon de l'écran de bienvenue du design : disque d'aplat
+  // clair, illustration centrée.
+  logoBadge: {
+    width: px(84),
+    height: px(84),
+    borderRadius: px(42),
+    backgroundColor: theme.colors.accentSoft,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: px(58),
+    height: px(58),
+    resizeMode: 'contain',
+  },
+  forgotPassword: {
+    alignSelf: 'flex-start',
+  },
+  footer: {
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.xs,
+  },
+}));
 
 export default function LoginScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const router = useRouter();
+  const styles = useStyles();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
 
   const handleLogin = async () => {
+    setSubmitting(true);
     try {
       const res = await api.post('/user/login', { email, password });
       const token = res.data?.access_token;
       if (!token) {
         throw new Error('Token manquant dans la réponse');
       }
-  
+
       // Stocke le token pour les prochains appels API. `login` retourne le
       // profil décodé : `authState` n'est pas encore à jour à cet instant.
       const user = login(token);
@@ -44,178 +76,80 @@ export default function LoginScreen() {
       } else {
         router.replace('/(tabs)');
       }
-
     } catch (e) {
       console.log(e);
       setError('Identifiants invalides');
+    } finally {
+      setSubmitting(false);
     }
   };
- return (
-    <View style={styles.container}>
-      <Image
-        source={require('@/assets/images/icon.png')}
-        style={styles.logo}
+
+  return (
+    <ScrollScreen centered>
+      <View style={styles.logoBadge}>
+        <Image source={require('@/assets/images/icon.png')} style={styles.logo} />
+      </View>
+
+      <View>
+        <Text variant="h1">Connexion</Text>
+        <Text variant="sub">Retrouvez vos pauses actives et votre suivi.</Text>
+      </View>
+
+      <TextField
+        label="Adresse e-mail"
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        autoComplete="email"
+        keyboardType="email-address"
       />
-      <Text style={styles.title}>Connexion</Text>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Email</Text>
-        <View style={[
-          styles.inputWrapper,
-          emailFocused && styles.inputFocused
-        ]}>
-          <TextInput 
-            style={styles.input} 
-            placeholder="Email" 
-            placeholderTextColor="#999"
-            onChangeText={setEmail} 
-            value={email}
-            onFocus={() => setEmailFocused(true)}
-            onBlur={() => setEmailFocused(false)}
-          />
-        </View>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Mot de passe</Text>
-        <View style={[
-          styles.inputWrapper,
-          passwordFocused && styles.inputFocused
-        ]}>
-          <TextInput 
-            style={styles.input} 
-            placeholder="Mot de passe" 
-            placeholderTextColor="#999"
-            secureTextEntry 
-            onChangeText={setPassword} 
-            value={password}
-            onFocus={() => setPasswordFocused(true)}
-            onBlur={() => setPasswordFocused(false)}
-          />
-        </View>
-      </View>
+      <TextField
+        label="Mot de passe"
+        placeholder="Mot de passe"
+        value={password}
+        onChangeText={setPassword}
+        autoCapitalize="none"
+        autoComplete="password"
+        secureTextEntry
+      />
 
       <Link href="/(auth)/forgot-password" style={styles.forgotPassword}>
-        <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
+        <Text variant="label" color="accentDeep">
+          Mot de passe oublié ?
+        </Text>
       </Link>
 
-      <TouchableOpacity 
+      <FormError message={error} testID="login-error" />
+
+      <Button
         testID="login-button"
-        style={styles.loginButton} 
+        accessibilityLabel="Se connecter"
+        title="Se connecter"
+        size="lg"
+        block
+        loading={submitting}
         onPress={handleLogin}
-      >
-        <Text style={styles.loginButtonText}>Se connecter</Text>
-      </TouchableOpacity>
+      />
 
-      <Text style={styles.signupText}>
-        Pas encore inscrit ?{' '}
-  </Text>
+      <View style={styles.footer}>
+        <Text variant="sub">Pas encore inscrit ?</Text>
 
-        <Text 
-          style={styles.signupLink} 
-          onPress={() => navigation.navigate('register/step1')}
-        >
-          Créer un compte patient
-        </Text>
-         <Text >
-    ou
-  </Text>
-        <Text 
-          style={styles.signupLink} 
-          onPress={() => navigation.navigate('register-pro/step1-infos')}
-        >
-          Créer un compte professionnel
-        </Text>
-      
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-    </View>
+        <Pressable onPress={() => navigation.navigate('register/step1')}>
+          <Text variant="bodyStrong" color="accentDeep">
+            Créer un compte patient
+          </Text>
+        </Pressable>
+
+        <Text variant="caption">ou</Text>
+
+        <Pressable onPress={() => navigation.navigate('register-pro/step1-infos')}>
+          <Text variant="bodyStrong" color="accentDeep">
+            Créer un compte professionnel
+          </Text>
+        </Pressable>
+      </View>
+    </ScrollScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
-  },
-  logo: {
-    width: 150,
-    height: 120,
-    alignSelf: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 32,
-    color: '#333',
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  label: {
-    marginBottom: 8,
-    fontSize: 16,
-    color: '#555',
-  },
-  inputWrapper: {
-    borderRadius: 30,
-    backgroundColor: '#f9f9f9',
-    overflow: 'hidden', // Empêche le débordement du fond
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  input: {
-    padding: 15,
-    paddingHorizontal: 20,
-    fontSize: 16,
-    color: '#333',
-  },
-  inputFocused: {
-    borderColor: '#FFAE00',
-    backgroundColor: '#fffdf6',
-    shadowColor: '#FFAE00',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  forgotPassword: {
-    marginBottom: 24,
-    alignSelf: 'flex-start',
-  },
-  forgotPasswordText: {
-    color: '#32CD32',
-    fontSize: 16,
-  },
-  loginButton: {
-    backgroundColor: '#32CD32',
-    borderRadius: 29,
-    padding: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  signupText: {
-    marginTop: 16,
-    textAlign: 'center',
-    fontSize: 16,
-    color: '#555',
-  },
-  signupLink: {
-    color: '#32CD32',
-    fontWeight: 'bold',
-  },
-  errorText: {
-    color: 'red',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-});

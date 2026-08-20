@@ -1,12 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Button,TouchableOpacity,StyleSheet  } from 'react-native';
+import React, { useState } from 'react';
+import { View } from 'react-native';
+
+import { Button, FormError, ScrollScreen, Text, TextField } from '@/components/ui';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
-  const [emailFocused, setEmailFocused] = useState(false);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleForgotPassword = async () => {
+    setSubmitting(true);
+    setMessage('');
+    setError('');
     try {
       const response = await fetch('https://example.com/api/forgot-password', {
         method: 'POST',
@@ -18,90 +24,51 @@ export default function ForgotPasswordScreen() {
       if (response.ok) {
         setMessage('Un email de réinitialisation a été envoyé.');
       } else {
-        setMessage('Erreur lors de l\'envoi de l\'email.');
+        setError("Erreur lors de l'envoi de l'email.");
       }
-    } catch (error) {
-      console.error(error);
-      setMessage('Erreur réseau. Veuillez réessayer plus tard.');
+    } catch (e) {
+      console.error(e);
+      setError('Erreur réseau. Veuillez réessayer plus tard.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-       <View style={{marginBottom: 16}}>
+    <ScrollScreen centered>
+      <View>
+        <Text variant="h1">Mot de passe oublié</Text>
+        <Text variant="sub">
+          Renseignez votre adresse e-mail : nous vous enverrons un lien de réinitialisation.
+        </Text>
+      </View>
 
-        <Text style={styles.label}>Entrez votre adresse e-mail :</Text>
-        <View style={[
-          styles.inputWrapper,
-          emailFocused && styles.inputFocused
-        ]}>
-          <TextInput 
-            style={styles.input} 
-            placeholder="Email" 
-            placeholderTextColor="#999"
-            onChangeText={setEmail} 
-            value={email}
-            onFocus={() => setEmailFocused(true)}
-            onBlur={() => setEmailFocused(false)}
-          />
-        </View>
-     </View>
-      <TouchableOpacity 
-        style={styles.loginButton} 
+      <TextField
+        label="Adresse e-mail"
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        autoComplete="email"
+        keyboardType="email-address"
+      />
+
+      <FormError message={error} testID="forgot-password-error" />
+
+      <Button
+        accessibilityLabel="Réinitialiser le mot de passe"
+        title="Réinitialiser le mot de passe"
+        size="lg"
+        block
+        loading={submitting}
         onPress={handleForgotPassword}
-      >
-        <Text style={styles.loginButtonText}>Réinitialiser le mot de passe</Text>
-      </TouchableOpacity>
-      {message ? <Text style={{ marginTop: 20 }}>{message}</Text> : null}
-    </View>
+      />
+
+      {message ? (
+        <Text variant="bodySm" color="good">
+          {message}
+        </Text>
+      ) : null}
+    </ScrollScreen>
   );
 }
-const styles = StyleSheet.create({
-    container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
-  },
-  
-  label: {
-    marginBottom: 8,
-    fontSize: 16,
-    color: '#555',
-  },
-  inputWrapper: {
-    borderRadius: 30,
-    backgroundColor: '#f9f9f9',
-    overflow: 'hidden', // Empêche le débordement du fond
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  input: {
-    padding: 15,
-    paddingHorizontal: 20,
-    fontSize: 16,
-    color: '#333',
-  },
-  inputFocused: {
-    borderColor: '#FFAE00',
-    backgroundColor: '#fffdf6',
-    shadowColor: '#FFAE00',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  loginButton: {
-    backgroundColor: '#32CD32',
-    borderRadius: 29,
-    padding: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-})

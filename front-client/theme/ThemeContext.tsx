@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -9,6 +8,36 @@ import type { AmbianceName, ColorScheme, Theme, ThemeMode } from './types';
 
 const MODE_KEY = '@backrelief/theme-mode';
 const AMBIANCE_KEY = '@backrelief/theme-ambiance';
+
+interface ThemeStorage {
+  multiGet: (keys: string[]) => Promise<readonly (readonly [string, string | null])[]>;
+  setItem: (key: string, value: string) => Promise<void>;
+}
+
+let cachedStorage: ThemeStorage | null | undefined;
+
+/**
+ * Charge AsyncStorage à la demande plutôt qu'au chargement du module.
+ *
+ * Le module natif lève dès son import quand il n'est pas lié — c'est le cas
+ * sous Jest. Or les écrans importent les primitives d'interface, qui importent
+ * le thème : un import direct rendrait le thème intestable sans que chaque
+ * suite ait à le simuler. La persistance est donc chargée au premier usage, et
+ * son absence dégrade proprement — le thème fonctionne, il ne se souvient
+ * simplement pas du choix d'une session à l'autre.
+ */
+function getStorage(): ThemeStorage | null {
+  if (cachedStorage === undefined) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const mod = require('@react-native-async-storage/async-storage');
+      cachedStorage = (mod?.default ?? mod) as ThemeStorage;
+    } catch {
+      cachedStorage = null;
+    }
+  }
+  return cachedStorage;
+}
 
 function isThemeMode(value: unknown): value is ThemeMode {
   return value === 'light' || value === 'dark' || value === 'system';
@@ -77,12 +106,15 @@ export function ThemeProvider({
   const [isHydrating, setIsHydrating] = useState(persist);
 
   useEffect(() => {
-    if (!persist) {
+    const storage = persist ? getStorage() : null;
+    if (!storage) {
+      setIsHydrating(false);
       return;
     }
     let cancelled = false;
 
-    AsyncStorage.multiGet([MODE_KEY, AMBIANCE_KEY])
+    storage
+      .multiGet([MODE_KEY, AMBIANCE_KEY])
       .then((entries) => {
         if (cancelled) {
           return;
@@ -115,7 +147,7 @@ export function ThemeProvider({
     (next: ThemeMode) => {
       setModeState(next);
       if (persist) {
-        AsyncStorage.setItem(MODE_KEY, next).catch(() => undefined);
+        getStorage()?.setItem(MODE_KEY, next).catch(() => undefined);
       }
     },
     [persist],
@@ -125,7 +157,7 @@ export function ThemeProvider({
     (next: AmbianceName) => {
       setAmbianceState(next);
       if (persist) {
-        AsyncStorage.setItem(AMBIANCE_KEY, next).catch(() => undefined);
+        getStorage()?.setItem(AMBIANCE_KEY, next).catch(() => undefined);
       }
     },
     [persist],

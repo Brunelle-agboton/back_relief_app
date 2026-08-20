@@ -1,12 +1,72 @@
+import { useNavigation } from '@react-navigation/native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, TouchableOpacity, StyleSheet, Image, Pressable } from 'react-native';
-import { useNavigation, NavigationProp, RouteProp, useRoute } from '@react-navigation/native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Image, View } from 'react-native';
+
+import {
+  Button,
+  ScrollScreen,
+  Segmented,
+  StepHeader,
+  StepProgress,
+  Text,
+  TextField,
+} from '@/components/ui';
+import { makeStyles, px } from '@/theme';
+
+import { REGISTER_STEP_COUNT } from './step1';
+
+/**
+ * Les libellés servent aussi de valeurs : c'est ce que l'API attend pour
+ * `sexe`, et l'étape suivante les transmet tels quels.
+ */
+const SEXE_OPTIONS = [
+  { label: 'Homme', value: 'Homme', testID: 'radio-homme' },
+  { label: 'Femme', value: 'Femme', testID: 'radio-femme' },
+  { label: 'Non-binaire', value: 'Non-binaire', testID: 'radio-nonbinaire' },
+] as const;
+
+const useStyles = makeStyles((theme) => ({
+  logoBadge: {
+    width: px(84),
+    height: px(84),
+    borderRadius: px(42),
+    backgroundColor: theme.colors.accentSoft,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: px(58),
+    height: px(58),
+    resizeMode: 'contain',
+  },
+  // `OnbPhysical` dispose deux mesures côte à côte.
+  row: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+  },
+  rowItem: {
+    flex: 1,
+  },
+  field: {
+    gap: px(6),
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+  },
+  actionItem: {
+    flex: 1,
+  },
+}));
 
 export default function RegisterStep2Screen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const styles = useStyles();
   const { userName, email, password } = useLocalSearchParams();
+
   const [age, setAge] = useState('');
   const [sexe, setSexe] = useState('');
   const [taille, setTaille] = useState('');
@@ -14,9 +74,9 @@ export default function RegisterStep2Screen() {
 
   const handleNext = () => {
     router.push({
-         pathname: '/register/step3', // Le chemin correct
-          params: { userName, email, password, age, sexe, poids, taille  } // Les données à passer
-      });
+      pathname: '/register/step3',
+      params: { userName, email, password, age, sexe, poids, taille },
+    });
   };
 
   const handleBack = () => {
@@ -24,223 +84,86 @@ export default function RegisterStep2Screen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Image
-        source={require('@/assets/images/icon.png')}
-        style={styles.logo}
-        testID="logo-image"
-      />
-    <Text style={styles.description}>
-      Personnalisez votre expérience pour des recommandations ciblées, un suivi intelligent de vos douleurs, et des pauses actives sur mesure
-    </Text>
+    <ScrollScreen>
+      <StepHeader step={1} count={REGISTER_STEP_COUNT} onBack={handleBack} />
+      <StepProgress step={1} count={REGISTER_STEP_COUNT} />
 
-    <View style={styles.row}>
-      <TouchableOpacity
-        testID="radio-homme"
-        style={[styles.radioButton, sexe === 'Homme' && styles.selectedRadioButton]}
-        onPress={() => setSexe('Homme')}
-        accessibilityRole="radio"
-      />
-        <Text style={styles.radioText}>Homme</Text>
-      <TouchableOpacity
-        testID="radio-femme"
-        style={[styles.radioButton, sexe === 'Femme' && styles.selectedRadioButton]}
-        onPress={() => setSexe('Femme')}
-        accessibilityRole="radio"
-      />
-        <Text style={styles.radioText}>Femme</Text>
-
-      <TouchableOpacity
-        testID="radio-nonbinaire"
-        style={[styles.radioButton, sexe === 'Non-binaire' && styles.selectedRadioButton]}
-        onPress={() => setSexe('Non-binaire')}
-        accessibilityRole="radio"
-      />
-        <Text style={styles.radioText}>Non-binaire</Text>
-    </View>
-
-    <View style={styles.rrow}>
-      <Text  style={styles.label}>Âge</Text>
-      <TextInput
-        style={[styles.input,styles.smallInput]}
-        placeholder="Âge"
-        keyboardType="numeric"
-        onChangeText={setAge}
-        value={age}
-      />
-      <Text style={styles.unit}>ans</Text>
-
-    </View>
-
-    <View style={styles.rrow}>
-      <Text style={styles.label}>Taille</Text>
-      <TextInput
-        style={[styles.input,styles.smallInput]}
-        placeholder="Taille"
-        keyboardType="numeric"
-        onChangeText={setTaille}
-        value={taille}
-      />
-      <Text style={styles.unit}>m</Text>
-    </View>
-
-    <View style={styles.rrow}>
-      <Text style={styles.label}>Poids</Text>
-      <TextInput
-        style={[styles.input, styles.smallInput]}
-        placeholder="Poids"
-        keyboardType="numeric"
-        onChangeText={setPoids}
-        value={poids}
-      />
-      <Text style={styles.unit}>kg</Text>
-    </View>
-    
-
-    <View style={styles.rowRight}>
-        <Pressable
-          onPress={handleBack}
-          style={({ pressed }) => [
-            styles.button,
-            styles.buttonSmall,
-            pressed && styles.pressed,
-            { marginRight: 18 } // espace entre les deux boutons
-          ]}
-          accessibilityLabel="Précédent"
-        >
-          <Text style={styles.buttonText}>Précédent</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={handleNext}
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.pressed
-          ]}
-          accessibilityLabel="Suivant"
-        >
-          <Text style={styles.buttonText}>Suivant</Text>
-        </Pressable>
+      <View style={styles.logoBadge}>
+        <Image
+          source={require('@/assets/images/icon.png')}
+          style={styles.logo}
+          testID="logo-image"
+        />
       </View>
-  </View>
+
+      <View>
+        <Text variant="h1">Parlez-nous de vous</Text>
+        <Text variant="sub">
+          Personnalisez votre expérience pour des recommandations ciblées, un suivi intelligent de
+          vos douleurs, et des pauses actives sur mesure
+        </Text>
+      </View>
+
+      <View style={styles.field}>
+        <Text variant="meta">Sexe</Text>
+        <Segmented
+          accessibilityLabel="Sexe"
+          value={sexe || null}
+          onChange={setSexe}
+          options={SEXE_OPTIONS}
+        />
+      </View>
+
+      <View style={styles.row}>
+        <View style={styles.rowItem}>
+          <TextField
+            label="Poids (kg)"
+            placeholder="Poids"
+            value={poids}
+            onChangeText={setPoids}
+            keyboardType="numeric"
+          />
+        </View>
+        <View style={styles.rowItem}>
+          <TextField
+            label="Âge (ans)"
+            placeholder="Âge"
+            value={age}
+            onChangeText={setAge}
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+
+      <TextField
+        label="Taille (m)"
+        placeholder="Taille"
+        value={taille}
+        onChangeText={setTaille}
+        keyboardType="numeric"
+      />
+
+      <View style={styles.actions}>
+        <View style={styles.actionItem}>
+          <Button
+            accessibilityLabel="Précédent"
+            title="Précédent"
+            variant="outline"
+            size="lg"
+            block
+            onPress={handleBack}
+          />
+        </View>
+        <View style={styles.actionItem}>
+          <Button
+            accessibilityLabel="Suivant"
+            title="Suivant"
+            size="lg"
+            block
+            onPress={handleNext}
+          />
+        </View>
+      </View>
+    </ScrollScreen>
   );
 }
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    marginTop:10,
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  description: {
-    textAlign: 'center',
-    color: '#FF8C00',
-    padding: 10,
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  rrow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  radioButton: {
-    width: 20,
-    height: 21,
-    borderWidth: 1,
-   backgroundColor: '#FFFFFF',
-    borderColor: '#ccc',
-     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    borderRadius: 20,
-    marginRight: 4,
-  },
-  selectedRadioButton: {
-    backgroundColor: '#39DF87',
-    borderColor: '#39DF87',
-  },
-  radioText: {
-    color: '#000',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 28,
-    padding: 10,
-    marginBottom: 8,
-    width: '100%',
-  },
-  smallInput: {
-    width: '40%',
-  },
-  label: {
-    fontSize: 16,
-    color: '#000',
-    marginRight: 8,
-    width: 80
-  },
-  unit: {
-    fontSize: 16,
-    color: '#000',
-    marginLeft: 8,
-  },
-  logo: {
-  width: 90,
-  height: 90,
-  resizeMode: 'contain',
-  alignSelf: 'center',
-  marginBottom: 8,
-  marginTop: 16,
-},
- rowRight: {
-    width: '100%',
-    alignItems: 'flex-end',
-    marginTop: 32,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  button: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 30,
-    paddingVertical: 12,
-    paddingHorizontal: 26,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonSmall: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-  pressed: {
-    transform: [{ scale: 0.985 }],
-    shadowOpacity: 0.04,
-    elevation: 3,
-  },
-  buttonText: {
-    color: '#6b6b6b',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-
-});
