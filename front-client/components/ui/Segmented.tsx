@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 
 import { makeStyles, px } from '@/theme';
 
+import { MIN_HIT_TARGET } from './Button';
 import { Text } from './Text';
 
 const useStyles = makeStyles((theme) => ({
@@ -17,10 +18,13 @@ const useStyles = makeStyles((theme) => ({
     borderColor: theme.colors.line,
   },
   // `.pa-seg > button` : 7 px / 6 px de padding.
+  // Les segments sont jointifs : `hitSlop` empiéterait sur ses voisins, c'est
+  // donc la hauteur elle-même qui atteint les 44 pt du design system.
   option: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: MIN_HIT_TARGET,
     paddingVertical: px(7),
     paddingHorizontal: px(6),
     borderRadius: theme.radius.pill,

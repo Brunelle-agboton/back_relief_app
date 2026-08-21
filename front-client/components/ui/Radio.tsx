@@ -11,7 +11,7 @@ const useStyles = makeStyles((theme) => ({
   root: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.sm,
+    gap: theme.spacing.xs,
   },
   circle: {
     width: SIZE,
@@ -62,6 +62,9 @@ export function Radio({ label, selected, onPress, disabled = false, testID }: Ra
       accessibilityLabel={label}
       disabled={disabled}
       onPress={onPress}
+      // Sans libellé la pastille ne fait que 25 pt : `hitSlop` porte la zone
+      // tactile aux 44 pt du design system sans grossir le repère visuel.
+      hitSlop={10}
       style={({ pressed }) => [styles.root, pressed && styles.pressed]}
     >
       <View style={[styles.circle, selected && styles.circleSelected]}>

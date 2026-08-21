@@ -42,10 +42,13 @@ export interface AmbianceScheme {
   line: string;
 
   good: string;
+  goodDeep: string;
   goodSoft: string;
+  onGood: string;
   warn: string;
   warnSoft: string;
   danger: string;
+  dangerDeep: string;
   dangerSoft: string;
   onDanger: string;
 
@@ -94,10 +97,13 @@ const sauge: Ambiance = {
     line: '#e7e2d6',
 
     good: '#5d7e51',
+    goodDeep: '#4a6741',
     goodSoft: '#e7efe2',
+    onGood: '#ffffff',
     warn: '#cf9a4a',
     warnSoft: '#f7e7ce',
     danger: '#cc6a52',
+    dangerDeep: '#a03d28',
     dangerSoft: '#f6e0da',
     onDanger: '#ffffff',
 
@@ -129,10 +135,13 @@ const sauge: Ambiance = {
     line: '#303629',
 
     good: '#9dbb90',
-    goodSoft: '#262e21',
+    goodDeep: '#c8e0bd',
+    goodSoft: '#22301f',
+    onGood: '#171a15',
     warn: '#dfae67',
     warnSoft: '#382d1b',
     danger: '#e28a71',
+    dangerDeep: '#f0b3a0',
     dangerSoft: '#3a251f',
     onDanger: '#171a15',
 
@@ -168,10 +177,13 @@ const terracotta: Ambiance = {
     line: '#efe3d6',
 
     good: '#7c9a5e',
+    goodDeep: '#5a7343',
     goodSoft: '#e9f0df',
+    onGood: '#2a201a',
     warn: '#e0922f',
     warnSoft: '#f9e4c8',
     danger: '#c2543a',
+    dangerDeep: '#9c3b25',
     dangerSoft: '#f6ddd5',
     onDanger: '#ffffff',
 
@@ -203,10 +215,13 @@ const terracotta: Ambiance = {
     line: '#372c25',
 
     good: '#9cb87e',
+    goodDeep: '#c9dfb2',
     goodSoft: '#25301d',
+    onGood: '#1c1613',
     warn: '#e8a752',
     warnSoft: '#382a17',
     danger: '#de7759',
+    dangerDeep: '#f2ac96',
     dangerSoft: '#3a231b',
     onDanger: '#1c1613',
 
@@ -237,7 +252,7 @@ const brume: Ambiance = {
   light: {
     bg: '#eef2f1',
     surface: '#ffffff',
-    surfaceSoft: '#dce8f4',
+    surfaceSoft: '#dceaf5',
     surfaceRaised: '#ffffff',
     overlay: 'rgba(24, 20, 16, 0.42)',
 
@@ -247,16 +262,19 @@ const brume: Ambiance = {
     onAccent: '#ffffff',
 
     accent: '#1662a9',
-    accentDeep: '#0f4c85',
-    accentSoft: '#dce8f4',
+    accentDeep: '#0f4a80',
+    accentSoft: '#dceaf5',
 
     line: '#e1e7e5',
 
-    good: '#5e8f86',
-    goodSoft: '#deebe7',
+    good: '#39df87',
+    goodDeep: '#0d7a47',
+    goodSoft: '#d4f5e9',
+    onGood: '#1e2826',
     warn: '#b6924d',
     warnSoft: '#ece2d0',
     danger: '#c2685a',
+    dangerDeep: '#9c4436',
     dangerSoft: '#f2ddd9',
     onDanger: '#ffffff',
 
@@ -287,11 +305,14 @@ const brume: Ambiance = {
 
     line: '#2b3533',
 
-    good: '#7fb0a6',
-    goodSoft: '#1f2c29',
+    good: '#39df87',
+    goodDeep: '#a8e8c6',
+    goodSoft: '#123326',
+    onGood: '#131917',
     warn: '#cdab6b',
     warnSoft: '#33291a',
     danger: '#dc8373',
+    dangerDeep: '#efab9c',
     dangerSoft: '#38231f',
     onDanger: '#131917',
 
@@ -320,5 +341,9 @@ export const ambiances: Readonly<Record<AmbianceName, Ambiance>> = Object.freeze
  *
  * Son accent suit la valeur du panneau de tweaks (`#1662A9`) plutôt que celle
  * de la feuille de style — voir le commentaire de l'ambiance.
+ *
+ * Le design system documente par ailleurs `--accent-alt` / `--accent-alt-soft`
+ * avec exactement les valeurs de `--good` / `good-soft`. Aucun rôle distinct
+ * n'est donc créé : ce sont `good` et `goodSoft`.
  */
 export const defaultAmbiance: AmbianceName = 'brume';

@@ -22,7 +22,7 @@ const useStyles = makeStyles((theme) => ({
   },
   intro: {
     alignItems: 'center',
-    gap: theme.spacing.xs,
+    gap: theme.spacing.xxs,
   },
   introText: {
     textAlign: 'center',
@@ -31,7 +31,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
     paddingVertical: px(7),
   },
   summaryValue: {
@@ -114,7 +114,7 @@ export default function RegisterDoneScreen() {
         </Text>
       </View>
 
-      <Card variant="line">
+      <Card>
         <SummaryRow label="Compte" value={email || '—'} />
         <Divider />
         <SummaryRow

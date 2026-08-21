@@ -44,7 +44,7 @@ const useStyles = makeStyles((theme) => ({
   // `OnbPhysical` dispose deux mesures côte à côte.
   row: {
     flexDirection: 'row',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   rowItem: {
     flex: 1,
@@ -54,7 +54,7 @@ const useStyles = makeStyles((theme) => ({
   },
   actions: {
     flexDirection: 'row',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   actionItem: {
     flex: 1,
@@ -148,7 +148,7 @@ export default function RegisterStep2Screen() {
           <Button
             accessibilityLabel="Précédent"
             title="Précédent"
-            variant="outline"
+            variant="secondary"
             size="lg"
             block
             onPress={handleBack}

@@ -45,10 +45,13 @@ export function createTheme(ambiance: AmbianceName, scheme: ColorScheme): Theme 
       focus: c.accent,
 
       good: c.good,
+      goodDeep: c.goodDeep,
       goodSoft: c.goodSoft,
+      onGood: c.onGood,
       warn: c.warn,
       warnSoft: c.warnSoft,
       danger: c.danger,
+      dangerDeep: c.dangerDeep,
       dangerSoft: c.dangerSoft,
       onDanger: c.onDanger,
 

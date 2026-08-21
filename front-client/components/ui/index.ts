@@ -11,7 +11,7 @@
  * `HapticTab`) restent importés par leur chemin propre et ne font pas partie
  * du design system.
  */
-export { Button } from './Button';
+export { Button, MIN_HIT_TARGET } from './Button';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './Button';
 export { Card } from './Card';
 export type { CardProps, CardVariant } from './Card';
@@ -20,8 +20,8 @@ export type { CheckboxProps } from './Checkbox';
 export { Chip } from './Chip';
 export type { ChipProps, ChipVariant } from './Chip';
 export { Divider } from './Divider';
-export { FormError } from './FormError';
-export type { FormErrorProps } from './FormError';
+export { FormMessage } from './FormMessage';
+export type { FormMessageProps, FormMessageTone } from './FormMessage';
 export { Header } from './Header';
 export type { HeaderProps } from './Header';
 export { OptionRow } from './OptionRow';

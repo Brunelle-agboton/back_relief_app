@@ -57,15 +57,26 @@ export interface ThemeColors {
   /** Bordure d'un champ actif, halo de focus. */
   focus: string;
 
-  /** `--good` — validation, réussite. */
+  /**
+   * `--good` — validation, réussite. **Couleur d'aplat, jamais de texte** : en
+   * ambiance brume le design retient `#39DF87`, qui plafonne à 1.74:1 sur
+   * blanc. Pour du texte, utiliser `goodDeep`.
+   */
   good: string;
+  /** Variante contrastée de `good`, pour le texte et les icônes. */
+  goodDeep: string;
   goodSoft: string;
+  /** Texte et icônes posés sur `good`. Varie selon l'ambiance. */
+  onGood: string;
   /** `--warn` — avertissement. */
   warn: string;
   warnSoft: string;
-  /** `--danger` — erreur, action destructive. */
+  /** `--danger` — erreur, action destructive. Couleur d'aplat et de bordure. */
   danger: string;
+  /** Variante contrastée de `danger`, pour le texte et les icônes. */
+  dangerDeep: string;
   dangerSoft: string;
+  /** Texte et icônes posés sur `danger`. */
   onDanger: string;
 
   /** `--streak` / `--streak-bg` — pastille de série de jours. */
@@ -82,8 +93,18 @@ export interface ThemeColors {
   tabBar: Readonly<{ bg: string; border: string; active: string; inactive: string }>;
 }
 
+/**
+ * Échelle d'espacement du design system : 8 · 12 · 16 · 20 · 24 · 32, sur une
+ * base de 4 pt. `xxs` complète l'échelle par le bas pour les gouttières les
+ * plus fines, que le design utilise sans les nommer.
+ *
+ * Ces valeurs sont déjà exprimées en points d'appareil — contrairement aux
+ * mesures de composants relevées sur la maquette, elles ne passent **pas** par
+ * le facteur d'échelle de `scale.ts`.
+ */
 export interface ThemeSpacing {
   none: 0;
+  xxs: number;
   xs: number;
   sm: number;
   md: number;

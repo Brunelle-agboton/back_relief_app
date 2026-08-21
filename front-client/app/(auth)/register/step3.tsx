@@ -4,7 +4,7 @@ import { View } from 'react-native';
 
 import {
   Button,
-  FormError,
+  FormMessage,
   OptionRow,
   ScrollScreen,
   Segmented,
@@ -42,11 +42,11 @@ const YES_NO = [
 
 const useStyles = makeStyles((theme) => ({
   section: {
-    gap: theme.spacing.sm,
+    gap: theme.spacing.xs,
   },
   actions: {
     flexDirection: 'row',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   actionItem: {
     flex: 1,
@@ -199,14 +199,14 @@ export default function RegisterStep3Screen() {
         />
       </View>
 
-      <FormError message={error} testID="step3-error" />
+      <FormMessage message={error} testID="step3-error" />
 
       <View style={styles.actions}>
         <View style={styles.actionItem}>
           <Button
             accessibilityLabel="Précédent"
             title="Précédent"
-            variant="outline"
+            variant="secondary"
             size="lg"
             block
             onPress={handleBack}

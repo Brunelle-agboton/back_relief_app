@@ -4,6 +4,7 @@ import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
 
 import { makeStyles, px, useTheme } from '@/theme';
 
+import { MIN_HIT_TARGET } from './Button';
 import { Text } from './Text';
 
 const TOGGLE_SIZE = px(30);
@@ -12,15 +13,16 @@ const useStyles = makeStyles((theme) => ({
   root: {
     gap: px(6),
   },
-  // `onbInputStyle` : rayon 14, rembourrage 13 / 14, contour de 1.5 px.
+  // Design system : rayon `--radius`, rembourrage 12 / 14, bordure de 1 px.
   field: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: MIN_HIT_TARGET,
     backgroundColor: theme.colors.field,
-    borderRadius: px(14),
-    borderWidth: 1.5,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
     borderColor: theme.colors.line,
-    paddingVertical: px(13),
+    paddingVertical: px(12),
     paddingLeft: px(14),
     paddingRight: px(14),
   },
@@ -38,7 +40,7 @@ const useStyles = makeStyles((theme) => ({
   },
   input: {
     flex: 1,
-    fontSize: px(14),
+    ...theme.typography.body,
     color: theme.colors.ink,
     // Neutralise la hauteur minimale que le moteur de texte Android impose,
     // afin que le rembourrage du champ reste celui du design.
@@ -132,6 +134,9 @@ export function TextField({
             accessibilityRole="button"
             accessibilityLabel={revealed ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
             onPress={() => setRevealed((value) => !value)}
+            // Le disque fait 37.5 pt : `hitSlop` porte la zone tactile aux 44 pt
+            // exigés sans grossir le repère visuel prévu par le design.
+            hitSlop={4}
             style={({ pressed }) => [styles.toggle, pressed && styles.togglePressed]}
           >
             <Ionicons
@@ -144,7 +149,7 @@ export function TextField({
       </View>
 
       {error ? (
-        <Text variant="caption" color="danger">
+        <Text variant="caption" color="dangerDeep">
           {error}
         </Text>
       ) : hint ? (

@@ -12,7 +12,7 @@ const useStyles = makeStyles((theme) => ({
   root: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
     paddingVertical: px(12),
     paddingHorizontal: px(14),
     borderRadius: px(14),

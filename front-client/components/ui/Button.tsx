@@ -5,54 +5,76 @@ import { makeStyles, px, useTheme } from '@/theme';
 
 import { Text } from './Text';
 
-/** Variantes de `.pa-btn` définies par le design. */
-export type ButtonVariant = 'primary' | 'soft' | 'outline' | 'ghost';
+/** Variantes documentées par le design system. */
+export type ButtonVariant = 'primary' | 'secondary' | 'success' | 'outlined' | 'ghost';
 export type ButtonSize = 'md' | 'lg';
 
+/** Zone tactile minimale imposée par le design system. */
+export const MIN_HIT_TARGET = 44;
+
 const useStyles = makeStyles((theme) => ({
-  // `.pa-btn` : rayon pilule, 11 px / 18 px de padding dans le design.
+  // Design system : rayon `--radius`, rembourrage 12 / 20.
   base: {
-    borderRadius: theme.radius.pill,
-    paddingVertical: px(11),
-    paddingHorizontal: px(18),
+    borderRadius: theme.radius.md,
+    paddingVertical: px(12),
+    paddingHorizontal: px(20),
+    minHeight: MIN_HIT_TARGET,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.sm,
+    gap: theme.spacing.xs,
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  // `.pa-btn-lg` : 14 px / 20 px.
   lg: {
     paddingVertical: px(14),
-    paddingHorizontal: px(20),
   },
   block: {
     alignSelf: 'stretch',
   },
-  // `.pa-btn-primary` : aplat d'accent et ombre portée légère.
   primary: {
     backgroundColor: theme.colors.accent,
     ...theme.shadows.raised,
   },
-  // `.pa-btn-soft` : aplat clair, texte en accent contrasté, sans ombre.
-  soft: {
+  secondary: {
     backgroundColor: theme.colors.accentSoft,
+    borderColor: theme.colors.accent,
   },
-  // `.pa-btn` par défaut : surface et contour `--line` en `inset`.
-  outline: {
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.line,
+  /**
+   * Le design system décrit un libellé vert sur aplat vert clair, soit 1.49:1 —
+   * en pratique illisible. Le rapport est inversé sur décision du client : le
+   * vert devient l'aplat, le libellé prend `onGood`, et l'ambiance brume passe
+   * ainsi de 1.49:1 à 8.71:1.
+   */
+  success: {
+    backgroundColor: theme.colors.good,
+    ...theme.shadows.raised,
   },
-  // `.pa-btn-ghost` : sans fond ni contour.
+  outlined: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: theme.colors.accent,
+  },
   ghost: {
     backgroundColor: 'transparent',
   },
   pressed: {
     opacity: 0.85,
   },
+  // Le design system fixe l'opacité des états désactivés à 0.45.
   disabled: {
     opacity: 0.45,
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  contentLoading: {
+    opacity: 0,
+  },
+  indicator: {
+    position: 'absolute',
   },
 }));
 
@@ -60,18 +82,19 @@ export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> 
   title: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
-  /** Occupe toute la largeur disponible (`.pa-btn-block`). */
+  /** Occupe toute la largeur disponible. */
   block?: boolean;
   loading?: boolean;
   /** Élément affiché avant le libellé — une icône, typiquement. */
   icon?: React.ReactNode;
 }
 
-/** Couleur du libellé pour chaque variante, d'après le design. */
+/** Couleur du libellé pour chaque variante. */
 const LABEL_COLOR = {
   primary: 'onAccent',
-  soft: 'accentDeep',
-  outline: 'ink',
+  secondary: 'accent',
+  success: 'onGood',
+  outlined: 'accent',
   ghost: 'ink2',
 } as const;
 
@@ -112,18 +135,15 @@ export function Button({
       ]}
       {...rest}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, opacity: loading ? 0 : 1 }}>
+      <View style={[styles.content, loading && styles.contentLoading]}>
         {icon}
         <Text variant={size === 'lg' ? 'buttonLg' : 'button'} color={labelColor}>
           {title}
         </Text>
       </View>
+
       {loading ? (
-        <ActivityIndicator
-          style={{ position: 'absolute' }}
-          color={theme.colors[labelColor]}
-          size="small"
-        />
+        <ActivityIndicator style={styles.indicator} color={theme.colors[labelColor]} size="small" />
       ) : null}
     </Pressable>
   );

@@ -16,7 +16,7 @@ const useStyles = makeStyles((theme) => ({
     paddingHorizontal: px(11),
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.xs,
+    gap: theme.spacing.xxs,
     alignSelf: 'flex-start',
     borderWidth: 1,
     borderColor: 'transparent',
@@ -76,6 +76,9 @@ export function Chip({ label, variant = 'default', onPress, selected, style, ...
       accessibilityRole="button"
       accessibilityState={{ selected }}
       onPress={onPress}
+      // Une puce mesure 33 pt de haut : l'agrandir déformerait le composant,
+      // `hitSlop` porte sa seule zone tactile aux 44 pt du design system.
+      hitSlop={6}
       style={({ pressed }) => [styles.base, styles[variant], pressed && styles.pressed, style]}
     >
       {content}

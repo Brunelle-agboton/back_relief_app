@@ -7,7 +7,19 @@ import type { ThemeColors, TypographyVariant } from '@/theme';
 /** Rôles de couleur admissibles pour du texte. */
 export type TextColor = Extract<
   keyof ThemeColors,
-  'ink' | 'ink2' | 'muted' | 'accent' | 'accentDeep' | 'onAccent' | 'good' | 'warn' | 'danger' | 'streak'
+  | 'ink'
+  | 'ink2'
+  | 'muted'
+  | 'accent'
+  | 'accentDeep'
+  | 'onAccent'
+  | 'good'
+  | 'goodDeep'
+  | 'onGood'
+  | 'warn'
+  | 'danger'
+  | 'dangerDeep'
+  | 'streak'
 >;
 
 export interface TextProps extends RNTextProps {

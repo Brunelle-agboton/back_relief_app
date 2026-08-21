@@ -3,29 +3,26 @@ import type { ThemeRadius, ThemeSpacing } from '../types';
 import { px } from './scale';
 
 /**
- * Échelle d'espacement, calée sur le rythme du design une fois mis à l'échelle
- * (cf. `scale.ts`) :
+ * Échelle d'espacement du design system — section « Espacement » :
+ * XS 8 · SM 12 · MD 16 · LG 20 · XL 24 · 2XL 32, base 4 pt.
  *
- * | design | mis à l'échelle | clé  | usage dans la maquette              |
- * |--------|-----------------|------|-------------------------------------|
- * |   4 px |          5 pt   | `xs` | `.pa-col` serré, gouttière d'icône  |
- * |   6 px |        7.5 pt   | `sm` | `.pa-chip` vertical, `.pa-screen` haut |
- * |  10 px |       12.5 pt   | `md` | `.pa-row`, `.pa-col`, `.pa-grid2`   |
- * |  13 px |      16.25 pt   | `lg` | gouttière verticale d'écran         |
- * |  16 px |         20 pt   | `xl` | marge horizontale d'écran           |
- * |  22 px |       27.5 pt   | `xxl`| respiration de bottom sheet         |
+ * Ces valeurs sont déjà en points d'appareil et ne passent **pas** par `px()`.
+ * Les paddings relevés sur la maquette (11/18 pour un bouton, 12/14 pour un
+ * champ) sont eux des mesures d'artboard : ils continuent d'être mis à
+ * l'échelle. Confondre les deux donnerait un rythme incohérent.
  *
- * Les clés sont arrondies à une échelle 4pt cohérente : l'écart au design
- * n'excède jamais 1.5 pt, pour un rythme bien plus tenable à l'usage.
+ * `xxs` et `xxxl` prolongent l'échelle aux deux extrémités pour les cas que le
+ * design utilise sans les nommer.
  */
 export const spacing: Readonly<ThemeSpacing> = Object.freeze({
   none: 0,
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 28,
+  xxs: 4,
+  xs: 8,
+  sm: 12,
+  md: 16,
+  lg: 20,
+  xl: 24,
+  xxl: 32,
   xxxl: 40,
 });
 

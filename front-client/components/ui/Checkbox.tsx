@@ -11,7 +11,7 @@ const useStyles = makeStyles((theme) => ({
   root: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.sm,
+    gap: theme.spacing.xs,
   },
   box: {
     width: SIZE,
@@ -59,6 +59,8 @@ export function Checkbox({ label, checked, onPress, disabled = false, testID }: 
       accessibilityLabel={label}
       disabled={disabled}
       onPress={onPress}
+      // Idem `Radio` : la case fait 25 pt, la zone tactile en fait 44.
+      hitSlop={10}
       style={({ pressed }) => [styles.root, pressed && styles.pressed]}
     >
       <View style={[styles.box, checked && styles.boxChecked]}>

@@ -3,7 +3,7 @@ import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
 
-import { Button, FormError, ScrollScreen, Text, TextField } from '@/components/ui';
+import { Button, FormMessage, ScrollScreen, Text, TextField } from '@/components/ui';
 import { makeStyles, px } from '@/theme';
 
 import { isEnabled } from '../../config/featureFlags';
@@ -39,8 +39,8 @@ const useStyles = makeStyles((theme) => ({
   },
   footer: {
     alignItems: 'center',
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.xs,
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.xxs,
   },
 }));
 
@@ -121,7 +121,7 @@ export default function LoginScreen() {
         </Text>
       </Link>
 
-      <FormError message={error} testID="login-error" />
+      <FormMessage message={error} testID="login-error" />
 
       <Button
         testID="login-button"

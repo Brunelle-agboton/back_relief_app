@@ -10,11 +10,11 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   titles: {
     flex: 1,
-    gap: theme.spacing.xs / 2,
+    gap: theme.spacing.xxs / 2,
   },
 }));
 

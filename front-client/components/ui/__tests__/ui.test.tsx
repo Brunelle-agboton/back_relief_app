@@ -3,9 +3,10 @@ import React from 'react';
 
 import {
   Button,
+  MIN_HIT_TARGET,
   Checkbox,
   Chip,
-  FormError,
+  FormMessage,
   OptionRow,
   Radio,
   Segmented,
@@ -14,7 +15,7 @@ import {
   Text,
   TextField,
 } from '@/components/ui';
-import { ThemeProvider, getTheme } from '@/theme';
+import { ThemeProvider, defaultAmbiance, getTheme } from '@/theme';
 
 jest.unmock('@react-navigation/native');
 
@@ -60,6 +61,63 @@ describe('Button', () => {
     // largeur au moment de l'appui.
     render(<Button title="Créer mon compte" loading testID="cta" />);
     expect(screen.getByText('Créer mon compte')).toBeTruthy();
+  });
+});
+
+describe('Button — spécification du design system', () => {
+  it('adopte le rayon du design system, et non la pilule du kit d’origine', () => {
+    const theme = getTheme(defaultAmbiance, 'light');
+    render(<Button title="Continuer" testID="cta" />);
+
+    expect(screen.getByTestId('cta')).toHaveStyle({ borderRadius: theme.radius.md });
+    expect(theme.radius.md).not.toBe(theme.radius.pill);
+  });
+
+  it('respecte la zone tactile minimale', () => {
+    render(<Button title="Continuer" testID="cta" />);
+    expect(screen.getByTestId('cta')).toHaveStyle({ minHeight: MIN_HIT_TARGET });
+  });
+
+  it('pose le libellé du bouton de réussite sur l’aplat vert', () => {
+    // Le design system décrit l'inverse — libellé vert sur aplat vert clair,
+    // soit 1.49:1. Le rapport est inversé sur décision du client.
+    const theme = getTheme(defaultAmbiance, 'light');
+    render(<Button title="Valider" variant="success" testID="cta" />);
+
+    expect(screen.getByTestId('cta')).toHaveStyle({ backgroundColor: theme.colors.good });
+    expect(screen.getByText('Valider')).toHaveStyle({ color: theme.colors.onGood });
+  });
+
+  it('colore le bouton secondaire selon le design system', () => {
+    const theme = getTheme(defaultAmbiance, 'light');
+    render(<Button title="Précédent" variant="secondary" testID="cta" />);
+
+    expect(screen.getByTestId('cta')).toHaveStyle({
+      backgroundColor: theme.colors.accentSoft,
+      borderColor: theme.colors.accent,
+    });
+    expect(screen.getByText('Précédent')).toHaveStyle({ color: theme.colors.accent });
+  });
+});
+
+describe('FormMessage', () => {
+  it('écrit la réussite avec la variante contrastée, pas l’aplat', () => {
+    // `good` vaut #39DF87 en ambiance brume : 1.74:1 sur fond clair.
+    const theme = getTheme(defaultAmbiance, 'light');
+    render(<FormMessage message="Email envoyé." tone="success" testID="ok" />);
+
+    expect(screen.getByTestId('ok')).toHaveStyle({ backgroundColor: theme.colors.goodSoft });
+    expect(screen.getByText('Email envoyé.')).toHaveStyle({ color: theme.colors.goodDeep });
+    expect(theme.colors.goodDeep).not.toBe(theme.colors.good);
+  });
+
+  it('écrit l’erreur avec la variante contrastée', () => {
+    const theme = getTheme(defaultAmbiance, 'light');
+    render(<FormMessage message="Identifiants invalides" testID="err" />);
+
+    expect(screen.getByText('Identifiants invalides')).toHaveStyle({
+      color: theme.colors.dangerDeep,
+    });
   });
 });
 
@@ -159,14 +217,14 @@ describe('OptionRow', () => {
   });
 });
 
-describe('FormError', () => {
+describe('FormMessage', () => {
   it('ne rend rien sans message', () => {
-    render(<FormError message={null} testID="err" />);
+    render(<FormMessage message={null} testID="err" />);
     expect(screen.queryByTestId('err')).toBeNull();
   });
 
   it('annonce le message aux lecteurs d’écran', () => {
-    render(<FormError message="Identifiants invalides" testID="err" />);
+    render(<FormMessage message="Identifiants invalides" testID="err" />);
 
     expect(screen.getByText('Identifiants invalides')).toBeTruthy();
     expect(screen.getByTestId('err')).toHaveAccessibilityState({});

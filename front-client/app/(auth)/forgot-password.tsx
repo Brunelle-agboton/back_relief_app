@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
 
-import { Button, FormError, ScrollScreen, Text, TextField } from '@/components/ui';
+import { Button, FormMessage, ScrollScreen, Text, TextField } from '@/components/ui';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -53,7 +53,8 @@ export default function ForgotPasswordScreen() {
         keyboardType="email-address"
       />
 
-      <FormError message={error} testID="forgot-password-error" />
+      <FormMessage message={error} testID="forgot-password-error" />
+      <FormMessage message={message} tone="success" testID="forgot-password-success" />
 
       <Button
         accessibilityLabel="Réinitialiser le mot de passe"
@@ -63,12 +64,6 @@ export default function ForgotPasswordScreen() {
         loading={submitting}
         onPress={handleForgotPassword}
       />
-
-      {message ? (
-        <Text variant="bodySm" color="good">
-          {message}
-        </Text>
-      ) : null}
     </ScrollScreen>
   );
 }

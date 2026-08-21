@@ -58,6 +58,8 @@ export function StepHeader({
           accessibilityRole="button"
           accessibilityLabel={backAccessibilityLabel}
           onPress={onBack}
+          // Le disque fait 37.5 pt ; la zone tactile atteint les 44 pt exigés.
+          hitSlop={4}
           style={({ pressed }) => [styles.back, pressed && styles.pressed]}
         >
           <Text variant="h3" color="ink" style={{ lineHeight: theme.typography.h3.fontSize }}>

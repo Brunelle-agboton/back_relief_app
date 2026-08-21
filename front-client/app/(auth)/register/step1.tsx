@@ -4,7 +4,7 @@ import { Image, Pressable, View } from 'react-native';
 
 import {
   Button,
-  FormError,
+  FormMessage,
   ScrollScreen,
   StepHeader,
   StepProgress,
@@ -36,7 +36,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: theme.spacing.xs,
+    gap: theme.spacing.xxs,
   },
 }));
 
@@ -106,7 +106,7 @@ export default function RegisterStep1Screen() {
         secureTextEntry
       />
 
-      <FormError message={error} testID="step1-error" />
+      <FormMessage message={error} testID="step1-error" />
 
       <Button
         accessibilityLabel="Suivant"

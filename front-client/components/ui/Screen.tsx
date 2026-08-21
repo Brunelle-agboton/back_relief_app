@@ -11,9 +11,9 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.colors.bg,
   },
   padded: {
-    paddingHorizontal: theme.spacing.xl,
-    paddingTop: theme.spacing.sm,
-    gap: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.xs,
+    gap: theme.spacing.md,
   },
   /** Écrans d'authentification : contenu centré verticalement. */
   centered: {
@@ -21,10 +21,10 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: 'center',
   },
   scrollContent: {
-    paddingHorizontal: theme.spacing.xl,
-    paddingTop: theme.spacing.sm,
-    paddingBottom: theme.spacing.xxl,
-    gap: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.xs,
+    paddingBottom: theme.spacing.xl,
+    gap: theme.spacing.md,
   },
 }));
 
