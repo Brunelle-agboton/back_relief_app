@@ -128,16 +128,22 @@ export interface ThemeRadius {
   pill: number;
 }
 
+/** Graisses employées par le design : 400 · 500 · 600 · 700. */
+export type FontWeightToken = '400' | '500' | '600' | '700';
+
 export interface ThemeFonts {
   /**
-   * Familles typographiques. `undefined` = police système de la plateforme.
+   * Familles typographiques, une par graisse.
    *
-   * Le design s'appuie sur Lexend (display) et Atkinson Hyperlegible (corps),
-   * deux polices non embarquées dans l'app. Le jour où elles le seront, il
-   * suffit de renseigner ces clés et de les charger dans `useFonts`.
+   * React Native ne sait pas dériver une graisse d'une famille : sur Android,
+   * déclarer `fontFamily: 'Lexend'` avec `fontWeight: '600'` rend du 400. Chaque
+   * graisse est donc une famille distincte, chargée depuis son propre fichier.
+   *
+   * `--font-display` est **Lexend**, `--font-body` **Atkinson Hyperlegible**,
+   * cette dernière étant dessinée pour la lisibilité et la dyslexie.
    */
-  display: string | undefined;
-  body: string | undefined;
+  display: Readonly<Record<FontWeightToken, string>>;
+  body: Readonly<Record<FontWeightToken, string>>;
   mono: string;
   weights: Readonly<{
     regular: TextStyle['fontWeight'];

@@ -52,11 +52,9 @@ export function Text({ variant = 'body', color, style, ...rest }: TextProps) {
 
   return (
     <RNText
-      style={[
-        theme.typography[variant],
-        { color: theme.colors[role], fontFamily: theme.fonts.body },
-        style,
-      ]}
+      // La variante porte déjà famille, graisse, taille et interlettrage : seule
+      // la couleur s'y ajoute.
+      style={[theme.typography[variant], { color: theme.colors[role] }, style]}
       {...rest}
     />
   );

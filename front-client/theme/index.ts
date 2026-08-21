@@ -20,6 +20,7 @@ export type {
   AmbianceName,
   CharacterPart,
   ColorScheme,
+  FontWeightToken,
   Theme,
   ThemeColors,
   ThemeFonts,

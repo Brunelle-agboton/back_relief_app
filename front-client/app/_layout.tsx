@@ -55,7 +55,17 @@ function RootLayout() {
     const router = useRouter();
     const [lastNotification, setLastNotification] = useState<Notifications.Notification | null>(null);
 
+  // Les clés doivent correspondre exactement aux familles déclarées dans
+  // `theme/tokens/typography.ts`. Lexend est fourni en police variable : les
+  // quatre instances statiques en sont extraites, React Native ne sachant pas
+  // sélectionner une graisse dans un fichier variable.
   const [loaded] = useFonts({
+    'Lexend-Regular': require('../assets/fonts/Lexend-Regular.ttf'),
+    'Lexend-Medium': require('../assets/fonts/Lexend-Medium.ttf'),
+    'Lexend-SemiBold': require('../assets/fonts/Lexend-SemiBold.ttf'),
+    'Lexend-Bold': require('../assets/fonts/Lexend-Bold.ttf'),
+    'AtkinsonHyperlegible-Regular': require('../assets/fonts/AtkinsonHyperlegible-Regular.ttf'),
+    'AtkinsonHyperlegible-Bold': require('../assets/fonts/AtkinsonHyperlegible-Bold.ttf'),
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 

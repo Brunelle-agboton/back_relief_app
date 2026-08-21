@@ -123,6 +123,41 @@ describe('système de thèmes', () => {
     expect(screen.getByTestId('probe')).toHaveTextContent(`${defaultAmbiance}-light`);
   });
 
+  it('associe une famille distincte à chaque graisse', () => {
+    // Le piège Android : une seule famille déclarée avec `fontWeight` rend
+    // toujours du 400. Chaque graisse doit donc porter son propre fichier.
+    const { fonts } = themes[defaultAmbiance].light;
+
+    expect(new Set(Object.values(fonts.display)).size).toBe(4);
+    expect(fonts.display['400']).toBe('Lexend-Regular');
+    expect(fonts.display['700']).toBe('Lexend-Bold');
+    // Atkinson n'existe qu'en deux graisses : les intermédiaires retombent
+    // sur la plus proche, sans quoi le rendu serait uniformément maigre.
+    expect(fonts.body['500']).toBe(fonts.body['400']);
+    expect(fonts.body['600']).toBe(fonts.body['700']);
+  });
+
+  it('applique Lexend aux titres et Atkinson au texte courant', () => {
+    // Répartition fixée par le design : `--font-display` aux titres, libellés
+    // et chiffres, `--font-body` au corps de texte.
+    const { typography } = themes[defaultAmbiance].light;
+
+    for (const variant of ['h1', 'h2', 'h3', 'meta', 'num', 'button', 'label'] as const) {
+      expect(typography[variant].fontFamily).toMatch(/^Lexend-/);
+    }
+    for (const variant of ['body', 'bodyStrong', 'bodySm', 'sub'] as const) {
+      expect(typography[variant].fontFamily).toMatch(/^AtkinsonHyperlegible-/);
+    }
+  });
+
+  it('conserve une graisse à côté de la famille', () => {
+    // Repli : si une police n'a pas fini de charger, la police système prend
+    // le relais à la bonne graisse plutôt qu'en maigre uniforme.
+    const { typography } = themes[defaultAmbiance].light;
+    expect(typography.h1.fontWeight).toBe('600');
+    expect(typography.body.fontWeight).toBe('400');
+  });
+
   it('mémoïse la feuille de styles par thème', () => {
     const factory = jest.fn((theme: Theme) => ({
       box: { backgroundColor: theme.colors.surface },
