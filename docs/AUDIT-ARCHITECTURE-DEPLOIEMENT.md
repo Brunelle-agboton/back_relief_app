@@ -287,9 +287,12 @@ Les données du seed (`America/Montreal`, « Établissement de santé canadien �
 
 ### 5.3 Synthèse de la contrainte bi-juridictionnelle
 
-Les deux régimes convergent vers la même architecture : **hébergement principal en Union européenne, chez un hébergeur certifié HDS**, avec une EFVP documentant le transfert pour le Québec. Cette configuration satisfait simultanément le RGPD, l'obligation HDS française et la Loi 25 — l'inverse (hébergement canadien) laisserait l'exigence HDS non satisfaite.
+Les deux régimes ne pointent pas vers la même région : **c'est le positionnement produit qui tranche**, pas la géographie des utilisateurs.
 
----
+- **Hors contexte de soin** (V1 bien-être, téléconsultation désactivée) : HDS n'est pas déclenché, et la décision d'adéquation dont bénéficie le Canada autorise l'hébergement des données d'utilisateurs français au Canada. Un hébergement **à Montréal** satisfait alors les deux régimes — et supprime au passage l'obligation d'EFVP de la Loi 25, les données ne quittant pas le Québec.
+- **En contexte de soin** (téléconsultation, praticiens français) : le référentiel HDS v2 impose l'hébergement **dans l'EEE** depuis le 16 mai 2026. Le Canada devient alors impossible pour ces données, et l'architecture passe obligatoirement à deux cellules régionales.
+
+Le détail des options et la décision de conception à prendre dès maintenant figurent en §6.2.
 
 ## 6. Recommandations de déploiement du backend
 
@@ -320,17 +323,43 @@ Les deux régimes convergent vers la même architecture : **hébergement princip
 
 ### 6.2 Choix d'hébergement
 
-**Recommandation : hébergeur européen certifié HDS dès la V1.**
+Le choix ne se décide pas sur la latence, mais sur **une seule question** : l'application opère-t-elle dans un *contexte de soin* en France ?
 
-| Option | Convient si | Points d'attention |
+#### La règle qui tranche
+
+Deux faits, vérifiés en août 2026, encadrent entièrement la décision :
+
+- **Le référentiel HDS v2, applicable depuis le 16 mai 2026, impose l'hébergement physique dans l'EEE** (UE + Norvège, Islande, Liechtenstein), avec obligation de publier une cartographie des transferts hors EEE. Conséquence directe : **aucun fournisseur ne peut couvrir depuis le Canada des données de santé françaises produites dans un contexte de soin.** Il n'existe pas de contournement contractuel — la certification AWS porte sur Paris (`eu-west-3`), celle d'Azure sur les régions France, celle de GCP sur ses régions européennes.
+- **Le Canada bénéficie d'une décision d'adéquation de la Commission européenne**, renouvelée en janvier 2024 et toujours en vigueur, limitée aux organismes commerciaux soumis à la PIPEDA. Conséquence : **hors contexte de soin, héberger au Canada les données d'utilisateurs français est licite sans clauses contractuelles types.**
+
+Les deux marchés sont donc conciliables dans une seule région **tant que la téléconsultation reste désactivée** — et structurellement inconciliables dès qu'elle est activée en France.
+
+#### Scénario A — priorité Canada, V1 telle qu'elle est *(recommandé aujourd'hui)*
+
+Positionnement bien-être, `teleconsultation: false`, pas de praticien français en exercice. HDS n'est pas déclenché, l'adéquation couvre le transfert. **Héberger à Montréal**, ce qui apporte un bénéfice de conformité souvent ignoré : les données restant **physiquement au Québec**, l'obligation d'EFVP de la Loi 25 pour communication hors Québec disparaît.
+
+| Option | Région | Pourquoi |
 |---|---|---|
-| **Scaleway** (Paris) — Serverless Containers + PostgreSQL managé | Recommandé pour la V1 | Certifié HDS, souveraineté FR, coût maîtrisé, écosystème simple |
-| **OVHcloud** (Gravelines / Roubaix) — Public Cloud + Managed Kubernetes | Équipe à l'aise avec Kubernetes | Certifié HDS, très bon rapport coût/ressources |
-| **Clever Cloud** (Paris) | Priorité au temps de mise en œuvre | Certifié HDS, PaaS de type Heroku, déploiement par `git push` |
-| **AWS `eu-west-3`** (Paris) — ECS Fargate + RDS + ElastiCache | Anticipation d'une forte croissance | Certifié HDS sur périmètre défini ; nécessite une configuration rigoureuse |
-| **Render** (actuel) | — | **Non certifié HDS, pas de région UE souveraine.** À conserver au plus pour un environnement de recette sans données réelles |
+| **Google Cloud** — Cloud Run + Cloud SQL + Memorystore | `northamerica-northeast1` (Montréal) | **Recommandé.** Le moins d'exploitation pour une petite équipe, mise à l'échelle jusqu'à zéro, coût de lancement faible. `europe-west9` (Paris, certifié HDS) disponible pour la future cellule France, sans changer de fournisseur |
+| **AWS** — Fargate + RDS + ElastiCache | `ca-central-1` (Montréal) | Alternative si la téléconsultation arrive tôt : sockets longue durée plus conventionnels derrière un ALB, catalogue de services plus large. `eu-west-3` (Paris) certifié HDS |
+| **OVHcloud** | Beauharnois (Québec) | Option budget, entreprise française (DPA en français), HDS en France. Services managés moins riches |
+| **Azure** | Canada East (Québec) | Canada Central est en Ontario — choisir Canada East pour rester au Québec |
+| **Render** (actuel) | — | Aucune région canadienne, non certifié HDS. À conserver au plus pour une recette sans données réelles |
 
-Pour une V1 sans téléconsultation, **Scaleway ou Clever Cloud** offrent le meilleur compromis entre conformité, coût et délai de mise en œuvre.
+**Latence pour les utilisateurs français** : Montréal ↔ Paris représente environ 85 à 95 ms d'aller-retour, soit un round-trip supplémentaire par appel API. C'est acceptable pour cette charge de travail — et surtout, **les médias (illustrations d'exercices), qui constituent l'essentiel des octets transférés, passent par un CDN avec des points de présence dans les deux marchés**. L'écart perçu par un utilisateur français reste donc faible.
+
+#### Scénario B — téléconsultation ou praticiens français activés
+
+HDS v2 impose alors l'EEE pour ces données. Le Canada-primaire devient impossible pour la partie française, et l'architecture passe obligatoirement à **deux cellules** : Montréal pour le Canada, une région UE certifiée HDS (Paris) pour la France, avec partitionnement des données par marché et un service d'identité commun (§8).
+
+#### La décision à prendre maintenant
+
+Le choix de région est réversible ; **le modèle de données ne l'est pas.** Deux dispositions à prendre dès le P0, presque gratuites aujourd'hui et très coûteuses après coup :
+
+1. **Ajouter un discriminant de résidence** (`region` / `data_residency`) sur `User` et sur les entités qui en dépendent, et proscrire les clés étrangères transversales entre marchés.
+2. **Passer les identifiants en UUID.** Toutes les entités utilisent aujourd'hui `@PrimaryGeneratedColumn('increment')`. Si la base est un jour scindée en deux cellules, **les identifiants entiers entreront en collision** — la migration devient alors une reprise de données complète. Le changement coûte une migration aujourd'hui.
+
+Autrement dit : héberger à Montréal pour servir la priorité canadienne, mais concevoir dès maintenant le partitionnement qui permettra d'ouvrir une cellule française sans reprise de données.
 
 ### 6.3 Configuration de production à mettre en place
 
@@ -478,7 +507,7 @@ L'ajout du second backend ne doit pas précéder l'assainissement de l'existant 
 
 Les charges sont des ordres de grandeur en jours-homme, pour un développeur familier du code.
 
-### P0 — Avant toute mise en production *(≈ 12–17 j)*
+### P0 — Avant toute mise en production *(≈ 13–19 j)*
 
 | # | Action | Réf. | Charge |
 |---|---|---|---|
@@ -494,22 +523,23 @@ Les charges sont des ordres de grandeur en jours-homme, pour un développeur fam
 | 10 | Retirer le secret JWT de repli ; propager `role` dans la stratégie | SEC-08 | 0,5 j |
 | 11 | CORS en liste blanche, Swagger désactivé en prod, `helmet`, `trust proxy`, `enableShutdownHooks` | SEC-10→14 | 1 j |
 | 12 | Transaction + verrou sur la réservation de créneau | MET-01 | 1 j |
-| 13 | Provisionner l'hébergement HDS UE et migrer la base | §6.2 | 2–3 j |
+| 13 | Provisionner l'hébergement cible (Montréal si priorité Canada) et migrer la base | §6.2 | 2–3 j |
+| 14 | Discriminant de résidence + passage des identifiants en UUID, avant tout partitionnement futur | §6.2 | 1–2 j |
 
 ### P1 — Avant soumission aux stores *(≈ 10–15 j)*
 
 | # | Action | Réf. | Charge |
 |---|---|---|---|
-| 14 | Suppression de compte in-app + route API + page web de suppression | §7.1, §7.2 | 2 j |
-| 15 | Écrans CGU et politique de confidentialité (et brancher les boutons inertes) | §7.1 | 1,5 j |
-| 16 | Refresh token + révocation à la déconnexion | SEC-08 | 2 j |
-| 17 | i18n FR/EN, y compris fiches store | §7.4 | 3–4 j |
-| 18 | Corriger `app.json` et `eas.json` (nom, scheme, permissions, URL, submit) | §7.3 | 1 j |
-| 19 | Déplacer les médias vers un stockage objet + CDN | DEP-04 | 1,5 j |
-| 20 | Corriger MET-02 (typo relation), MET-03 (hydratation), MET-05, MET-09, MET-10 | §3 | 1,5 j |
-| 21 | Sentry backend, logs structurés, `/ready` | DEP-07 | 1 j |
-| 22 | Déclarer l'API dans `render.yaml` ou son équivalent chez le nouvel hébergeur | DEP-05 | 0,5 j |
-| 23 | Formulaires Data safety, Health Apps, App Privacy ; comptes de démonstration | §7 | 1 j |
+| 15 | Suppression de compte in-app + route API + page web de suppression | §7.1, §7.2 | 2 j |
+| 16 | Écrans CGU et politique de confidentialité (et brancher les boutons inertes) | §7.1 | 1,5 j |
+| 17 | Refresh token + révocation à la déconnexion | SEC-08 | 2 j |
+| 18 | i18n FR/EN, y compris fiches store | §7.4 | 3–4 j |
+| 19 | Corriger `app.json` et `eas.json` (nom, scheme, permissions, URL, submit) | §7.3 | 1 j |
+| 20 | Déplacer les médias vers un stockage objet + CDN | DEP-04 | 1,5 j |
+| 21 | Corriger MET-02 (typo relation), MET-03 (hydratation), MET-05, MET-09, MET-10 | §3 | 1,5 j |
+| 22 | Sentry backend, logs structurés, `/ready` | DEP-07 | 1 j |
+| 23 | Déclarer l'API dans `render.yaml` ou son équivalent chez le nouvel hébergeur | DEP-05 | 0,5 j |
+| 24 | Formulaires Data safety, Health Apps, App Privacy ; comptes de démonstration | §7 | 1 j |
 
 ### P2 — Post-lancement / préparation de l'extension *(≈ 15–20 j)*
 
