@@ -371,11 +371,22 @@ Tarifs publics à la demande relevés en août 2026 pour Google Cloud, région `
 |---|---:|---:|---:|
 | **Cloud SQL** 1 vCPU / 3,75 Go / 20 Go SSD, sans HA, IP privée | 62 | 85 | 53 |
 | ↳ *avec engagement 1 an (−25 %)* | *46* | *64* | *40* |
-| **Cloud Run** — scale-to-zero (reste dans le palier gratuit) | 0 | 0 | 0 |
-| **Cloud Run** — 0,5 vCPU chaud en permanence | 42 | 58 | 36 |
-| **Cloud Run** — 1 vCPU chaud en permanence | 86 | 119 | 74 |
+| **Cloud Run** — *une seule des trois lignes ci-dessous* | | | |
+| ↳ *option A :* scale-to-zero (reste dans le palier gratuit) | 0 | 0 | 0 |
+| ↳ *option B :* 0,5 vCPU chaud en permanence | 42 | 58 | 36 |
+| ↳ *option C :* 1 vCPU chaud en permanence | 86 | 119 | 74 |
 | Cloud Storage + egress médias | 1 | 1 | 1 |
 | Artifact Registry + Secret Manager + journaux | 2 | 3 | 2 |
+
+> **Attention à la lecture du tableau.** Les trois lignes Cloud Run sont des **alternatives mutuellement exclusives**, pas des postes à cumuler. Le total combiné vaut donc :
+>
+> | Option Cloud Run retenue | Cloud SQL à la demande | Cloud SQL engagé 1 an |
+> |---|---:|---:|
+> | A — scale-to-zero | **89 $CA/mois** | 68 $CA/mois |
+> | B — 0,5 vCPU chaud | 147 $CA/mois | 126 $CA/mois |
+> | C — 1 vCPU chaud | 208 $CA/mois | 186 $CA/mois |
+>
+> L'écart entre l'option A et l'option C atteint **118 $CA par mois, soit 1 420 $CA par an** — pour la seule garantie d'éviter les démarrages à froid.
 
 **Le constat qui pilote le budget : maintenir une instance Cloud Run chaude 24 h/24 coûte plus cher que la base de données** — 86 $US/mois d'astreinte pour 1 vCPU, avant même le premier appel API. C'est le principal levier d'arbitrage.
 
