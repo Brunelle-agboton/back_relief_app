@@ -361,7 +361,62 @@ Le choix de région est réversible ; **le modèle de données ne l'est pas.** D
 
 Autrement dit : héberger à Montréal pour servir la priorité canadienne, mais concevoir dès maintenant le partitionnement qui permettra d'ouvrir une cellule française sans reprise de données.
 
-### 6.3 Configuration de production à mettre en place
+### 6.3 Budget d'hébergement
+
+Tarifs publics à la demande relevés en août 2026 pour Google Cloud, région `northamerica-northeast1` (Montréal). Ce sont des **ordres de grandeur pour cadrer un budget**, pas un devis : la majoration Montréal par rapport à `us-central1` est estimée à +10 %, et la facture réelle dépend de l'usage. À valider avec le [calculateur officiel](https://cloud.google.com/products/calculator) une fois la configuration figée.
+
+#### Le poste dominant n'est pas celui qu'on croit
+
+| Poste | $US/mois | $CA/mois | €/mois |
+|---|---:|---:|---:|
+| **Cloud SQL** 1 vCPU / 3,75 Go / 20 Go SSD, sans HA, IP privée | 62 | 85 | 53 |
+| ↳ *avec engagement 1 an (−25 %)* | *46* | *64* | *40* |
+| **Cloud Run** — scale-to-zero (reste dans le palier gratuit) | 0 | 0 | 0 |
+| **Cloud Run** — 0,5 vCPU chaud en permanence | 42 | 58 | 36 |
+| **Cloud Run** — 1 vCPU chaud en permanence | 86 | 119 | 74 |
+| Cloud Storage + egress médias | 1 | 1 | 1 |
+| Artifact Registry + Secret Manager + journaux | 2 | 3 | 2 |
+
+**Le constat qui pilote le budget : maintenir une instance Cloud Run chaude 24 h/24 coûte plus cher que la base de données** — 86 $US/mois d'astreinte pour 1 vCPU, avant même le premier appel API. C'est le principal levier d'arbitrage.
+
+À l'inverse, **les médias ne coûtent rien** : les actifs mesurés dans le dépôt représentent 6 Mo au total (139 fichiers, dont 3,4 Mo réellement servis par l'API pour les pauses actives). Même à 10 000 utilisateurs, l'egress reste sous la barre des 3 $US/mois.
+
+#### Scénarios au lancement (≈ 1 000 utilisateurs actifs mensuels)
+
+| Configuration | $US/mois | $CA/mois | €/mois | $US/an |
+|---|---:|---:|---:|---:|
+| **Mini** — scale-to-zero + engagement 1 an | 49 | 68 | 42 | 590 |
+| **Sobre** — scale-to-zero, sans engagement | 65 | 89 | 55 | 775 |
+| **Confort** — 0,5 vCPU chaud + engagement 1 an | 91 | 125 | 78 | 1 093 |
+| **Confort +** — 1 vCPU chaud, sans engagement | 151 | 208 | 129 | 1 811 |
+
+Le compromis entre « Mini » et « Confort » est un **arbitrage coût contre démarrage à froid** : en scale-to-zero, la première requête après une période d'inactivité subit 2 à 5 secondes de latence, le temps que NestJS et le pool TypeORM s'initialisent. Deux atténuations : une tâche Cloud Scheduler qui appelle `/health` toutes les 5 minutes garde une instance tiède pour quelques dollars par mois — sans garantie formelle, Cloud Run pouvant recycler l'instance ; ou passer à 0,5 vCPU chaud, qui divise l'astreinte par deux.
+
+**Recommandation pour le lancement : configuration « Sobre » (≈ 65 $US / 89 $CA par mois), sans engagement.** L'engagement 1 an n'a de sens qu'une fois la charge réelle observée — s'engager avant d'avoir mesuré revient à parier sur un dimensionnement non validé.
+
+#### Paliers suivants
+
+| Palier | $US/mois | $CA/mois | €/mois | $US/an |
+|---|---:|---:|---:|---:|
+| ≈ 10 000 MAU — 2 vCPU / 7,5 Go, Redis, 1 instance chaude | 261 | 359 | 224 | 3 133 |
+| ≈ 50 000 MAU — haute disponibilité, 2 instances | 549 | 755 | 470 | 6 586 |
+
+La haute disponibilité double le coût de calcul de la base et fait passer le stockage SSD de 0,222 à 0,34 $US/Go-mois. Elle n'est pas nécessaire au lancement : une instance mono-zone avec PITR et une restauration testée constitue une posture défendable pour une V1.
+
+#### Hors hébergement — à ne pas oublier dans le budget client
+
+| Poste | Coût |
+|---|---|
+| Compte développeur Apple | 99 $US / an |
+| Compte développeur Google Play | 25 $US, paiement unique |
+| Sentry | Palier gratuit suffisant au lancement ; ≈ 26 $US/mois ensuite |
+| EAS Build (compilation des binaires) | Palier gratuit limité ; ≈ 99 $US/mois en usage soutenu, ou paiement à la compilation |
+| Serveur TURN (téléconsultation) | À prévoir uniquement à l'activation — compter 20 à 50 $US/mois pour un `coturn` auto-hébergé |
+| Certification HDS (cellule France) | Uniquement en scénario B — surcoût d'hébergement, non chiffré ici |
+
+Au total, un lancement en configuration « Sobre » représente de l'ordre de **65 à 70 $US par mois (≈ 90 à 95 $CA), soit environ 800 à 950 $US sur la première année**, comptes développeurs inclus.
+
+### 6.4 Configuration de production à mettre en place
 
 **Base de données**
 - Migrations TypeORM obligatoires : générer une migration initiale, désactiver `synchronize` dans tous les environnements, exécuter les migrations en étape de déploiement distincte (jamais au démarrage de l'application).
@@ -388,7 +443,7 @@ app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
 **Observabilité** — Sentry côté backend, logs JSON structurés (`nestjs-pino`) avec identifiant de corrélation, `/health` (liveness) et `/ready` (readiness, vérifiant la base), alertes sur taux d'erreur 5xx et latence p95.
 
-### 6.4 Chaîne CI/CD
+### 6.5 Chaîne CI/CD
 
 L'actuelle ne se déclenche ni sur `main` ni sur les branches de release, ne teste pas la sécurité et ne déploie pas.
 
