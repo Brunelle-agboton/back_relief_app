@@ -1,36 +1,58 @@
-import { IsString, IsOptional, IsInt, Min, IsArray, IsEnum, IsObject, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsInt,
+  IsArray,
+  IsEnum,
+  IsObject,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { ProfessionalType, EstablishmentType } from '../entities/practitioner_profile.entity';
-import { AddAvailabilityToPractitionerDto } from './add-availability-to-practitioner.dto'
+import {
+  ProfessionalType,
+  EstablishmentType,
+} from '../entities/practitioner_profile.entity';
+import { ToJsonArray, ToJsonObject } from '../../../common/transforms/coerce';
+
 export class CreatePractitionerProfileDto {
-    @IsInt()
-    userId: number;
+  @Type(() => Number)
+  @IsInt()
+  userId: number;
 
-    @IsEnum(ProfessionalType)
-    professionalType: ProfessionalType;
+  @IsEnum(ProfessionalType)
+  professionalType: ProfessionalType;
 
-    @IsString()
-    licenseNumber: string;
+  @IsOptional()
+  @IsString()
+  licenseNumber?: string;
 
-    @IsArray()
-    @IsString({ each: true })
-    proSpecialities: string[];
+  // Le client transmet ces champs sérialisés en JSON (paramètres de
+  // navigation expo-router) : on les normalise avant validation.
+  @IsOptional()
+  @ToJsonArray()
+  @IsArray()
+  @IsString({ each: true })
+  proSpecialities?: string[];
 
-    @IsEnum(EstablishmentType)
-    establishmentType: EstablishmentType;
+  @IsEnum(EstablishmentType)
+  establishmentType: EstablishmentType;
 
-    @IsString()
-    phone: string;
+  @IsOptional()
+  @IsString()
+  phone?: string;
 
-    @IsString()
-    city: string;
+  @IsOptional()
+  @IsString()
+  city?: string;
 
-    @IsString()
-    postalCode: string;
+  @IsString()
+  postalCode: string;
 
-    @IsString()
-    country: string;
+  @IsOptional()
+  @IsString()
+  country?: string;
 
-    @IsObject()
-    availabilities: Record<string, string[]>;
+  @IsOptional()
+  @ToJsonObject()
+  @IsObject()
+  availabilities?: Record<string, string[]>;
 }

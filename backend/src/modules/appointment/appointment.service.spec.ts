@@ -59,7 +59,9 @@ describe('AppointmentService', () => {
     }).compile();
 
     service = module.get<AppointmentService>(AppointmentService);
-    repository = module.get<Repository<Appointment>>(getRepositoryToken(Appointment));
+    repository = module.get<Repository<Appointment>>(
+      getRepositoryToken(Appointment),
+    );
   });
 
   it('should be defined', () => {
@@ -89,7 +91,9 @@ describe('AppointmentService', () => {
 
       expect(repository.create).toHaveBeenCalledWith({
         start_at: new Date(createAppointmentDto.startTime),
-        end_at: new Date(new Date(createAppointmentDto.startTime).getTime() + 30 * 60000),
+        end_at: new Date(
+          new Date(createAppointmentDto.startTime).getTime() + 30 * 60000,
+        ),
         status: 'confirmed',
         patient: patient,
         practitionerProfile: practitioner,
@@ -220,7 +224,7 @@ describe('AppointmentService', () => {
         where: {
           practitionerProfile: { id: practitionerId },
         },
-        relations: ['patient', 'practitionerPofile'],
+        relations: ['patient', 'practitionerProfile'],
         order: {
           start_at: 'ASC',
         },
@@ -242,7 +246,11 @@ describe('AppointmentService', () => {
           patient: { id: userId },
           status: 'confirmed',
         },
-        relations: ['patient', 'practitionerProfile', 'practitionerProfile.user'],
+        relations: [
+          'patient',
+          'practitionerProfile',
+          'practitionerProfile.user',
+        ],
         order: {
           start_at: 'ASC',
         },

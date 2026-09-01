@@ -7,6 +7,11 @@ import { User } from '../user/entities/user.entity';
 import { Activity } from './entities/activity.entity';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
+import { UserRole } from '../../common/enums/user-role.enum';
+import { ForbiddenException } from '@nestjs/common';
+
+const asUser = (userId: number, role: UserRole = UserRole.USER) =>
+  ({ user: { userId, email: 'a@a.com', role } }) as AuthenticatedRequest;
 
 describe('ActivityController', () => {
   let controller: ActivityController;
@@ -25,6 +30,7 @@ describe('ActivityController', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ActivityController],
       providers: [
@@ -53,33 +59,36 @@ describe('ActivityController', () => {
       const createActivityDto: CreateActivityDto = {
         type: 'test' as any,
         metadata: '{}',
-        user: user,
       };
       const activity = new Activity();
-      const req = { user: { userId } } as unknown as AuthenticatedRequest;
 
       mockUserService.findOne.mockResolvedValue(user);
       mockActivityService.log.mockResolvedValue(activity);
 
-      const result = await controller.logAction(req, createActivityDto);
+      const result = await controller.logAction(
+        asUser(userId),
+        createActivityDto,
+      );
 
       expect(userService.findOne).toHaveBeenCalledWith(userId);
-      expect(activityService.log).toHaveBeenCalledWith({ ...createActivityDto, user });
+      // SEC-05 : l'utilisateur vient du jeton, pas du corps de requête.
+      expect(activityService.log).toHaveBeenCalledWith(createActivityDto, user);
       expect(result).toEqual(activity);
     });
 
-    it('should throw an error if user is not found', async () => {
-      const userId = 1;
+    it("propage l'erreur si l'utilisateur du jeton n'existe plus", async () => {
       const createActivityDto: CreateActivityDto = {
         type: 'test' as any,
         metadata: '{}',
-        user: new User(),
       };
-      const req = { user: { userId } } as unknown as AuthenticatedRequest;
 
-      mockUserService.findOne.mockResolvedValue(null);
+      mockUserService.findOne.mockRejectedValue(
+        new Error('User with id 1 not found'),
+      );
 
-      await expect(controller.logAction(req, createActivityDto)).rejects.toThrow('User not found');
+      await expect(
+        controller.logAction(asUser(1), createActivityDto),
+      ).rejects.toThrow('User with id 1 not found');
     });
   });
 
@@ -87,14 +96,21 @@ describe('ActivityController', () => {
     it('should return activities for a user', async () => {
       const userId = 1;
       const activities = [new Activity()];
-      const req = { user: { userId } } as unknown as AuthenticatedRequest;
 
       mockActivityService.findByUser.mockResolvedValue(activities);
 
-      const result = await controller.getForUser(String(userId), req);
+      const result = await controller.getForUser(userId, asUser(userId));
 
       expect(activityService.findByUser).toHaveBeenCalledWith(userId);
       expect(result).toEqual(activities);
+    });
+
+    // SEC-04/07 : findByUser ignorait req.user.
+    it("refuse l'historique d'un autre utilisateur", () => {
+      expect(() => controller.getForUser(2, asUser(1))).toThrow(
+        ForbiddenException,
+      );
+      expect(activityService.findByUser).not.toHaveBeenCalled();
     });
   });
 
@@ -111,13 +127,12 @@ describe('ActivityController', () => {
   });
 
   describe('remove', () => {
-    it('should remove an activity', async () => {
-      const id = '1';
+    it("transmet l'appelant au service pour le contrôle de propriété", async () => {
       mockActivityService.remove.mockResolvedValue(undefined);
 
-      await controller.remove(id);
+      await controller.remove(1, asUser(3));
 
-      expect(activityService.remove).toHaveBeenCalledWith(+id);
+      expect(activityService.remove).toHaveBeenCalledWith(1, 3, false);
     });
   });
 });

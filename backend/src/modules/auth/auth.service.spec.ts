@@ -6,6 +6,8 @@ import * as bcrypt from 'bcrypt';
 import { User } from '../user/entities/user.entity';
 import { PractitionerProfileService } from '../practitioner_profile/practitioner_profile.service';
 import { AppointmentService } from '../appointment/appointment.service';
+import { UserRole } from '../../common/enums/user-role.enum';
+import { TokenType } from './jwt.constants';
 
 jest.mock('bcrypt');
 
@@ -16,11 +18,15 @@ describe('AuthService', () => {
 
   const mockUserService = {
     findByEmail: jest.fn(),
+    findByEmailWithPassword: jest.fn(),
+    findAuthContext: jest.fn(),
+    revokeTokens: jest.fn(),
     create: jest.fn(),
   };
 
   const mockJwtService = {
     sign: jest.fn(),
+    verifyAsync: jest.fn(),
   };
 
   const mockPractitionerProfileService = {
@@ -33,7 +39,13 @@ describe('AuthService', () => {
     create: jest.fn(),
   };
 
+  beforeAll(() => {
+    process.env.MODE = 'DEV';
+    process.env.JWT_SECRET = 'test-secret';
+  });
+
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -71,23 +83,33 @@ describe('AuthService', () => {
       user.email = 'test@example.com';
       user.password = 'hashed_password';
 
-      mockUserService.findByEmail.mockResolvedValue(user);
+      mockUserService.findByEmailWithPassword.mockResolvedValue(user);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const { password, ...result } = user;
-      const resultValidate = await service.validateUser('test@example.com', 'password');
+      const resultValidate = await service.validateUser(
+        'test@example.com',
+        'password',
+      );
 
-      expect(userService.findByEmail).toHaveBeenCalledWith('test@example.com');
-      expect(bcrypt.compare).toHaveBeenCalledWith('password', 'hashed_password');
+      expect(userService.findByEmailWithPassword).toHaveBeenCalledWith(
+        'test@example.com',
+      );
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'password',
+        'hashed_password',
+      );
       expect(resultValidate).toEqual(result);
     });
 
     it('should return null if user is not found', async () => {
-      mockUserService.findByEmail.mockResolvedValue(null);
+      mockUserService.findByEmailWithPassword.mockResolvedValue(null);
 
       const result = await service.validateUser('test@example.com', 'password');
 
-      expect(userService.findByEmail).toHaveBeenCalledWith('test@example.com');
+      expect(userService.findByEmailWithPassword).toHaveBeenCalledWith(
+        'test@example.com',
+      );
       expect(result).toBeNull();
     });
 
@@ -96,19 +118,27 @@ describe('AuthService', () => {
       user.email = 'test@example.com';
       user.password = 'hashed_password';
 
-      mockUserService.findByEmail.mockResolvedValue(user);
+      mockUserService.findByEmailWithPassword.mockResolvedValue(user);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      const result = await service.validateUser('test@example.com', 'wrong_password');
+      const result = await service.validateUser(
+        'test@example.com',
+        'wrong_password',
+      );
 
-      expect(userService.findByEmail).toHaveBeenCalledWith('test@example.com');
-      expect(bcrypt.compare).toHaveBeenCalledWith('wrong_password', 'hashed_password');
+      expect(userService.findByEmailWithPassword).toHaveBeenCalledWith(
+        'test@example.com',
+      );
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'wrong_password',
+        'hashed_password',
+      );
       expect(result).toBeNull();
     });
   });
 
   describe('registerPractitioner', () => {
-    it('crée un utilisateur, un profil et un rendez-vous d\'onboarding', async () => {
+    it("crée un utilisateur, un profil et un rendez-vous d'onboarding", async () => {
       const dto = {
         email: 'pro@test.com',
         password: 'secret123',
@@ -125,7 +155,11 @@ describe('AuthService', () => {
         appointment: { startTime: '2027-01-10T09:00:00.000Z' },
       };
 
-      const createdUser = { id: 5, email: dto.email, role: 'practitioner' } as any;
+      const createdUser = {
+        id: 5,
+        email: dto.email,
+        role: 'practitioner',
+      } as any;
       const createdProfile = { id: 10 } as any;
       const createdAppointment = { id: 20 } as any;
 
@@ -135,32 +169,127 @@ describe('AuthService', () => {
 
       const result = await service.registerPractitioner(dto);
 
-      expect(mockUserService.create).toHaveBeenCalledWith({
-        email: dto.email,
-        password: dto.password,
-        userName: dto.userName,
-        role: 'practitioner',
-      });
+      // SEC-03 : le rôle est imposé par la route, il ne transite plus par le DTO.
+      expect(mockUserService.create).toHaveBeenCalledWith(
+        { email: dto.email, password: dto.password, userName: dto.userName },
+        UserRole.PRACTITIONER,
+      );
       expect(mockPractitionerProfileService.create).toHaveBeenCalledWith(
         expect.objectContaining({ userId: createdUser.id }),
       );
       expect(mockAppointmentService.create).toHaveBeenCalledWith(
-        expect.objectContaining({ patientId: createdUser.id, practitionerId: 1 }),
+        expect.objectContaining({
+          patientId: createdUser.id,
+          practitionerId: 1,
+        }),
       );
-      expect(result).toEqual({ user: createdUser, profile: createdProfile, appointment: createdAppointment });
+      expect(result).toEqual({
+        user: createdUser,
+        profile: createdProfile,
+        appointment: createdAppointment,
+      });
     });
   });
 
   describe('login', () => {
-    it('should return an access token', async () => {
-      const user = { email: 'test@example.com', id: 1, role: 'user' } as unknown as Omit<User, 'password'>;
-      const token = 'some_token';
-      mockJwtService.sign.mockReturnValue(token);
+    it('émet un couple access + refresh porteur du rôle et de la version', async () => {
+      const user = {
+        email: 'test@example.com',
+        id: 1,
+        role: UserRole.USER,
+        tokenVersion: 3,
+      } as unknown as Omit<User, 'password'>;
+      mockJwtService.sign
+        .mockReturnValueOnce('access')
+        .mockReturnValueOnce('refresh');
 
       const result = await service.login(user);
 
-      expect(jwtService.sign).toHaveBeenCalledWith({ email: 'test@example.com', sub: 1, role: 'user' });
-      expect(result).toEqual({ access_token: token });
+      // SEC-08 : le rôle et la version de révocation sont dans le payload.
+      expect(jwtService.sign).toHaveBeenNthCalledWith(
+        1,
+        {
+          email: 'test@example.com',
+          sub: 1,
+          role: UserRole.USER,
+          tv: 3,
+          typ: TokenType.ACCESS,
+        },
+        expect.objectContaining({ secret: 'test-secret' }),
+      );
+      expect(jwtService.sign).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ typ: TokenType.REFRESH }),
+        expect.any(Object),
+      );
+      expect(result).toEqual(
+        expect.objectContaining({
+          access_token: 'access',
+          refresh_token: 'refresh',
+        }),
+      );
+    });
+  });
+
+  describe('refresh', () => {
+    // SEC-08
+    it("rejette un jeton qui n'est pas un refresh token", async () => {
+      mockJwtService.verifyAsync.mockResolvedValue({
+        sub: 1,
+        typ: TokenType.ACCESS,
+        tv: 0,
+      });
+      await expect(service.refresh('token')).rejects.toThrow(
+        'Type de jeton invalide',
+      );
+    });
+
+    it('rejette un refresh token dont la version a été révoquée', async () => {
+      mockJwtService.verifyAsync.mockResolvedValue({
+        sub: 1,
+        typ: TokenType.REFRESH,
+        tv: 1,
+      });
+      mockUserService.findAuthContext.mockResolvedValue({
+        id: 1,
+        email: 'a@a.com',
+        role: UserRole.USER,
+        tokenVersion: 2,
+      });
+      await expect(service.refresh('token')).rejects.toThrow(
+        'Refresh token révoqué',
+      );
+    });
+
+    it('émet un nouveau couple de jetons pour un refresh valide', async () => {
+      mockJwtService.verifyAsync.mockResolvedValue({
+        sub: 1,
+        typ: TokenType.REFRESH,
+        tv: 2,
+      });
+      mockUserService.findAuthContext.mockResolvedValue({
+        id: 1,
+        email: 'a@a.com',
+        role: UserRole.USER,
+        tokenVersion: 2,
+      });
+      mockJwtService.sign
+        .mockReturnValueOnce('access2')
+        .mockReturnValueOnce('refresh2');
+
+      const result = await service.refresh('token');
+
+      expect(result.access_token).toBe('access2');
+      expect(result.refresh_token).toBe('refresh2');
+    });
+  });
+
+  describe('logout', () => {
+    // SEC-08 : la déconnexion révoque réellement les jetons côté serveur.
+    it("incrémente la version de jeton de l'utilisateur", async () => {
+      mockUserService.revokeTokens.mockResolvedValue(undefined);
+      await service.logout(9);
+      expect(mockUserService.revokeTokens).toHaveBeenCalledWith(9);
     });
   });
 });

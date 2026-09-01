@@ -14,11 +14,13 @@ describe('ActivityService', () => {
     create: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
+    findOne: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ActivityService,
@@ -44,15 +46,17 @@ describe('ActivityService', () => {
       const createActivityDto: CreateActivityDto = {
         type: 'test' as any,
         metadata: '{}',
-        user: user,
       };
       const activity = new Activity();
       mockRepository.create.mockReturnValue(activity);
       mockRepository.save.mockResolvedValue(activity);
 
-      const result = await service.log(createActivityDto);
+      const result = await service.log(createActivityDto, user);
 
-      expect(repository.create).toHaveBeenCalledWith(createActivityDto);
+      expect(repository.create).toHaveBeenCalledWith({
+        ...createActivityDto,
+        user,
+      });
       expect(repository.save).toHaveBeenCalledWith(activity);
       expect(result).toEqual(activity);
     });
@@ -81,18 +85,46 @@ describe('ActivityService', () => {
 
       const result = await service.findAll();
 
-      expect(repository.find).toHaveBeenCalledWith({ order: { createdAt: 'DESC' } });
+      expect(repository.find).toHaveBeenCalledWith({
+        order: { createdAt: 'DESC' },
+      });
       expect(result).toEqual(activities);
     });
   });
 
   describe('remove', () => {
     it('should delete the activity by id', async () => {
+      const owner = new User();
+      owner.id = 3;
+      const activity = new Activity();
+      activity.user = owner;
+      mockRepository.findOne.mockResolvedValue(activity);
       mockRepository.delete.mockResolvedValue({ affected: 1 });
 
-      await service.remove(1);
+      await service.remove(1, 3);
 
       expect(repository.delete).toHaveBeenCalledWith(1);
+    });
+
+    // SEC-07
+    it("refuse la suppression d'une activité appartenant à un tiers", async () => {
+      const owner = new User();
+      owner.id = 3;
+      const activity = new Activity();
+      activity.user = owner;
+      mockRepository.findOne.mockResolvedValue(activity);
+
+      await expect(service.remove(1, 9)).rejects.toThrow(
+        'Accès limité à vos propres données',
+      );
+      expect(repository.delete).not.toHaveBeenCalled();
+    });
+
+    it('renvoie 404 pour une activité inexistante', async () => {
+      mockRepository.findOne.mockResolvedValue(null);
+      await expect(service.remove(1, 3)).rejects.toThrow(
+        'Activity #1 not found',
+      );
     });
   });
 });

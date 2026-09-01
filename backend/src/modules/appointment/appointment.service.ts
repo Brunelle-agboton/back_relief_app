@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Appointment, AppointmentStatus } from './entities/appointment.entity';
@@ -18,8 +22,16 @@ export class AppointmentService {
     private readonly availabilityService: AvailabilityService,
   ) {}
 
-  async create(createAppointmentDto: CreateAppointmentDto): Promise<Appointment> {
+  async create(
+    createAppointmentDto: CreateAppointmentDto,
+  ): Promise<Appointment> {
     const { patientId, practitionerId, startTime, note } = createAppointmentDto;
+
+    // SEC-07 : l'identifiant du patient est imposé par le contrôleur à partir
+    // du jeton ; il ne peut pas être absent d'un appel légitime.
+    if (patientId === undefined) {
+      throw new BadRequestException('patientId manquant.');
+    }
 
     // 1. Find Patient (User)
     const patient = await this.userService.findOne(patientId);
@@ -28,16 +40,21 @@ export class AppointmentService {
     }
 
     // 2. Find Practitioner Profile
-    const practitionerProfile = await this.practitionerProfileService.findOne(practitionerId);
+    const practitionerProfile =
+      await this.practitionerProfileService.findOne(practitionerId);
     if (!practitionerProfile) {
-      throw new NotFoundException(`Practitioner with ID ${practitionerId} not found.`);
+      throw new NotFoundException(
+        `Practitioner with ID ${practitionerId} not found.`,
+      );
     }
 
     // 3. Create start_at from the provided ISO string
     const start_at = new Date(startTime);
 
     if (isNaN(start_at.getTime())) {
-      throw new BadRequestException('Invalid startTime format. Please provide a valid ISO 8601 date string.');
+      throw new BadRequestException(
+        'Invalid startTime format. Please provide a valid ISO 8601 date string.',
+      );
     }
 
     // Appointment duration is 30 minutes
@@ -53,11 +70,13 @@ export class AppointmentService {
     const availableSlot = await this.availabilityService.findExactSlot(
       practitionerProfile.id,
       start_at,
-      end_at
+      end_at,
     );
 
     if (!availableSlot) {
-      throw new BadRequestException('No matching availability slot found for this time.');
+      throw new BadRequestException(
+        'No matching availability slot found for this time.',
+      );
     }
     if (availableSlot.isBooked) {
       throw new BadRequestException('This slot is already booked.');
@@ -89,14 +108,14 @@ export class AppointmentService {
       where: {
         practitionerProfile: { id: practitionerId },
       },
-      relations: ['patient', 'practitionerPofile'], // Include patient and practitioner details
+      relations: ['patient', 'practitionerProfile'], // Include patient and practitioner details
       order: {
         start_at: 'ASC', // Order by start time ascending
       },
     });
   }
 
-    async findByUserId(userId: number): Promise<Appointment[]> {
+  async findByUserId(userId: number): Promise<Appointment[]> {
     return this.appointmentRepository.find({
       where: {
         patient: { id: userId },

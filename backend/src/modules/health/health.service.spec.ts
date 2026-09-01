@@ -6,7 +6,6 @@ import { Activity, ActivityType } from '../activity/entities/activity.entity';
 import { Exercise } from '../exercise/entities/exercise.entity';
 import { User } from '../user/entities/user.entity';
 import { Repository } from 'typeorm';
-import { CreateHealthDto } from './dto/create-health.dto';
 import { PainInputDto } from './dto/pain-input.dto';
 
 describe('HealthService', () => {
@@ -58,10 +57,18 @@ describe('HealthService', () => {
     }).compile();
 
     service = module.get<HealthService>(HealthService);
-    painRecordRepository = module.get<Repository<PainRecord>>(getRepositoryToken(PainRecord));
-    hydrationRecordRepository = module.get<Repository<HydrationRecord>>(getRepositoryToken(HydrationRecord));
-    activityRepository = module.get<Repository<Activity>>(getRepositoryToken(Activity));
-    exerciseRepository = module.get<Repository<Exercise>>(getRepositoryToken(Exercise));
+    painRecordRepository = module.get<Repository<PainRecord>>(
+      getRepositoryToken(PainRecord),
+    );
+    hydrationRecordRepository = module.get<Repository<HydrationRecord>>(
+      getRepositoryToken(HydrationRecord),
+    );
+    activityRepository = module.get<Repository<Activity>>(
+      getRepositoryToken(Activity),
+    );
+    exerciseRepository = module.get<Repository<Exercise>>(
+      getRepositoryToken(Exercise),
+    );
   });
 
   it('should be defined', () => {
@@ -75,17 +82,22 @@ describe('HealthService', () => {
   });
 
   describe('submitPain', () => {
-    it('should save a pain record', async () => {
-      const dto: PainInputDto = { painLocation: 'Bas du dos', painLevel: 5, painDescription: '', user: new User(), recordedAt: new Date() };
-      await service.submitPain(dto);
-      expect(painRecordRepository.save).toHaveBeenCalled();
-    });
-  });
+    it("rattache le relevé à l'utilisateur fourni par le contrôleur", async () => {
+      const dto: PainInputDto = {
+        painLocation: 'Bas du dos',
+        painLevel: 5,
+        painDescription: '',
+      };
+      const user = new User();
+      user.id = 7;
 
-  describe('create', () => {
-    it('should return a string', () => {
-      const dto: CreateHealthDto = {};
-      expect(service.create(dto)).toBe('This action adds a new health');
+      await service.submitPain(dto, user);
+
+      expect(painRecordRepository.save).toHaveBeenCalledWith({
+        ...dto,
+        user,
+        recordedAt: expect.any(Date),
+      });
     });
   });
 
@@ -104,7 +116,9 @@ describe('HealthService', () => {
 
       expect(painRecordRepository.find).toHaveBeenCalled();
       expect(activityRepository.find).toHaveBeenCalled();
-      expect(result.lastPainByLocation).toEqual({ head: { level: 5, desc: 'headache' } });
+      expect(result.lastPainByLocation).toEqual({
+        head: { level: 5, desc: 'headache' },
+      });
     });
 
     it('utilise une chaîne vide quand painDescription est null', async () => {
@@ -158,7 +172,9 @@ describe('HealthService', () => {
 
       const result = await service.getPainsLatest(user);
 
-      expect(result.exercises).toEqual([{ id: 1, title: 'test exercise', image: 'test.jpg' }]);
+      expect(result.exercises).toEqual([
+        { id: 1, title: 'test exercise', image: 'test.jpg' },
+      ]);
     });
   });
 
@@ -168,10 +184,15 @@ describe('HealthService', () => {
       const hydrationRecord = new HydrationRecord();
       mockHydrationRecordRepository.save.mockResolvedValue(hydrationRecord);
 
-      const result = await service.setHydratation(size);
+      const user = new User();
+      user.id = 7;
 
+      const result = await service.setHydratation(size, user);
+
+      // Le relevé était enregistré sans utilisateur : il n'était jamais relu.
       expect(hydrationRecordRepository.save).toHaveBeenCalledWith({
         bottleSize: size,
+        user,
         recordedAt: expect.any(Date),
       });
       expect(result).toEqual(hydrationRecord);
@@ -206,28 +227,16 @@ describe('HealthService', () => {
     });
   });
 
-  describe('findAll', () => {
-    it('should return "This action returns all health" ', async () => {
-      expect(await service.findAll()).toBe('This action returns all health');
-    });
-  });
-
-  describe('findOne', () => {
-    it('should return "This action returns a #1 health" ', async () => {
-      expect(await service.findOne(1)).toBe('This action returns a #1 health');
-    });
-  });
-
-  describe('update', () => {
-    it('should return "This action updates a #1 health" ', async () => {
-      const dto: PainInputDto = { painLocation: 'Bas du dos', painLevel: 5, painDescription: '', user: new User(), recordedAt: new Date() };
-      expect(await service.update(1, dto)).toBe('This action updates a #1 health');
-    });
-  });
-
-  describe('remove', () => {
-    it('should return "This action removes a #1 health" ', async () => {
-      expect(await service.remove(1)).toBe('This action removes a #1 health');
+  // SEC-04 : les méthodes de scaffolding (findAll / findOne / update / remove,
+  // qui renvoyaient des chaînes littérales sur des routes publiques) ont été
+  // supprimées avec les routes qu'elles servaient.
+  describe('surface du service', () => {
+    it("n'expose plus les méthodes de scaffolding", () => {
+      expect((service as any).create).toBeUndefined();
+      expect((service as any).findAll).toBeUndefined();
+      expect((service as any).findOne).toBeUndefined();
+      expect((service as any).update).toBeUndefined();
+      expect((service as any).remove).toBeUndefined();
     });
   });
 });

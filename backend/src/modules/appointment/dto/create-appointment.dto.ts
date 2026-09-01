@@ -1,10 +1,22 @@
-import { IsInt, IsString, IsOptional, IsDateString, IsDate } from 'class-validator';
+import {
+  IsInt,
+  IsString,
+  IsOptional,
+  IsDateString,
+  MaxLength,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
+/**
+ * SEC-04/07 : `patientId` est optionnel et ignoré pour un patient — le
+ * contrôleur impose l'identifiant de l'appelant. Seul un administrateur peut
+ * prendre rendez-vous pour un tiers.
+ */
 export class CreateAppointmentDto {
+  @IsOptional()
   @IsInt()
   @Type(() => Number)
-  patientId: number;
+  patientId?: number;
 
   @IsInt()
   @Type(() => Number)
@@ -15,5 +27,6 @@ export class CreateAppointmentDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   note?: string;
 }

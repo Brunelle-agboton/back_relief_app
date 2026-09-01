@@ -3,6 +3,15 @@ import { AppointmentController } from './appointment.controller';
 import { AppointmentService } from './appointment.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { Appointment } from './entities/appointment.entity';
+import { PractitionerProfileService } from '../practitioner_profile/practitioner_profile.service';
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { UserRole } from '../../common/enums/user-role.enum';
+import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
+import { ForbiddenException } from '@nestjs/common';
+
+const asUser = (userId: number, role: UserRole = UserRole.USER) =>
+  ({ user: { userId, email: 'a@a.com', role } }) as AuthenticatedRequest;
 
 describe('AppointmentController', () => {
   let controller: AppointmentController;
@@ -15,7 +24,12 @@ describe('AppointmentController', () => {
     findByPractitionerId: jest.fn(),
   };
 
+  const mockPractitionerProfileService = {
+    findForUser: jest.fn(),
+  };
+
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AppointmentController],
       providers: [
@@ -23,8 +37,17 @@ describe('AppointmentController', () => {
           provide: AppointmentService,
           useValue: mockAppointmentService,
         },
+        {
+          provide: PractitionerProfileService,
+          useValue: mockPractitionerProfileService,
+        },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<AppointmentController>(AppointmentController);
     service = module.get<AppointmentService>(AppointmentService);
@@ -37,19 +60,54 @@ describe('AppointmentController', () => {
   describe('create', () => {
     it('should create an appointment', async () => {
       const createAppointmentDto: CreateAppointmentDto = {
-        patientId: 1,
         practitionerId: 1,
         startTime: new Date().toISOString(),
-        // end_at: new Date().toISOString(),
-        // notes: 'test note'
       };
       const expectedAppointment = new Appointment();
       mockAppointmentService.create.mockResolvedValue(expectedAppointment);
 
-      const result = await controller.create(createAppointmentDto);
+      const result = await controller.create(createAppointmentDto, asUser(7));
 
-      expect(service.create).toHaveBeenCalledWith(createAppointmentDto);
+      // SEC-07 : le patient est celui du jeton.
+      expect(service.create).toHaveBeenCalledWith({
+        ...createAppointmentDto,
+        patientId: 7,
+      });
       expect(result).toEqual(expectedAppointment);
+    });
+
+    it('ignore un patientId imposé par le client', async () => {
+      mockAppointmentService.create.mockResolvedValue(new Appointment());
+
+      await controller.create(
+        {
+          patientId: 999,
+          practitionerId: 1,
+          startTime: new Date().toISOString(),
+        },
+        asUser(7),
+      );
+
+      expect(service.create).toHaveBeenCalledWith(
+        expect.objectContaining({ patientId: 7 }),
+      );
+    });
+
+    it('autorise un administrateur à réserver pour un tiers', async () => {
+      mockAppointmentService.create.mockResolvedValue(new Appointment());
+
+      await controller.create(
+        {
+          patientId: 999,
+          practitionerId: 1,
+          startTime: new Date().toISOString(),
+        },
+        asUser(7, UserRole.ADMIN),
+      );
+
+      expect(service.create).toHaveBeenCalledWith(
+        expect.objectContaining({ patientId: 999 }),
+      );
     });
   });
 
@@ -67,27 +125,51 @@ describe('AppointmentController', () => {
 
   describe('findByUserId', () => {
     it('should return appointments for a given user ID', async () => {
-      const userId = '1';
       const expectedAppointments = [new Appointment()];
-      mockAppointmentService.findByUserId.mockResolvedValue(expectedAppointments);
+      mockAppointmentService.findByUserId.mockResolvedValue(
+        expectedAppointments,
+      );
 
-      const result = await controller.findByUserId(userId);
+      const result = await controller.findByUserId(1, asUser(1));
 
-      expect(service.findByUserId).toHaveBeenCalledWith(+userId);
+      expect(service.findByUserId).toHaveBeenCalledWith(1);
       expect(result).toEqual(expectedAppointments);
+    });
+
+    // SEC-04/07 : l'agenda médical d'un autre patient n'est plus lisible.
+    it("refuse l'agenda d'un autre patient", () => {
+      expect(() => controller.findByUserId(2, asUser(1))).toThrow(
+        ForbiddenException,
+      );
+      expect(service.findByUserId).not.toHaveBeenCalled();
     });
   });
 
   describe('findByPractitionerId', () => {
     it('should return appointments for a given practitioner ID', async () => {
-      const practitionerId = '1';
       const expectedAppointments = [new Appointment()];
-      mockAppointmentService.findByPractitionerId.mockResolvedValue(expectedAppointments);
+      mockPractitionerProfileService.findForUser.mockResolvedValue({ id: 1 });
+      mockAppointmentService.findByPractitionerId.mockResolvedValue(
+        expectedAppointments,
+      );
 
-      const result = await controller.findByPractitionerId(practitionerId);
+      const result = await controller.findByPractitionerId(
+        1,
+        asUser(5, UserRole.PRACTITIONER),
+      );
 
-      expect(service.findByPractitionerId).toHaveBeenCalledWith(+practitionerId);
+      expect(service.findByPractitionerId).toHaveBeenCalledWith(1);
       expect(result).toEqual(expectedAppointments);
+    });
+
+    // SEC-04/07
+    it("refuse l'agenda d'un autre praticien", async () => {
+      mockPractitionerProfileService.findForUser.mockResolvedValue({ id: 2 });
+
+      await expect(
+        controller.findByPractitionerId(1, asUser(5, UserRole.PRACTITIONER)),
+      ).rejects.toThrow(ForbiddenException);
+      expect(service.findByPractitionerId).not.toHaveBeenCalled();
     });
   });
 });

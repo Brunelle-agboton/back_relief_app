@@ -1,10 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
 import { UserService } from '../user/user.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { PainInputDto } from './dto/pain-input.dto';
 import { User } from '../user/entities/user.entity';
+import { UserRole } from '../../common/enums/user-role.enum';
+import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
+
+const asUser = (userId: number) =>
+  ({
+    user: { userId, email: 'a@a.com', role: UserRole.USER },
+  }) as AuthenticatedRequest;
 
 describe('HealthController', () => {
   let controller: HealthController;
@@ -17,10 +25,6 @@ describe('HealthController', () => {
     getPainsLatest: jest.fn(),
     setHydratation: jest.fn(),
     latestHydratation: jest.fn(),
-    findAll: jest.fn(),
-    findOne: jest.fn(),
-    update: jest.fn(),
-    remove: jest.fn(),
   };
 
   const mockUserService = {
@@ -28,6 +32,7 @@ describe('HealthController', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HealthController],
       providers: [
@@ -36,11 +41,13 @@ describe('HealthController', () => {
       ],
     })
       .overrideGuard(JwtAuthGuard)
-      .useValue({ canActivate: (context) => {
-        const req = context.switchToHttp().getRequest();
-        req.user = { userId: 1 }; // Mock user
-        return true;
-      } })
+      .useValue({
+        canActivate: (context) => {
+          const req = context.switchToHttp().getRequest();
+          req.user = { userId: 1, email: 'a@a.com', role: UserRole.USER };
+          return true;
+        },
+      })
       .compile();
 
     controller = module.get<HealthController>(HealthController);
@@ -50,6 +57,18 @@ describe('HealthController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  /**
+   * SEC-04 : les routes de scaffolding GET/PATCH/DELETE /health/:id et
+   * GET /health ont été supprimées ; elles étaient publiques et entraient en
+   * conflit avec la sonde de disponibilité.
+   */
+  it("n'expose plus les routes CRUD de scaffolding", () => {
+    expect((controller as any).findAll).toBeUndefined();
+    expect((controller as any).findOne).toBeUndefined();
+    expect((controller as any).update).toBeUndefined();
+    expect((controller as any).remove).toBeUndefined();
   });
 
   describe('getPainOptions', () => {
@@ -62,109 +81,59 @@ describe('HealthController', () => {
   });
 
   describe('submitPain', () => {
-    it('should submit pain for a valid user', async () => {
-      const req = { user: { userId: 1 } };
-      const dto: PainInputDto = { painLocation: 'Bas du dos', painLevel: 5, painDescription: '', user: new User(), recordedAt: new Date() };
+    const dto: PainInputDto = {
+      painLocation: 'Bas du dos',
+      painLevel: 5,
+      painDescription: '',
+    };
+
+    it("rattache le relevé à l'utilisateur du jeton", async () => {
       const user = new User();
       mockUserService.findOne.mockResolvedValue(user);
       mockHealthService.submitPain.mockResolvedValue({ ...dto, user });
 
-      const result = await controller.submitPain(req, dto);
+      const result = await controller.submitPain(asUser(1), dto);
 
       expect(userService.findOne).toHaveBeenCalledWith(1);
-      expect(healthService.submitPain).toHaveBeenCalledWith({ ...dto, user });
+      expect(healthService.submitPain).toHaveBeenCalledWith(dto, user);
       expect(result).toEqual({ ...dto, user });
     });
 
-    it('should throw an error if user not found', async () => {
-      const req = { user: { userId: 1 } };
-      const dto: PainInputDto = { painLocation: 'Bas du dos', painLevel: 5, painDescription: '', user: new User(), recordedAt: new Date() };
-      mockUserService.findOne.mockResolvedValue(null);
-      await expect(controller.submitPain(req, dto)).rejects.toThrow('User not found');
+    it("propage l'erreur si le compte du jeton n'existe plus", async () => {
+      mockUserService.findOne.mockRejectedValue(
+        new NotFoundException('User with id 1 not found'),
+      );
+      await expect(controller.submitPain(asUser(1), dto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('getPainsLatest', () => {
     it('should get latest pains for a user', async () => {
-        const req = { user: { userId: 1 } };
-        const user = new User();
-        mockUserService.findOne.mockResolvedValue(user);
-        mockHealthService.getPainsLatest.mockResolvedValue([]);
-        await controller.getPainsLatest(req);
-        expect(healthService.getPainsLatest).toHaveBeenCalledWith(user);
-    });
-
-    it('should throw an error if user not found', async () => {
-        const req = { user: { userId: 1 } };
-        mockUserService.findOne.mockResolvedValue(null);
-        await expect(controller.getPainsLatest(req)).rejects.toThrow('User not found');
+      const user = new User();
+      mockUserService.findOne.mockResolvedValue(user);
+      mockHealthService.getPainsLatest.mockResolvedValue([]);
+      await controller.getPainsLatest(asUser(1));
+      expect(healthService.getPainsLatest).toHaveBeenCalledWith(user);
     });
   });
 
   describe('setHydratation', () => {
-    it('should set hydratation for a user', async () => {
-        const req = { user: { userId: 1 } };
-        const user = new User();
-        const size = '500ml';
-        mockUserService.findOne.mockResolvedValue(user);
-        await controller.setHydratation(req, size);
-        expect(healthService.setHydratation).toHaveBeenCalledWith(size);
-    });
-
-    it('should throw an error if user not found', async () => {
-        const req = { user: { userId: 1 } };
-        const size = '500ml';
-        mockUserService.findOne.mockResolvedValue(null);
-        await expect(controller.setHydratation(req, size)).rejects.toThrow('User not found');
+    it("rattache le relevé d'hydratation à l'utilisateur du jeton", async () => {
+      const user = new User();
+      mockUserService.findOne.mockResolvedValue(user);
+      await controller.setHydratation(asUser(1), { size: '500ml' });
+      expect(healthService.setHydratation).toHaveBeenCalledWith('500ml', user);
     });
   });
 
   describe('latestHydratation', () => {
     it('should get latest hydratation for a user', async () => {
-        const req = { user: { userId: 1 } };
-        const user = new User();
-        mockUserService.findOne.mockResolvedValue(user);
-        await controller.latestHydratation(req);
-        expect(healthService.latestHydratation).toHaveBeenCalledWith(user);
-    });
-
-    it('should throw an error if user not found', async () => {
-        const req = { user: { userId: 1 } };
-        mockUserService.findOne.mockResolvedValue(null);
-        await expect(controller.latestHydratation(req)).rejects.toThrow('User not found');
-    });
-  });
-
-  describe('findAll', () => {
-    it('should return all health', () => {
-      mockHealthService.findAll.mockReturnValue([]);
-      expect(controller.findAll()).toEqual([]);
-      expect(healthService.findAll).toHaveBeenCalled();
-    });
-  });
-
-  describe('findOne', () => {
-    it('should return one health', () => {
-      mockHealthService.findOne.mockReturnValue({} as any);
-      expect(controller.findOne('1')).toEqual({});
-      expect(healthService.findOne).toHaveBeenCalledWith(1);
-    });
-  });
-
-  describe('update', () => {
-    it('should update a health', () => {
-      const dto: PainInputDto = { painLocation: 'Bas du dos', painLevel: 5, painDescription: '', user: new User(), recordedAt: new Date() };
-      mockHealthService.update.mockReturnValue({} as any);
-      expect(controller.update('1', dto)).toEqual({});
-      expect(healthService.update).toHaveBeenCalledWith(1, dto);
-    });
-  });
-
-  describe('remove', () => {
-    it('should remove a health', () => {
-      mockHealthService.remove.mockReturnValue(undefined);
-      expect(controller.remove('1')).toBeUndefined();
-      expect(healthService.remove).toHaveBeenCalledWith(1);
+      const user = new User();
+      mockUserService.findOne.mockResolvedValue(user);
+      await controller.latestHydratation(asUser(1));
+      expect(healthService.latestHydratation).toHaveBeenCalledWith(user);
     });
   });
 });

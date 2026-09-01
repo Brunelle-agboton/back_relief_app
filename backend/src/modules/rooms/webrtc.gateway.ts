@@ -10,6 +10,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { getJwtSecret, JwtPayload, TokenType } from '../auth/jwt.constants';
 
 type Presence = { userId: number; socketId: string; role?: string };
 
@@ -36,9 +37,15 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const token = client.handshake.auth?.token as string;
       if (!token) throw new UnauthorizedException('No token');
 
-      const payload = this.jwtService.verify(token, {
-        secret: process.env.JWT_SECRET || 'secretKey',
-      }) as any;
+      // SEC-08 : secret obligatoire, aucun repli en dur, et seul un access
+      // token est accepté sur le canal temps réel.
+      const payload = this.jwtService.verify<JwtPayload>(token, {
+        secret: getJwtSecret(),
+      });
+
+      if (payload.typ !== TokenType.ACCESS) {
+        throw new UnauthorizedException('Invalid token type');
+      }
 
       const userId = payload.sub;
       if (!userId) throw new UnauthorizedException('Invalid token payload');
@@ -46,11 +53,19 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // enregistrer mapping
       this.socketsByUser.set(userId, client.id);
       // stocker user info sur le socket pour usage futur
-      (client as any).user = { userId, email: payload.email, role: payload.role };
+      (client as any).user = {
+        userId,
+        email: payload.email,
+        role: payload.role,
+      };
 
-      this.logger.log(`Socket connected: user ${userId} -> socket ${client.id}`);
+      this.logger.log(
+        `Socket connected: user ${userId} -> socket ${client.id}`,
+      );
     } catch (err) {
-      this.logger.warn(`Unauthorized socket connection attempt: ${err?.message}`);
+      this.logger.warn(
+        `Unauthorized socket connection attempt: ${err?.message}`,
+      );
       client.emit('error', 'Unauthorized');
       client.disconnect(true);
     }
@@ -68,7 +83,10 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
           // notify remaining peer
           for (const otherUserId of set) {
             const sockId = this.socketsByUser.get(otherUserId);
-            if (sockId) this.server.to(sockId).emit('peer-left', { roomId, userId: user.userId });
+            if (sockId)
+              this.server
+                .to(sockId)
+                .emit('peer-left', { roomId, userId: user.userId });
           }
           if (set.size === 0) this.rooms.delete(roomId);
         }
@@ -83,36 +101,42 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleJoinRoom(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { roomId: string },
-  ) 
-  {
-    
-    this.logger.log(`Received joinRoom event from socket ${client.id} for room ${payload.roomId}`);
+  ) {
+    this.logger.log(
+      `Received joinRoom event from socket ${client.id} for room ${payload.roomId}`,
+    );
     const user = (client as any).user;
     if (!user) {
-      this.logger.warn(`Unauthorized joinRoom attempt from socket ${client.id}`);
+      this.logger.warn(
+        `Unauthorized joinRoom attempt from socket ${client.id}`,
+      );
       return client.emit('error', 'Unauthorized');
     }
 
     const existingSet = this.rooms.get(payload.roomId);
 
-if (existingSet?.has(user.userId)) {
-  this.logger.warn(`User ${user.userId} already joined room ${payload.roomId}`);
-  return;
-}
+    if (existingSet?.has(user.userId)) {
+      this.logger.warn(
+        `User ${user.userId} already joined room ${payload.roomId}`,
+      );
+      return;
+    }
 
     const { roomId } = payload;
     if (!roomId) {
-      this.logger.warn(`joinRoom event missing roomId from user ${user.userId}`);
+      this.logger.warn(
+        `joinRoom event missing roomId from user ${user.userId}`,
+      );
       return client.emit('error', 'roomId required');
     }
 
     let set = this.rooms.get(roomId);
     if (set && set.has(user.userId)) {
-    this.logger.warn(`User ${user.userId} already in room ${roomId}`);
+      this.logger.warn(`User ${user.userId} already in room ${roomId}`);
       this.initiatorByRoom.set(roomId, user.userId);
 
-    return;
-}
+      return;
+    }
 
     if (!set) {
       set = new Set<number>();
@@ -121,21 +145,29 @@ if (existingSet?.has(user.userId)) {
     }
 
     if (set.size >= 2 && !set.has(user.userId)) {
-      this.logger.warn(`Room ${roomId} is full. User ${user.userId} cannot join.`);
+      this.logger.warn(
+        `Room ${roomId} is full. User ${user.userId} cannot join.`,
+      );
       return client.emit('room-full');
     }
 
     set.add(user.userId);
     client.join(roomId);
-    this.logger.log(`User ${user.userId} joined room ${roomId}. Current participants: ${set.size}`);
+    this.logger.log(
+      `User ${user.userId} joined room ${roomId}. Current participants: ${set.size}`,
+    );
 
     // inform peers
     for (const otherUserId of set) {
       if (otherUserId !== user.userId) {
         const otherSocket = this.socketsByUser.get(otherUserId);
         if (otherSocket) {
-          this.server.to(otherSocket).emit('peer-joined', { roomId, userId: user.userId });
-          this.logger.log(`Notified peer ${otherUserId} that user ${user.userId} joined room ${roomId}`);
+          this.server
+            .to(otherSocket)
+            .emit('peer-joined', { roomId, userId: user.userId });
+          this.logger.log(
+            `Notified peer ${otherUserId} that user ${user.userId} joined room ${roomId}`,
+          );
         }
       }
     }
@@ -143,8 +175,10 @@ if (existingSet?.has(user.userId)) {
     client.emit('joined', { roomId });
 
     if (set.size === 2) {
-      this.logger.log(`Room ${roomId} now has 2 participants. Designating an initiator.`);
-      
+      this.logger.log(
+        `Room ${roomId} now has 2 participants. Designating an initiator.`,
+      );
+
       // Get user IDs from the room
       const userIds = Array.from(set);
 
@@ -165,14 +199,19 @@ if (existingSet?.has(user.userId)) {
       }
 
       // Notify both that the call can start, which triggers navigation
-      if (initiatorSocketId) this.server.to(initiatorSocketId).emit('call_started', { roomId });
-      if (receiverSocketId) this.server.to(receiverSocketId).emit('call_started', { roomId });
+      if (initiatorSocketId)
+        this.server.to(initiatorSocketId).emit('call_started', { roomId });
+      if (receiverSocketId)
+        this.server.to(receiverSocketId).emit('call_started', { roomId });
       this.logger.log(`Emitted call_started to both users in room ${roomId}`);
     }
   }
 
   @SubscribeMessage('leaveRoom')
-  handleLeaveRoom(@ConnectedSocket() client: Socket, @MessageBody() payload: { roomId: string }) {
+  handleLeaveRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { roomId: string },
+  ) {
     const user = (client as any).user;
     const { roomId } = payload;
     const set = this.rooms.get(roomId);
@@ -183,10 +222,12 @@ if (existingSet?.has(user.userId)) {
 
     for (const otherUserId of set) {
       const otherSocket = this.socketsByUser.get(otherUserId);
-      if (otherSocket) this.server.to(otherSocket).emit('peer-left', { roomId, userId: user.userId });
+      if (otherSocket)
+        this.server
+          .to(otherSocket)
+          .emit('peer-left', { roomId, userId: user.userId });
     }
     if (set.size === 0) this.rooms.delete(roomId);
-    
   }
 
   @SubscribeMessage('offer')
@@ -206,7 +247,9 @@ if (existingSet?.has(user.userId)) {
       if (participantId !== from.userId) {
         const targetSock = this.socketsByUser.get(participantId);
         if (targetSock) {
-          this.server.to(targetSock).emit('offer', { fromUserId: from.userId, sdp, roomId });
+          this.server
+            .to(targetSock)
+            .emit('offer', { fromUserId: from.userId, sdp, roomId });
         }
       }
     }
@@ -229,7 +272,9 @@ if (existingSet?.has(user.userId)) {
       if (participantId !== from.userId) {
         const targetSock = this.socketsByUser.get(participantId);
         if (targetSock) {
-          this.server.to(targetSock).emit('answer', { fromUserId: from.userId, sdp, roomId });
+          this.server
+            .to(targetSock)
+            .emit('answer', { fromUserId: from.userId, sdp, roomId });
         }
       }
     }
@@ -252,7 +297,13 @@ if (existingSet?.has(user.userId)) {
       if (participantId !== from.userId) {
         const targetSock = this.socketsByUser.get(participantId);
         if (targetSock) {
-          this.server.to(targetSock).emit('ice_candidate', { fromUserId: from.userId, candidate, roomId });
+          this.server
+            .to(targetSock)
+            .emit('ice_candidate', {
+              fromUserId: from.userId,
+              candidate,
+              roomId,
+            });
         }
       }
     }
@@ -271,7 +322,7 @@ if (existingSet?.has(user.userId)) {
       return client.emit('error', 'Room not found');
     }
 
-    // If there are two participants, and the other one is ready, 
+    // If there are two participants, and the other one is ready,
     // the initiator should send the offer.
     if (roomParticipants.size === 2) {
       for (const participantId of roomParticipants) {

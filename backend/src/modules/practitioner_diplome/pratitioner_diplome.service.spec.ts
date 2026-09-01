@@ -3,7 +3,7 @@ import { PractitionerDiplomeService } from './practitioner_diplome.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { PractitionerDiplome } from './entities/practitioner_diplome.entity';
 import { Repository } from 'typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CreatePractitionerDiplomeDto } from './dto/create-practitioner_diplome.dto';
 
 describe('PractitionerDiplomeService', () => {
@@ -22,12 +22,19 @@ describe('PractitionerDiplomeService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PractitionerDiplomeService,
-        { provide: getRepositoryToken(PractitionerDiplome), useValue: mockRepository },
+        {
+          provide: getRepositoryToken(PractitionerDiplome),
+          useValue: mockRepository,
+        },
       ],
     }).compile();
 
-    service = module.get<PractitionerDiplomeService>(PractitionerDiplomeService);
-    repository = module.get<Repository<PractitionerDiplome>>(getRepositoryToken(PractitionerDiplome));
+    service = module.get<PractitionerDiplomeService>(
+      PractitionerDiplomeService,
+    );
+    repository = module.get<Repository<PractitionerDiplome>>(
+      getRepositoryToken(PractitionerDiplome),
+    );
     jest.clearAllMocks();
   });
 
@@ -76,13 +83,15 @@ describe('PractitionerDiplomeService', () => {
 
       const result = await service.findAll();
 
-      expect(mockRepository.find).toHaveBeenCalledWith({ relations: ['practitionerProfile'] });
+      expect(mockRepository.find).toHaveBeenCalledWith({
+        relations: ['practitionerProfile'],
+      });
       expect(result).toHaveLength(2);
     });
   });
 
   describe('findByProfile', () => {
-    it('retourne les diplômes d\'un praticien', async () => {
+    it("retourne les diplômes d'un praticien", async () => {
       const diplomes = [new PractitionerDiplome()];
       mockRepository.find.mockResolvedValue(diplomes);
 
@@ -102,9 +111,10 @@ describe('PractitionerDiplomeService', () => {
 
       const result = await service.findOne(1);
 
+      // Le propriétaire du profil est chargé pour permettre le contrôle d'accès.
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: ['practitionerProfile'],
+        relations: ['practitionerProfile', 'practitionerProfile.user'],
       });
       expect(result).toEqual(diplome);
     });
@@ -115,38 +125,88 @@ describe('PractitionerDiplomeService', () => {
     });
   });
 
+  // SEC-04/07 : chaque accès ciblé vérifie que le diplôme appartient bien au
+  // praticien appelant.
+  const ownedBy = (userId: number) =>
+    Object.assign(new PractitionerDiplome(), {
+      year: 2018,
+      practitionerProfile: { id: 3, user: { id: userId } },
+    });
+
+  describe('findOneOwnedBy', () => {
+    it('retourne le diplôme de son propriétaire', async () => {
+      const diplome = ownedBy(4);
+      mockRepository.findOne.mockResolvedValue(diplome);
+
+      await expect(service.findOneOwnedBy(1, 4)).resolves.toBe(diplome);
+    });
+
+    it("refuse le diplôme d'un autre praticien", async () => {
+      mockRepository.findOne.mockResolvedValue(ownedBy(4));
+
+      await expect(service.findOneOwnedBy(1, 9)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('autorise un administrateur', async () => {
+      const diplome = ownedBy(4);
+      mockRepository.findOne.mockResolvedValue(diplome);
+
+      await expect(service.findOneOwnedBy(1, 9, true)).resolves.toBe(diplome);
+    });
+  });
+
   describe('update', () => {
     it('met à jour et sauvegarde le diplôme', async () => {
-      const diplome = Object.assign(new PractitionerDiplome(), { year: 2018 });
+      const diplome = ownedBy(4);
       mockRepository.findOne.mockResolvedValue(diplome);
       mockRepository.save.mockResolvedValue({ ...diplome, year: 2022 });
 
-      const result = await service.update(1, { year: 2022 });
+      const result = await service.update(1, { year: 2022 }, 4);
 
       expect(mockRepository.save).toHaveBeenCalled();
       expect(result.year).toBe(2022);
     });
 
+    it("refuse la mise à jour du diplôme d'un tiers", async () => {
+      mockRepository.findOne.mockResolvedValue(ownedBy(4));
+
+      await expect(service.update(1, { year: 2022 }, 9)).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
     it('lève NotFoundException si non trouvé', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      await expect(service.update(99, { year: 2022 })).rejects.toThrow(NotFoundException);
+      await expect(service.update(99, { year: 2022 }, 4)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('remove', () => {
     it('supprime le diplôme', async () => {
-      const diplome = new PractitionerDiplome();
+      const diplome = ownedBy(4);
       mockRepository.findOne.mockResolvedValue(diplome);
       mockRepository.remove.mockResolvedValue(undefined);
 
-      await service.remove(1);
+      await service.remove(1, 4);
 
       expect(mockRepository.remove).toHaveBeenCalledWith(diplome);
     });
 
+    it("refuse la suppression du diplôme d'un tiers", async () => {
+      mockRepository.findOne.mockResolvedValue(ownedBy(4));
+
+      await expect(service.remove(1, 9)).rejects.toThrow(ForbiddenException);
+      expect(mockRepository.remove).not.toHaveBeenCalled();
+    });
+
     it('lève NotFoundException si non trouvé', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      await expect(service.remove(99)).rejects.toThrow(NotFoundException);
+      await expect(service.remove(99, 4)).rejects.toThrow(NotFoundException);
     });
   });
 });
