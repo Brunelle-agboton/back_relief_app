@@ -1,4 +1,4 @@
-import { Transform } from 'class-transformer';
+import { plainToInstance, Transform } from 'class-transformer';
 
 /**
  * Coercitions appliquées AVANT validation.
@@ -27,6 +27,22 @@ export const ToJsonArray = () => Transform(({ value }) => parseJson(value));
 
 /** « {\"2026-01-01\":[\"09:00\"]} » → objet */
 export const ToJsonObject = () => Transform(({ value }) => parseJson(value));
+
+/**
+ * Comme ToJsonArray, mais pour un tableau d'objets imbriqués : les éléments
+ * sont instanciés dans leur classe de DTO.
+ *
+ * Indispensable dès qu'on combine une transformation personnalisée et
+ * @ValidateNested : class-transformer applique @Type AVANT la transformation,
+ * qui remplace ensuite le résultat par des objets simples. class-validator ne
+ * retrouve alors aucune métadonnée sur ces objets et, en mode `whitelist`,
+ * supprime *toutes* leurs propriétés — le tableau arrive vide au service.
+ */
+export const ToJsonArrayOf = <T>(cls: new (...args: never[]) => T) =>
+  Transform(({ value }) => {
+    const parsed = parseJson(value);
+    return Array.isArray(parsed) ? plainToInstance(cls, parsed) : parsed;
+  });
 
 /** { a: 1 } → « {\"a\":1} » (colonne texte) */
 export const ToJsonString = () =>

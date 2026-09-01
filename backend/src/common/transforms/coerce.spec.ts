@@ -151,6 +151,34 @@ describe('Coercitions de DTO (ValidationPipe global)', () => {
       expect(validateSync(dto)).toHaveLength(0);
     });
 
+    /**
+     * Régression : les objets imbriqués doivent traverser le ValidationPipe
+     * *en mode whitelist*. Avec @Transform + @Type, class-validator ne trouvait
+     * aucune métadonnée sur les objets issus du JSON.parse et supprimait toutes
+     * leurs propriétés — les diplômes arrivaient vides jusqu'à l'INSERT.
+     */
+    it('conserve les propriétés des diplômes à travers le mode whitelist', async () => {
+      const pipe = new ValidationPipe({ whitelist: true, transform: true });
+
+      const result = (await pipe.transform(
+        {
+          diplomes:
+            '[{"diplome":"Master","school":"Paris","country":"FR","yearExperience":"5"}]',
+        },
+        { type: 'body', metatype: CompletePractitionerProfileDto },
+      )) as CompletePractitionerProfileDto;
+
+      expect(result.diplomes).toHaveLength(1);
+      expect(result.diplomes?.[0]).toEqual(
+        expect.objectContaining({
+          diplome: 'Master',
+          school: 'Paris',
+          country: 'FR',
+          yearExperience: 5,
+        }),
+      );
+    });
+
     it('rejette un JSON invalide au lieu de le laisser filer', () => {
       const dto = build(CompletePractitionerProfileDto, {
         proSpecialities: 'invalid json',
