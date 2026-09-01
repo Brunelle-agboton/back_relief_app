@@ -3,7 +3,9 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 require('dotenv').config();
 
 /**
- * Point d'entrée unique de la configuration.
+ * Point d'entrée unique de la configuration (hors JWT : voir
+ * modules/auth/jwt.constants.ts, volontairement sans dépendance à ce service
+ * pour rester testable isolément).
  *
  * Deux modes sont distingués via la variable `MODE` :
  *   - `MODE=DEV`  → environnement de développement / CI (tolérant, seed auto, Swagger ouvert)
@@ -13,8 +15,7 @@ require('dotenv').config();
  * regroupés ici et documentés dans backend/PRODUCTION.md.
  */
 class ConfigService {
-
-  constructor(private env: { [k: string]: string | undefined }) { }
+  constructor(private env: { [k: string]: string | undefined }) {}
 
   private getValue(key: string, throwOnMissing = true): string {
     const value = this.env[key];
@@ -34,7 +35,7 @@ class ConfigService {
   }
 
   public ensureValues(keys: string[]) {
-    keys.forEach(k => this.getValue(k, true));
+    keys.forEach((k) => this.getValue(k, true));
     return this;
   }
 
@@ -45,41 +46,6 @@ class ConfigService {
   public isProduction() {
     const mode = this.getValue('MODE', false);
     return mode != 'DEV';
-  }
-
-  /* ------------------------------------------------------------------ JWT */
-
-  /**
-   * Secret de signature des access tokens. Aucun repli en dur : une variable
-   * manquante doit faire échouer le démarrage, jamais produire un secret
-   * devinable (cf. SEC-08).
-   */
-  public getJwtSecret(): string {
-    return this.getValue('JWT_SECRET', true);
-  }
-
-  /**
-   * Secret dédié aux refresh tokens. Obligatoire en production ; en
-   * développement on retombe sur JWT_SECRET (les deux familles de jetons
-   * restent distinguables par le claim `typ`).
-   */
-  public getJwtRefreshSecret(): string {
-    const dedicated = this.getValue('JWT_REFRESH_SECRET', false);
-    if (dedicated) {
-      return dedicated;
-    }
-    if (this.isProduction()) {
-      throw new Error('config error - missing env.JWT_REFRESH_SECRET (obligatoire en production)');
-    }
-    return this.getJwtSecret();
-  }
-
-  public getAccessTokenTtl(): string {
-    return this.getValue('JWT_ACCESS_EXPIRES_IN', false) || '1h';
-  }
-
-  public getRefreshTokenTtl(): string {
-    return this.getValue('JWT_REFRESH_EXPIRES_IN', false) || '30d';
   }
 
   /* ----------------------------------------------------------------- HTTP */
@@ -95,7 +61,10 @@ class ConfigService {
     if (!raw) {
       return '*';
     }
-    return raw.split(',').map(o => o.trim()).filter(Boolean);
+    return raw
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
   }
 
   /** La documentation Swagger décrit toute la surface d'API : fermée par défaut en prod. */
@@ -139,17 +108,15 @@ class ConfigService {
       ssl: this.isProduction() ? { rejectUnauthorized: false } : false,
     };
   }
-
 }
 
-const configService = new ConfigService(process.env)
-  .ensureValues([
-    'POSTGRES_HOST',
-    'POSTGRES_PORT',
-    'POSTGRES_USER',
-    'POSTGRES_PASSWORD',
-    'POSTGRES_DATABASE',
-    'JWT_SECRET',
-  ]);
+const configService = new ConfigService(process.env).ensureValues([
+  'POSTGRES_HOST',
+  'POSTGRES_PORT',
+  'POSTGRES_USER',
+  'POSTGRES_PASSWORD',
+  'POSTGRES_DATABASE',
+  'JWT_SECRET',
+]);
 
 export { configService, ConfigService };

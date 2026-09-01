@@ -2,7 +2,7 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ test_and_ci, fixing_backend, backend_tests, deploy ]
+    branches: [ test_and_ci, fixing_backend, backend_tests, deploy, deploy_on_play, secure_backend_for_prod ]
   pull_request:
     branches: [ main ]
 
@@ -52,6 +52,9 @@ jobs:
         echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> backend/.env
         echo "POSTGRES_DATABASE=${{ secrets.POSTGRES_DATABASE }}" >> backend/.env
         echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> backend/.env
+        # MODE=DEV : JWT_REFRESH_SECRET retombe sur JWT_SECRET (obligatoire en prod uniquement).
+        # Seed désactivé : la CI n'a pas besoin du praticien de démonstration.
+        echo "SEED_ON_BOOT=false" >> backend/.env
 
     - name: Run backend unit tests
       working-directory: ./backend
