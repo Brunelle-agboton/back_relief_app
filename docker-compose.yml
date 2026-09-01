@@ -1,13 +1,19 @@
 services:
   backend:
-    build: 
+    build:
       context: .
       dockerfile: backend/Dockerfile
+      # L'étape `development` conserve les devDependencies et le rechargement
+      # à chaud ; l'étape `production` (défaut de l'image) en est distincte.
+      target: development
     ports:
       - "3000:3000"
     command: npm run start:dev
     volumes:
       - ./backend/:/api
+      # Volume anonyme : évite que le montage précédent masque les dépendances
+      # installées dans l'image.
+      - /api/node_modules
       - ./front-client/assets/images:/front-client/assets/images:ro
     env_file:
       - ./backend/.env

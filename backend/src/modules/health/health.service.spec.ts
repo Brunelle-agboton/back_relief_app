@@ -31,9 +31,11 @@ describe('HealthService', () => {
 
   const mockExerciseRepository = {
     findOne: jest.fn(),
+    find: jest.fn().mockResolvedValue([]),
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         HealthService,
@@ -151,7 +153,8 @@ describe('HealthService', () => {
       activity.metadata = JSON.stringify({ exerciceId: 1 });
       mockPainRecordRepository.find.mockResolvedValue([]);
       mockActivityRepository.find.mockResolvedValue([activity]);
-      mockExerciseRepository.findOne.mockResolvedValue(null);
+      // MET-11 : une seule requête groupée remplace le findOne par activité.
+      mockExerciseRepository.find.mockResolvedValue([]);
 
       const result = await service.getPainsLatest(user);
 
@@ -168,13 +171,30 @@ describe('HealthService', () => {
       exercise.image = 'test.jpg';
       mockPainRecordRepository.find.mockResolvedValue([]);
       mockActivityRepository.find.mockResolvedValue([activity]);
-      mockExerciseRepository.findOne.mockResolvedValue(exercise);
+      mockExerciseRepository.find.mockResolvedValue([exercise]);
 
       const result = await service.getPainsLatest(user);
 
+      // Une seule requête, quel que soit le nombre d'activités.
+      expect(mockExerciseRepository.find).toHaveBeenCalledTimes(1);
       expect(result.exercises).toEqual([
         { id: 1, title: 'test exercise', image: 'test.jpg' },
       ]);
+    });
+
+    // MET-11 : une métadonnée corrompue ne doit plus faire tomber la route.
+    it('ignore une métadonnée JSON malformée sans lever', async () => {
+      const user = new User();
+      const activity = new Activity();
+      activity.metadata = '{ ceci nest pas du json';
+      mockPainRecordRepository.find.mockResolvedValue([]);
+      mockActivityRepository.find.mockResolvedValue([activity]);
+      mockExerciseRepository.find.mockResolvedValue([]);
+
+      const result = await service.getPainsLatest(user);
+
+      expect(result.exercises).toEqual([null]);
+      expect(mockExerciseRepository.find).not.toHaveBeenCalled();
     });
   });
 

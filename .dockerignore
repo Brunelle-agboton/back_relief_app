@@ -1,0 +1,30 @@
+# Le contexte de build est la racine du dépôt : tout ce qui n'est pas nécessaire
+# à l'image est exclu, pour ne pas gonfler le contexte ni y faire entrer de
+# secret (.env) ou d'artefact local.
+
+.git
+.github
+**/node_modules
+**/dist
+**/build
+**/coverage
+**/.expo
+**/.expo-shared
+
+# Secrets et configuration locale
+**/.env
+**/.env.*
+!**/.env.example
+
+# Client mobile : seules les illustrations servies par l'API sont copiées
+front-client/*
+!front-client/assets
+front-client/assets/*
+!front-client/assets/images
+
+# Données locales et divers
+dbData
+**/*.log
+**/.DS_Store
+**/*.md
+!backend/PRODUCTION.md

@@ -1,40 +1,36 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
-import { SummaryService }                  from './summary.service';
-import { JwtAuthGuard }                    from '../auth/jwt.guard';
+import { SummaryService } from './summary.service';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 import { UserService } from '../user/user.service';
 import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
 
 @Controller('summary')
 export class SummaryController {
-  constructor(private summaryService: SummaryService,
-        private readonly userService: UserService,
+  constructor(
+    private summaryService: SummaryService,
+    private readonly userService: UserService,
   ) {}
   @UseGuards(JwtAuthGuard)
   @Get()
   async getSummary(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.userId; 
-    
+    const userId = req.user.userId;
+
+    // MET-10 : findOne lève une NotFoundException (404) ; le `throw new Error`
+    // qui figurait ici transformait un compte introuvable en erreur 500.
     const user = await this.userService.findOne(userId);
-    if (!user) {
-      throw new Error('User not found');
-    }
 
     const result = await this.summaryService.getSummaryForUser(user);
     return result;
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get("details")
+  @Get('details')
   async getUserHealthDetails(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.userId; 
-    
+    const userId = req.user.userId;
+
     const user = await this.userService.findOne(userId);
-    if (!user) {
-      throw new Error('User not found');
-    }
 
     const result = await this.summaryService.getUserHealth(user);
     return result;
-
   }
 }

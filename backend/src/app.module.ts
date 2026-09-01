@@ -1,8 +1,11 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { LoggerModule } from 'nestjs-pino';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
+import { AppThrottlerGuard } from './common/guards/app-throttler.guard';
+import { buildLoggerConfig } from './common/logging/logger.config';
 import { AppService } from './app.service';
 import { configService } from './config/config.service';
 import { DataSource } from 'typeorm';
@@ -34,7 +37,19 @@ const imagesPath = join(
 console.log('→ Serving images from:', imagesPath);
 @Module({
   imports: [
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }]),
+    LoggerModule.forRoot(buildLoggerConfig()),
+    /**
+     * SEC-12 : le quota par défaut était de 10 requêtes/minute pour la totalité
+     * de l'API — un seul écran de l'application en consomme davantage. Le
+     * plafond global est relevé et paramétrable ; les routes sensibles
+     * (connexion, inscription) conservent leur propre @Throttle strict.
+     */
+    ThrottlerModule.forRoot([
+      {
+        ttl: configService.getThrottleTtlMs(),
+        limit: configService.getThrottleLimit(),
+      },
+    ]),
     TypeOrmModule.forRootAsync({
       useFactory: () => {
         return configService.getTypeOrmConfig();
@@ -76,7 +91,7 @@ console.log('→ Serving images from:', imagesPath);
   controllers: [AppController],
   providers: [
     AppService,
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: AppThrottlerGuard },
     /**
      * SEC-01 : applique @Exclude() à toutes les réponses. Sans cet
      * intercepteur global, le hash bcrypt de `User` resterait sérialisé par

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProgramLineDto } from './dto/create-program-line.dto';
 import { UpdateProgramLineDto } from './dto/update-program-line.dto';
 import { Repository } from 'typeorm';
@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class ProgramLineService {
-   constructor(
+  constructor(
     @InjectRepository(ProgramLine)
     private programLineRepository: Repository<ProgramLine>,
     @InjectRepository(Program)
@@ -20,19 +20,29 @@ export class ProgramLineService {
 
   async create(createProgramLineDto: CreateProgramLineDto) {
     // on récupère les entités liées
-    const program  = await this.programRepository.findOneBy({ id: createProgramLineDto.programId });
-    if (!program) throw new Error(`Program #${createProgramLineDto.programId} not found`);
+    const program = await this.programRepository.findOneBy({
+      id: createProgramLineDto.programId,
+    });
+    if (!program)
+      throw new NotFoundException(
+        `Program #${createProgramLineDto.programId} not found`,
+      );
 
-    const exercise = await this.exerciseRepository.findOneBy({ id: createProgramLineDto.exerciseId });
-    if (!exercise) throw new Error(`Exercise #${createProgramLineDto.exerciseId} not found`);
+    const exercise = await this.exerciseRepository.findOneBy({
+      id: createProgramLineDto.exerciseId,
+    });
+    if (!exercise)
+      throw new NotFoundException(
+        `Exercise #${createProgramLineDto.exerciseId} not found`,
+      );
 
     const line = this.programLineRepository.create({
       program,
       exercise,
-      order:       createProgramLineDto.order,
+      order: createProgramLineDto.order,
       repetitions: createProgramLineDto.repetitions,
-      duration:    createProgramLineDto.duration,
-      calories:    createProgramLineDto.calories,
+      duration: createProgramLineDto.duration,
+      calories: createProgramLineDto.calories,
     });
 
     return this.programLineRepository.save(line);
@@ -45,51 +55,64 @@ export class ProgramLineService {
   }
 
   findOne(id: number) {
-    return this.programLineRepository.findOne({
-       where: { id },
-       relations: ['program', 'exercise'],
-    }).then(line => {
-      if (!line) {
-        throw new Error(`ProgramLine with id ${id} not found`);
-      }
-  
-      // Retourner les données 
-      return {
-        id:          line.id,
-        order:       line.order,
-        repetitions: line.repetitions,
-        duration:    line.duration,
-        calories:    line.calories,
-        program: {
-          id:    line.program.id,
-          title: line.program.title,
-        },
-        exercise: {
-          id:       line.exercise.id,
-          title:    line.exercise.title,
-          category: line.exercise.category,
-        },
-      };
-    });;
+    return this.programLineRepository
+      .findOne({
+        where: { id },
+        relations: ['program', 'exercise'],
+      })
+      .then((line) => {
+        if (!line) {
+          throw new NotFoundException(`ProgramLine with id ${id} not found`);
+        }
+
+        // Retourner les données
+        return {
+          id: line.id,
+          order: line.order,
+          repetitions: line.repetitions,
+          duration: line.duration,
+          calories: line.calories,
+          program: {
+            id: line.program.id,
+            title: line.program.title,
+          },
+          exercise: {
+            id: line.exercise.id,
+            title: line.exercise.title,
+            category: line.exercise.category,
+          },
+        };
+      });
   }
 
   async update(id: number, updateProgramLineDto: UpdateProgramLineDto) {
     const line = await this.programLineRepository.findOneBy({ id });
-    if (!line) throw new Error(`ProgramLine with id ${id} not found`);
+    if (!line)
+      throw new NotFoundException(`ProgramLine with id ${id} not found`);
 
     // Update fields
     Object.assign(line, updateProgramLineDto);
 
     // Handle relations if they are updated
     if (updateProgramLineDto.programId) {
-      const program = await this.programRepository.findOneBy({ id: updateProgramLineDto.programId });
-      if (!program) throw new Error(`Program #${updateProgramLineDto.programId} not found`);
+      const program = await this.programRepository.findOneBy({
+        id: updateProgramLineDto.programId,
+      });
+      if (!program)
+        throw new NotFoundException(
+          `Program #${updateProgramLineDto.programId} not found`,
+        );
       line.program = program;
     }
 
     if (updateProgramLineDto.exerciseId) {
-      const exercise = await this.exerciseRepository.findOneBy({ id: updateProgramLineDto.exerciseId });
-      if (!exercise) throw new Error(`Exercise #${updateProgramLineDto.exerciseId} not found`);
+      const exercise = await this.exerciseRepository.findOneBy({
+        id: updateProgramLineDto.exerciseId,
+      });
+      if (!exercise)
+        throw new NotFoundException(
+          `Exercise #${updateProgramLineDto.exerciseId} not found`,
+        );
       line.exercise = exercise;
     }
 
@@ -99,8 +122,10 @@ export class ProgramLineService {
   async remove(id: number) {
     const result = await this.programLineRepository.delete(id);
     if (result.affected === 0) {
-      throw new Error(`ProgramLine with ID ${id} not found`);
+      throw new NotFoundException(`ProgramLine with ID ${id} not found`);
     }
-    return { message: `ProgramLine with ID ${id} has been successfully removed` };
+    return {
+      message: `ProgramLine with ID ${id} has been successfully removed`,
+    };
   }
 }

@@ -24,9 +24,11 @@ describe('SummaryService', () => {
 
   const mockProgramLineRepo = {
     findOne: jest.fn(),
+    find: jest.fn().mockResolvedValue([]),
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SummaryService,
@@ -46,9 +48,13 @@ describe('SummaryService', () => {
     }).compile();
 
     service = module.get<SummaryService>(SummaryService);
-    healthRepo = module.get<Repository<PainRecord>>(getRepositoryToken(PainRecord));
+    healthRepo = module.get<Repository<PainRecord>>(
+      getRepositoryToken(PainRecord),
+    );
     actRepo = module.get<Repository<Activity>>(getRepositoryToken(Activity));
-    programLineRepo = module.get<Repository<ProgramLine>>(getRepositoryToken(ProgramLine));
+    programLineRepo = module.get<Repository<ProgramLine>>(
+      getRepositoryToken(ProgramLine),
+    );
   });
 
   it('should be defined', () => {
@@ -76,14 +82,20 @@ describe('SummaryService', () => {
       expect(result.notifications).toHaveLength(2);
     });
 
-    it('inclut les paramètres de notification de l\'utilisateur', async () => {
+    it("inclut les paramètres de notification de l'utilisateur", async () => {
       mockHealthRepo.find.mockResolvedValue([]);
       mockActRepo.find.mockResolvedValue([]);
 
       const result = await service.getSummaryForUser(makeUser());
 
-      expect(result.notifications[0]).toMatchObject({ title: 'Pause Active', active: true });
-      expect(result.notifications[1]).toMatchObject({ title: 'Boire de l\'eau', active: false });
+      expect(result.notifications[0]).toMatchObject({
+        title: 'Pause Active',
+        active: true,
+      });
+      expect(result.notifications[1]).toMatchObject({
+        title: "Boire de l'eau",
+        active: false,
+      });
     });
 
     it('retourne "Unknown exercise" si la programLine est introuvable', async () => {
@@ -95,29 +107,83 @@ describe('SummaryService', () => {
       });
       mockHealthRepo.find.mockResolvedValue([]);
       mockActRepo.find.mockResolvedValue([act]);
-      mockProgramLineRepo.findOne.mockResolvedValue(null);
+      // MET-11 : une requête groupée remplace le findOne par activité.
+      mockProgramLineRepo.find.mockResolvedValue([]);
 
       const result = await service.getSummaryForUser(makeUser());
 
-      expect(result.exercises[0]).toMatchObject({ name: 'Unknown exercise', calories: 0, duration: '0s' });
+      expect(result.exercises[0]).toMatchObject({
+        name: 'Unknown exercise',
+        calories: 0,
+        duration: '0s',
+      });
     });
 
-    it('retourne les détails de l\'exercice si la programLine est trouvée', async () => {
+    it("retourne les détails de l'exercice si la programLine est trouvée", async () => {
       const act = Object.assign(new Activity(), {
         id: 2,
         metadata: JSON.stringify({ exerciceId: 1, lineOrder: 1 }),
         createdAt: new Date('2026-05-28T10:00:00.000Z'),
         type: ActivityType.PAUSE_COMPLETED,
       });
-      const exercise = Object.assign(new Exercise(), { title: 'Gainage', id: 1 });
-      const progLine = Object.assign(new ProgramLine(), { exercise, duration: 30, calories: 5 });
+      const exercise = Object.assign(new Exercise(), {
+        title: 'Gainage',
+        id: 1,
+      });
+      const progLine = Object.assign(new ProgramLine(), {
+        exercise,
+        order: 1,
+        duration: 30,
+        calories: 5,
+      });
       mockHealthRepo.find.mockResolvedValue([]);
       mockActRepo.find.mockResolvedValue([act]);
-      mockProgramLineRepo.findOne.mockResolvedValue(progLine);
+      mockProgramLineRepo.find.mockResolvedValue([progLine]);
 
       const result = await service.getSummaryForUser(makeUser());
 
-      expect(result.exercises[0]).toMatchObject({ name: 'Gainage', duration: '30 s', calories: 5 });
+      expect(result.exercises[0]).toMatchObject({
+        name: 'Gainage',
+        duration: '30 s',
+        calories: 5,
+      });
+    });
+
+    // MET-11 : N+1 supprimé — une seule requête quel que soit le nombre d'activités.
+    it("ne fait qu'une requête programLine pour plusieurs activités", async () => {
+      const acts = [1, 2, 3].map((id) =>
+        Object.assign(new Activity(), {
+          id,
+          metadata: JSON.stringify({ exerciceId: id, lineOrder: 1 }),
+          createdAt: new Date('2026-05-28T10:00:00.000Z'),
+          type: ActivityType.PAUSE_COMPLETED,
+        }),
+      );
+      mockHealthRepo.find.mockResolvedValue([]);
+      mockActRepo.find.mockResolvedValue(acts);
+      mockProgramLineRepo.find.mockResolvedValue([]);
+
+      await service.getSummaryForUser(makeUser());
+
+      expect(mockProgramLineRepo.find).toHaveBeenCalledTimes(1);
+      expect(mockProgramLineRepo.findOne).not.toHaveBeenCalled();
+    });
+
+    // MET-11 : une métadonnée corrompue ne doit plus faire tomber la route.
+    it('ignore une métadonnée JSON malformée sans lever', async () => {
+      const act = Object.assign(new Activity(), {
+        id: 9,
+        metadata: 'pas du json du tout',
+        createdAt: new Date('2026-05-28T10:00:00.000Z'),
+        type: ActivityType.PAUSE_COMPLETED,
+      });
+      mockHealthRepo.find.mockResolvedValue([]);
+      mockActRepo.find.mockResolvedValue([act]);
+
+      const result = await service.getSummaryForUser(makeUser());
+
+      expect(result.exercises[0]).toMatchObject({ name: 'Unknown exercise' });
+      expect(mockProgramLineRepo.find).not.toHaveBeenCalled();
     });
   });
 
@@ -135,7 +201,10 @@ describe('SummaryService', () => {
     });
 
     it('retourne le dernier niveau de douleur', async () => {
-      const pain = Object.assign(new PainRecord(), { painLevel: 7, recordedAt: new Date() });
+      const pain = Object.assign(new PainRecord(), {
+        painLevel: 7,
+        recordedAt: new Date(),
+      });
       const user = Object.assign(new User(), { id: 1 });
       mockHealthRepo.find.mockResolvedValue([pain]);
       mockActRepo.find.mockResolvedValue([]);
@@ -148,7 +217,10 @@ describe('SummaryService', () => {
     it('calcule un streak de 3 jours consécutifs', async () => {
       const user = Object.assign(new User(), { id: 1 });
       const makeAct = (dateStr: string) =>
-        Object.assign(new Activity(), { createdAt: new Date(dateStr), type: ActivityType.PAUSE_COMPLETED });
+        Object.assign(new Activity(), {
+          createdAt: new Date(dateStr),
+          type: ActivityType.PAUSE_COMPLETED,
+        });
 
       mockHealthRepo.find.mockResolvedValue([]);
       mockActRepo.find.mockResolvedValue([
@@ -163,10 +235,13 @@ describe('SummaryService', () => {
       expect(result.streakDays).toBe(3);
     });
 
-    it('s\'arrête au premier jour manquant dans le streak', async () => {
+    it("s'arrête au premier jour manquant dans le streak", async () => {
       const user = Object.assign(new User(), { id: 1 });
       const makeAct = (dateStr: string) =>
-        Object.assign(new Activity(), { createdAt: new Date(dateStr), type: ActivityType.PAUSE_COMPLETED });
+        Object.assign(new Activity(), {
+          createdAt: new Date(dateStr),
+          type: ActivityType.PAUSE_COMPLETED,
+        });
 
       mockHealthRepo.find.mockResolvedValue([]);
       // 2026-05-25 manquant — streak de 2 seulement

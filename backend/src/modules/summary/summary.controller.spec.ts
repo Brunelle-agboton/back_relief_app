@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SummaryController } from './summary.controller';
 import { SummaryService } from './summary.service';
@@ -34,9 +35,9 @@ describe('SummaryController', () => {
         },
       ],
     })
-    .overrideGuard(JwtAuthGuard)
-    .useValue({ canActivate: () => true })
-    .compile();
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<SummaryController>(SummaryController);
     summaryService = module.get<SummaryService>(SummaryService);
@@ -65,14 +66,21 @@ describe('SummaryController', () => {
       expect(result).toEqual(summary);
     });
 
-    it('should throw an error if user is not found', async () => {
-        const userId = 1;
-        const req = { user: { userId } } as unknown as AuthenticatedRequest;
-  
-        mockUserService.findOne.mockResolvedValue(null);
-  
-        await expect(controller.getSummary(req)).rejects.toThrow('User not found');
-      });
+    // MET-10 : un compte introuvable donnait un 500 (`throw new Error`) ;
+    // le service lève désormais une NotFoundException, soit un 404.
+    it('propage la NotFoundException du service', async () => {
+      const req = {
+        user: { userId: 1 },
+      } as unknown as AuthenticatedRequest;
+
+      mockUserService.findOne.mockRejectedValue(
+        new NotFoundException('User with id 1 not found'),
+      );
+
+      await expect(controller.getSummary(req)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
   });
 
   describe('getUserHealthDetails', () => {
@@ -93,13 +101,18 @@ describe('SummaryController', () => {
       expect(result).toEqual(healthDetails);
     });
 
-    it('should throw an error if user is not found', async () => {
-        const userId = 1;
-        const req = { user: { userId } } as unknown as AuthenticatedRequest;
-  
-        mockUserService.findOne.mockResolvedValue(null);
-  
-        await expect(controller.getUserHealthDetails(req)).rejects.toThrow('User not found');
-      });
+    it('propage la NotFoundException du service', async () => {
+      const req = {
+        user: { userId: 1 },
+      } as unknown as AuthenticatedRequest;
+
+      mockUserService.findOne.mockRejectedValue(
+        new NotFoundException('User with id 1 not found'),
+      );
+
+      await expect(controller.getUserHealthDetails(req)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
   });
 });

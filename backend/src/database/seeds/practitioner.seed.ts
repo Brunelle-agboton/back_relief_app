@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { UserRole } from './common/enums/user-role.enum';
+import { UserRole } from '../../common/enums/user-role.enum';
 
 /**
  * Seed de DÉVELOPPEMENT uniquement — n'est appelé que si `SEED_ON_BOOT` est
@@ -12,7 +12,7 @@ import { UserRole } from './common/enums/user-role.enum';
  * codée en dur. Les identifiants proviennent désormais de l'environnement et le
  * mot de passe est haché comme n'importe quel autre compte.
  */
-export async function runSeed(dataSource: DataSource) {
+export async function seedDemoPractitioner(dataSource: DataSource) {
   const email = process.env.SEED_PRACTITIONER_EMAIL;
   const password = process.env.SEED_PRACTITIONER_PASSWORD;
   const userName = process.env.SEED_PRACTITIONER_NAME || 'Praticien Démo';

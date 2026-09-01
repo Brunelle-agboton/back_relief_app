@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { PainInputDto } from './dto/pain-input.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PainRecord, HydrationRecord } from './entities/health.entity';
@@ -7,6 +7,7 @@ import { painLocations } from '../../utils/painLocations';
 import { User } from '../user/entities/user.entity';
 import { Activity, ActivityType } from '../activity/entities/activity.entity';
 import { Exercise } from '../exercise/entities/exercise.entity';
+import { parseActivityMetadata } from '../activity/activity-metadata';
 
 @Injectable()
 export class HealthService {
@@ -73,25 +74,35 @@ export class HealthService {
       take: 10,
     });
 
-    // 3- Exercices réalisés (type pause_completed ou autre)
-    const exercises = await Promise.all(
-      completed.map(async (act) => {
-        const meta = JSON.parse(act.metadata || '{}');
-        const exercise = await this.exerciseRepo.findOne({
-          where: {
-            id: meta.exerciceId,
-          },
-        });
-        if (!exercise) {
-          return null;
-        }
-        return {
-          id: exercise.id,
-          title: exercise.title,
-          image: exercise.image,
-        };
-      }),
-    );
+    /**
+     * MET-11 : une seule requête au lieu d'un findOne par activité, et lecture
+     * défensive de la métadonnée — un JSON malformé faisait tomber la route.
+     */
+    const exerciseIds = [
+      ...new Set(
+        completed
+          .map((act) => parseActivityMetadata(act.metadata).exerciceId)
+          .filter((id): id is number => id !== undefined && id !== null),
+      ),
+    ];
+
+    const foundExercises = exerciseIds.length
+      ? await this.exerciseRepo.find({ where: { id: In(exerciseIds) } })
+      : [];
+    const exerciseById = new Map(foundExercises.map((e) => [e.id, e]));
+
+    const exercises = completed.map((act) => {
+      const { exerciceId } = parseActivityMetadata(act.metadata);
+      const exercise = exerciceId ? exerciseById.get(exerciceId) : undefined;
+      if (!exercise) {
+        return null;
+      }
+      return {
+        id: exercise.id,
+        title: exercise.title,
+        image: exercise.image,
+      };
+    });
     return {
       lastPainByLocation,
       exercises,
