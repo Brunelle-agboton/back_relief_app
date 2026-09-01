@@ -1,24 +1,88 @@
+# Aucune valeur secrète ne doit apparaître dans ce fichier : il est versionné.
+# - les identifiants de la base sont injectés par Render via `fromDatabase`
+# - les secrets applicatifs sont déclarés `sync: false` et saisis dans le
+#   dashboard Render (Environment) — voir backend/PRODUCTION.md
+#
+# ATTENTION : le mot de passe PostgreSQL qui figurait ici en clair (et qui reste
+# présent dans l'historique git, commit 9830c53) doit être considéré comme
+# compromis et ROTÉ dans Render avant toute mise en production.
+
 databases:
   - name: healthtracker_51um
     databaseName: healthtracker_51um
     user: backrelief
 
 services:
- - type: pserv
-   name: pgbouncer
-   runtime: docker
-   plan: standard
-   repo: https://github.com/render-oss/docker-pgbouncer
-   envVars:
-   - key: postgresql://backrelief:8oZsluEUgSDZr4vcETo5sjTcnyYj9KV0@dpg-d7h6ve67r5hc73duiu1g-a/healthtracker_51um
-     fromDatabase:
-       name: healthtracker_51um
-       property: connectionString
-   - key: POOL_MODE
-     value: transaction
-   - key: SERVER_RESET_QUERY
-     value: DISCARD ALL
-   - key: MAX_CLIENT_CONN
-     value: 500
-   - key: DEFAULT_POOL_SIZE
-     value: 50
+  - type: pserv
+    name: pgbouncer
+    runtime: docker
+    plan: standard
+    repo: https://github.com/render-oss/docker-pgbouncer
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: healthtracker_51um
+          property: connectionString
+      - key: POOL_MODE
+        value: transaction
+      - key: SERVER_RESET_QUERY
+        value: DISCARD ALL
+      - key: MAX_CLIENT_CONN
+        value: 500
+      - key: DEFAULT_POOL_SIZE
+        value: 50
+
+  - type: web
+    name: back-relief-api
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      # --- Mode d'exécution -------------------------------------------------
+      - key: MODE
+        value: PROD
+      - key: PORT
+        value: 3000
+
+      # --- Base de données (via pgbouncer) ---------------------------------
+      - key: POSTGRES_HOST
+        fromService:
+          type: pserv
+          name: pgbouncer
+          property: host
+      - key: POSTGRES_PORT
+        value: 5432
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: healthtracker_51um
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: healthtracker_51um
+          property: password
+      - key: POSTGRES_DATABASE
+        fromDatabase:
+          name: healthtracker_51um
+          property: database
+
+      # `true` uniquement pour amorcer le schéma au tout premier déploiement,
+      # à repasser à `false` immédiatement après.
+      - key: DB_SYNCHRONIZE
+        value: false
+      # Le seed de démonstration ne doit jamais tourner sur la base de prod.
+      - key: SEED_ON_BOOT
+        value: false
+      # La documentation Swagger décrit toute la surface d'API : fermée en prod.
+      - key: SWAGGER_ENABLED
+        value: false
+
+      # --- Secrets : à saisir dans le dashboard Render, jamais ici ----------
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      # Liste blanche CORS (l'app mobile n'envoie pas d'en-tête Origin).
+      - key: CORS_ORIGINS
+        sync: false
