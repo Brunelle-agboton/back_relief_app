@@ -3,6 +3,14 @@ import { ExerciseService } from './exercise.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Exercise, Category, Position } from './entities/exercise.entity';
 import { Repository } from 'typeorm';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
 const mockRepo = () => ({
   save: jest.fn(),
@@ -37,7 +45,7 @@ describe('ExerciseService', () => {
       image: 'squat.jpg',
       description: 'Un exercice pour le dos',
     };
-    const saved = { id: 1, ...dto };
+    const saved = { id: UUID_A, ...dto };
     repo.save.mockResolvedValue(saved);
 
     const result = await service.create(dto as any);
@@ -48,8 +56,20 @@ describe('ExerciseService', () => {
 
   it('should find all exercises', async () => {
     const exercises = [
-      { id: 1, title: 'Squat', category: Category.WALL, position: Position.LOMBAIRES, image: 'squat.jpg' },
-      { id: 2, title: 'Assis', category: Category.SIT, position: Position.BRAS, image: 'assis.jpg' },
+      {
+        id: UUID_A,
+        title: 'Squat',
+        category: Category.WALL,
+        position: Position.LOMBAIRES,
+        image: 'squat.jpg',
+      },
+      {
+        id: UUID_B,
+        title: 'Assis',
+        category: Category.SIT,
+        position: Position.BRAS,
+        image: 'assis.jpg',
+      },
     ];
     repo.find.mockResolvedValue(exercises);
 
@@ -60,14 +80,20 @@ describe('ExerciseService', () => {
   });
 
   it('should return a string for findOne', () => {
-    expect(service.findOne(1)).toBe('This action returns a #1 exercise');
+    expect(service.findOne(UUID_A)).toBe(
+      `This action returns a #${UUID_A} exercise`,
+    );
   });
 
   it('should return a string for update', () => {
-    expect(service.update(1, {} as any)).toBe('This action updates a #1 exercise');
+    expect(service.update(UUID_A, {} as any)).toBe(
+      `This action updates a #${UUID_A} exercise`,
+    );
   });
 
   it('should return a string for remove', () => {
-    expect(service.remove(1)).toBe('This action removes a #1 exercise');
+    expect(service.remove(UUID_A)).toBe(
+      `This action removes a #${UUID_A} exercise`,
+    );
   });
 });

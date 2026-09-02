@@ -6,6 +6,14 @@ import { UserService } from '../user/user.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { User } from '../user/entities/user.entity';
 import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
 describe('SummaryController', () => {
   let controller: SummaryController;
@@ -50,7 +58,7 @@ describe('SummaryController', () => {
 
   describe('getSummary', () => {
     it('should return a summary for the user', async () => {
-      const userId = 1;
+      const userId = UUID_A;
       const user = new User();
       user.id = userId;
       const summary = { healthHistory: [], exercises: [], notifications: [] };
@@ -70,7 +78,7 @@ describe('SummaryController', () => {
     // le service lève désormais une NotFoundException, soit un 404.
     it('propage la NotFoundException du service', async () => {
       const req = {
-        user: { userId: 1 },
+        user: { userId: UUID_A },
       } as unknown as AuthenticatedRequest;
 
       mockUserService.findOne.mockRejectedValue(
@@ -85,7 +93,7 @@ describe('SummaryController', () => {
 
   describe('getUserHealthDetails', () => {
     it('should return health details for the user', async () => {
-      const userId = 1;
+      const userId = UUID_A;
       const user = new User();
       user.id = userId;
       const healthDetails = { painLevel: 5, nbExercises: 10, streakDays: 3 };
@@ -103,7 +111,7 @@ describe('SummaryController', () => {
 
     it('propage la NotFoundException du service', async () => {
       const req = {
-        user: { userId: 1 },
+        user: { userId: UUID_A },
       } as unknown as AuthenticatedRequest;
 
       mockUserService.findOne.mockRejectedValue(

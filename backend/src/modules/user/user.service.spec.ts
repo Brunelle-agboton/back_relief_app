@@ -7,6 +7,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from '../../common/enums/user-role.enum';
+import { UUID_A, UUID_MISSING } from '../../common/testing/uuid.fixtures';
 
 jest.mock('bcrypt');
 
@@ -144,7 +145,7 @@ describe('UserService', () => {
       (bcrypt.hash as jest.Mock).mockResolvedValue('new_hash');
       mockRepository.save.mockResolvedValue(user);
 
-      await service.changePassword(1, 'old', 'brandnew');
+      await service.changePassword(UUID_A, 'old', 'brandnew');
 
       expect(bcrypt.hash).toHaveBeenCalledWith('brandnew', 10);
       expect(user.password).toBe('new_hash');
@@ -158,7 +159,7 @@ describe('UserService', () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(
-        service.changePassword(1, 'wrong', 'brandnew'),
+        service.changePassword(UUID_A, 'wrong', 'brandnew'),
       ).rejects.toThrow('Mot de passe actuel incorrect');
     });
   });
@@ -171,7 +172,7 @@ describe('UserService', () => {
       mockRepository.findOne.mockResolvedValue(user);
       mockRepository.save.mockResolvedValue(user);
 
-      await service.revokeTokens(1);
+      await service.revokeTokens(UUID_A);
 
       expect(user.tokenVersion).toBe(1);
     });
@@ -193,15 +194,17 @@ describe('UserService', () => {
     it('should find a user by id', async () => {
       const user = new User();
       mockRepository.findOne.mockResolvedValue(user);
-      const result = await service.findOne(1);
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      const result = await service.findOne(UUID_A);
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { id: UUID_A },
+      });
       expect(result).toEqual(user);
     });
 
     it('should throw an error if user not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      await expect(service.findOne(1)).rejects.toThrow(
-        'User with id 1 not found',
+      await expect(service.findOne(UUID_A)).rejects.toThrow(
+        `User with id ${UUID_A} not found`,
       );
     });
   });
@@ -219,15 +222,17 @@ describe('UserService', () => {
   describe('update', () => {
     it('should find user, apply changes and save', async () => {
       const user = new User();
-      user.id = 1;
+      user.id = UUID_A;
       user.userName = 'old';
       const dto: UpdateUserDto = { userName: 'new' };
       mockRepository.findOne.mockResolvedValue(user);
       mockRepository.save.mockResolvedValue({ ...user, ...dto });
 
-      const result = await service.update(1, dto);
+      const result = await service.update(UUID_A, dto);
 
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { id: UUID_A },
+      });
       expect(repository.save).toHaveBeenCalled();
       expect(result.userName).toBe('new');
     });
@@ -236,12 +241,12 @@ describe('UserService', () => {
     // écrit en clair comme c'était le cas auparavant.
     it('hache un mot de passe qui atteindrait update()', async () => {
       const user = new User();
-      user.id = 1;
+      user.id = UUID_A;
       mockRepository.findOne.mockResolvedValue(user);
       mockRepository.save.mockImplementation(async (u) => u);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
 
-      await service.update(1, { password: 'plaintext' } as any);
+      await service.update(UUID_A, { password: 'plaintext' } as any);
 
       expect(bcrypt.hash).toHaveBeenCalledWith('plaintext', 10);
       expect(user.password).toBe('hashed_password');
@@ -249,9 +254,9 @@ describe('UserService', () => {
 
     it('should throw if user not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      await expect(service.update(99, { userName: 'x' })).rejects.toThrow(
-        'User with id 99 not found',
-      );
+      await expect(
+        service.update(UUID_MISSING, { userName: 'x' }),
+      ).rejects.toThrow(`User with id ${UUID_MISSING} not found`);
     });
   });
 
@@ -261,12 +266,14 @@ describe('UserService', () => {
       mockRepository.findOne.mockResolvedValue(user);
       mockRepository.save.mockResolvedValue(user);
 
-      const result = await service.updateUserSetting(1, {
+      const result = await service.updateUserSetting(UUID_A, {
         restReminder: true,
         drinkReminder: false,
       });
 
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { id: UUID_A },
+      });
       expect(user.restReminder).toBe(true);
       expect(user.drinkReminder).toBe(false);
       expect(repository.save).toHaveBeenCalledWith(user);
@@ -276,11 +283,11 @@ describe('UserService', () => {
     it('should throw if user not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
       await expect(
-        service.updateUserSetting(1, {
+        service.updateUserSetting(UUID_A, {
           restReminder: true,
           drinkReminder: false,
         }),
-      ).rejects.toThrow('User with id 1 not found');
+      ).rejects.toThrow(`User with id ${UUID_A} not found`);
     });
   });
 
@@ -290,16 +297,18 @@ describe('UserService', () => {
       mockRepository.findOne.mockResolvedValue(user);
       mockRepository.remove.mockResolvedValue(undefined);
 
-      await service.remove(1);
+      await service.remove(UUID_A);
 
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { id: UUID_A },
+      });
       expect(repository.remove).toHaveBeenCalledWith(user);
     });
 
     it('should throw if user not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      await expect(service.remove(99)).rejects.toThrow(
-        'User with id 99 not found',
+      await expect(service.remove(UUID_MISSING)).rejects.toThrow(
+        `User with id ${UUID_MISSING} not found`,
       );
     });
   });

@@ -8,8 +8,16 @@ import { PainInputDto } from './dto/pain-input.dto';
 import { User } from '../user/entities/user.entity';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
-const asUser = (userId: number) =>
+const asUser = (userId: string) =>
   ({
     user: { userId, email: 'a@a.com', role: UserRole.USER },
   }) as AuthenticatedRequest;
@@ -44,7 +52,7 @@ describe('HealthController', () => {
       .useValue({
         canActivate: (context) => {
           const req = context.switchToHttp().getRequest();
-          req.user = { userId: 1, email: 'a@a.com', role: UserRole.USER };
+          req.user = { userId: UUID_A, email: 'a@a.com', role: UserRole.USER };
           return true;
         },
       })
@@ -92,9 +100,9 @@ describe('HealthController', () => {
       mockUserService.findOne.mockResolvedValue(user);
       mockHealthService.submitPain.mockResolvedValue({ ...dto, user });
 
-      const result = await controller.submitPain(asUser(1), dto);
+      const result = await controller.submitPain(asUser(UUID_A), dto);
 
-      expect(userService.findOne).toHaveBeenCalledWith(1);
+      expect(userService.findOne).toHaveBeenCalledWith(UUID_A);
       expect(healthService.submitPain).toHaveBeenCalledWith(dto, user);
       expect(result).toEqual({ ...dto, user });
     });
@@ -103,7 +111,7 @@ describe('HealthController', () => {
       mockUserService.findOne.mockRejectedValue(
         new NotFoundException('User with id 1 not found'),
       );
-      await expect(controller.submitPain(asUser(1), dto)).rejects.toThrow(
+      await expect(controller.submitPain(asUser(UUID_A), dto)).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -114,7 +122,7 @@ describe('HealthController', () => {
       const user = new User();
       mockUserService.findOne.mockResolvedValue(user);
       mockHealthService.getPainsLatest.mockResolvedValue([]);
-      await controller.getPainsLatest(asUser(1));
+      await controller.getPainsLatest(asUser(UUID_A));
       expect(healthService.getPainsLatest).toHaveBeenCalledWith(user);
     });
   });
@@ -123,7 +131,7 @@ describe('HealthController', () => {
     it("rattache le relevé d'hydratation à l'utilisateur du jeton", async () => {
       const user = new User();
       mockUserService.findOne.mockResolvedValue(user);
-      await controller.setHydratation(asUser(1), { size: '500ml' });
+      await controller.setHydratation(asUser(UUID_A), { size: '500ml' });
       expect(healthService.setHydratation).toHaveBeenCalledWith('500ml', user);
     });
   });
@@ -132,7 +140,7 @@ describe('HealthController', () => {
     it('should get latest hydratation for a user', async () => {
       const user = new User();
       mockUserService.findOne.mockResolvedValue(user);
-      await controller.latestHydratation(asUser(1));
+      await controller.latestHydratation(asUser(UUID_A));
       expect(healthService.latestHydratation).toHaveBeenCalledWith(user);
     });
   });

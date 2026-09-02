@@ -53,7 +53,7 @@ describe('NotificationController', () => {
   describe('findOne', () => {
     it('should return a notification', () => {
       controller.findOne('1');
-      expect(service.findOne).toHaveBeenCalledWith(1);
+      expect(service.findOne).toHaveBeenCalledWith('1');
     });
   });
 
@@ -61,14 +61,14 @@ describe('NotificationController', () => {
     it('should update a notification', () => {
       const dto = new UpdateNotificationDto();
       controller.update('1', dto);
-      expect(service.update).toHaveBeenCalledWith(1, dto);
+      expect(service.update).toHaveBeenCalledWith('1', dto);
     });
   });
 
   describe('remove', () => {
     it('should remove a notification', () => {
       controller.remove('1');
-      expect(service.remove).toHaveBeenCalledWith(1);
+      expect(service.remove).toHaveBeenCalledWith('1');
     });
   });
 });

@@ -5,6 +5,14 @@ import { Notification } from './entities/notification.entity';
 import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
 describe('NotificationService', () => {
   let service: NotificationService;
@@ -27,7 +35,9 @@ describe('NotificationService', () => {
     }).compile();
 
     service = module.get<NotificationService>(NotificationService);
-    repository = module.get<Repository<Notification>>(getRepositoryToken(Notification));
+    repository = module.get<Repository<Notification>>(
+      getRepositoryToken(Notification),
+    );
     jest.clearAllMocks();
   });
 
@@ -39,9 +49,9 @@ describe('NotificationService', () => {
     it('crée et sauvegarde une notification', async () => {
       const dto: CreateNotificationDto = {
         title: 'Rappel',
-        description: 'Buvez de l\'eau',
+        description: "Buvez de l'eau",
         date: '2026-05-28T10:00:00.000Z',
-        userId: 1,
+        userId: UUID_A,
       };
       const notification = new Notification();
       mockRepository.create.mockReturnValue(notification);
@@ -73,14 +83,14 @@ describe('NotificationService', () => {
   });
 
   describe('findByUser', () => {
-    it('retourne les notifications d\'un utilisateur triées par date DESC', async () => {
+    it("retourne les notifications d'un utilisateur triées par date DESC", async () => {
       const notifications = [new Notification()];
       mockRepository.find.mockResolvedValue(notifications);
 
-      const result = await service.findByUser(42);
+      const result = await service.findByUser(UUID_D);
 
       expect(mockRepository.find).toHaveBeenCalledWith({
-        where: { user: { id: 42 } },
+        where: { user: { id: UUID_D } },
         order: { date: 'DESC' },
       });
       expect(result).toEqual(notifications);
@@ -92,25 +102,35 @@ describe('NotificationService', () => {
       const notification = new Notification();
       mockRepository.findOne.mockResolvedValue(notification);
 
-      const result = await service.findOne(1);
+      const result = await service.findOne(UUID_A);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 }, relations: ['user'] });
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: UUID_A },
+        relations: ['user'],
+      });
       expect(result).toEqual(notification);
     });
 
     it('lève NotFoundException si non trouvée', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      await expect(service.findOne(99)).rejects.toThrow(NotFoundException);
+      await expect(service.findOne(UUID_MISSING)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('update', () => {
     it('met à jour et sauvegarde la notification', async () => {
-      const notification = Object.assign(new Notification(), { title: 'Ancien titre' });
+      const notification = Object.assign(new Notification(), {
+        title: 'Ancien titre',
+      });
       mockRepository.findOne.mockResolvedValue(notification);
-      mockRepository.save.mockResolvedValue({ ...notification, title: 'Nouveau titre' });
+      mockRepository.save.mockResolvedValue({
+        ...notification,
+        title: 'Nouveau titre',
+      });
 
-      const result = await service.update(1, { title: 'Nouveau titre' });
+      const result = await service.update(UUID_A, { title: 'Nouveau titre' });
 
       expect(mockRepository.save).toHaveBeenCalled();
       expect(result.title).toBe('Nouveau titre');
@@ -118,7 +138,9 @@ describe('NotificationService', () => {
 
     it('lève NotFoundException si non trouvée', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      await expect(service.update(99, { title: 'x' })).rejects.toThrow(NotFoundException);
+      await expect(
+        service.update(UUID_MISSING, { title: 'x' }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -128,7 +150,7 @@ describe('NotificationService', () => {
       mockRepository.findOne.mockResolvedValue(notification);
       mockRepository.save.mockResolvedValue({ ...notification, isRead: true });
 
-      const result = await service.markAsRead(1);
+      const result = await service.markAsRead(UUID_A);
 
       expect(notification.isRead).toBe(true);
       expect(mockRepository.save).toHaveBeenCalledWith(notification);
@@ -142,14 +164,16 @@ describe('NotificationService', () => {
       mockRepository.findOne.mockResolvedValue(notification);
       mockRepository.remove.mockResolvedValue(undefined);
 
-      await service.remove(1);
+      await service.remove(UUID_A);
 
       expect(mockRepository.remove).toHaveBeenCalledWith(notification);
     });
 
     it('lève NotFoundException si non trouvée', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      await expect(service.remove(99)).rejects.toThrow(NotFoundException);
+      await expect(service.remove(UUID_MISSING)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

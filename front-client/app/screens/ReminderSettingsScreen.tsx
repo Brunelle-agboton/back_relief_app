@@ -23,8 +23,8 @@ export default function ReminderSettingsScreen() {
                        router.replace('/screens/LoginScreen');
                        return;
                      }
-           const id = parseInt(userId, 10);
-            const { data } = await api.get(`user/me/${id}`);
+            // L'identifiant est un UUID : plus de conversion numérique.
+            const { data } = await api.get(`user/me/${userId}`);
                   setRestReminder(data.restReminder);
             setDrinkReminder(data.drinkReminder);
 

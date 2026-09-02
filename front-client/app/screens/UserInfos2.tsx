@@ -29,8 +29,8 @@ export default function UserInfos2() {
                  router.replace('/screens/LoginScreen');
                  return;
                }
-     const id = parseInt(userId, 10);
-      const { data } = await api.get(`user/me/${id}`);
+      // L'identifiant est un UUID : il ne doit plus être converti en nombre.
+      const { data } = await api.get(`user/me/${userId}`);
       setSexe(data.sexe);
       setAge(String(data.age));
       setTaille(String(data.taille));

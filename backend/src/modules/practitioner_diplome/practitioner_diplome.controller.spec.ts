@@ -9,8 +9,16 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
-const asUser = (userId: number, role: UserRole = UserRole.PRACTITIONER) =>
+const asUser = (userId: string, role: UserRole = UserRole.PRACTITIONER) =>
   ({ user: { userId, email: 'pro@test.com', role } }) as AuthenticatedRequest;
 
 describe('PratitionerDiplomeController', () => {
@@ -64,9 +72,9 @@ describe('PratitionerDiplomeController', () => {
       mockProfileService.findForUser.mockResolvedValue({ id: 12 });
       mockService.create.mockResolvedValue(diplome);
 
-      const result = await controller.create(dto, asUser(4));
+      const result = await controller.create(dto, asUser(UUID_D));
 
-      expect(mockProfileService.findForUser).toHaveBeenCalledWith(4);
+      expect(mockProfileService.findForUser).toHaveBeenCalledWith(UUID_D);
       expect(mockService.create).toHaveBeenCalledWith(dto, 12);
       expect(result).toEqual(diplome);
     });
@@ -80,7 +88,7 @@ describe('PratitionerDiplomeController', () => {
       };
 
       await expect(
-        controller.create(dto, asUser(4, UserRole.USER)),
+        controller.create(dto, asUser(UUID_D, UserRole.USER)),
       ).rejects.toThrow(ForbiddenException);
       expect(mockService.create).not.toHaveBeenCalled();
     });
@@ -104,9 +112,13 @@ describe('PratitionerDiplomeController', () => {
       const diplome = new PractitionerDiplome();
       mockService.findOneOwnedBy.mockResolvedValue(diplome);
 
-      const result = await controller.findOne(1, asUser(4));
+      const result = await controller.findOne(UUID_A, asUser(UUID_D));
 
-      expect(mockService.findOneOwnedBy).toHaveBeenCalledWith(1, 4, false);
+      expect(mockService.findOneOwnedBy).toHaveBeenCalledWith(
+        UUID_A,
+        UUID_D,
+        false,
+      );
       expect(result).toEqual(diplome);
     });
   });
@@ -116,12 +128,16 @@ describe('PratitionerDiplomeController', () => {
       const diplome = new PractitionerDiplome();
       mockService.update.mockResolvedValue(diplome);
 
-      const result = await controller.update(1, { year: 2022 }, asUser(4));
+      const result = await controller.update(
+        UUID_A,
+        { year: 2022 },
+        asUser(UUID_D),
+      );
 
       expect(mockService.update).toHaveBeenCalledWith(
-        1,
+        UUID_A,
         { year: 2022 },
-        4,
+        UUID_D,
         false,
       );
       expect(result).toEqual(diplome);
@@ -132,9 +148,9 @@ describe('PratitionerDiplomeController', () => {
     it('supprime un diplôme en vérifiant la propriété', async () => {
       mockService.remove.mockResolvedValue(undefined);
 
-      await controller.remove(1, asUser(4));
+      await controller.remove(UUID_A, asUser(UUID_D));
 
-      expect(mockService.remove).toHaveBeenCalledWith(1, 4, false);
+      expect(mockService.remove).toHaveBeenCalledWith(UUID_A, UUID_D, false);
     });
   });
 });

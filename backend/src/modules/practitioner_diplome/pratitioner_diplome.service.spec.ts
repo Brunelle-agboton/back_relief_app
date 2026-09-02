@@ -5,6 +5,14 @@ import { PractitionerDiplome } from './entities/practitioner_diplome.entity';
 import { Repository } from 'typeorm';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CreatePractitionerDiplomeDto } from './dto/create-practitioner_diplome.dto';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
 describe('PractitionerDiplomeService', () => {
   let service: PractitionerDiplomeService;
@@ -67,11 +75,11 @@ describe('PractitionerDiplomeService', () => {
       mockRepository.create.mockReturnValue(diplome);
       mockRepository.save.mockResolvedValue(diplome);
 
-      await service.create(dto, 5);
+      await service.create(dto, UUID_E);
 
       expect(mockRepository.create).toHaveBeenCalledWith({
         ...dto,
-        practitionerProfile: { id: 5 },
+        practitionerProfile: { id: UUID_E },
       });
     });
   });
@@ -95,10 +103,10 @@ describe('PractitionerDiplomeService', () => {
       const diplomes = [new PractitionerDiplome()];
       mockRepository.find.mockResolvedValue(diplomes);
 
-      const result = await service.findByProfile(3);
+      const result = await service.findByProfile(UUID_C);
 
       expect(mockRepository.find).toHaveBeenCalledWith({
-        where: { practitionerProfile: { id: 3 } },
+        where: { practitionerProfile: { id: UUID_C } },
       });
       expect(result).toEqual(diplomes);
     });
@@ -109,11 +117,11 @@ describe('PractitionerDiplomeService', () => {
       const diplome = new PractitionerDiplome();
       mockRepository.findOne.mockResolvedValue(diplome);
 
-      const result = await service.findOne(1);
+      const result = await service.findOne(UUID_A);
 
       // Le propriétaire du profil est chargé pour permettre le contrôle d'accès.
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 1 },
+        where: { id: UUID_A },
         relations: ['practitionerProfile', 'practitionerProfile.user'],
       });
       expect(result).toEqual(diplome);
@@ -121,92 +129,102 @@ describe('PractitionerDiplomeService', () => {
 
     it('lève NotFoundException si non trouvé', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      await expect(service.findOne(99)).rejects.toThrow(NotFoundException);
+      await expect(service.findOne(UUID_MISSING)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   // SEC-04/07 : chaque accès ciblé vérifie que le diplôme appartient bien au
   // praticien appelant.
-  const ownedBy = (userId: number) =>
+  const ownedBy = (userId: string) =>
     Object.assign(new PractitionerDiplome(), {
       year: 2018,
-      practitionerProfile: { id: 3, user: { id: userId } },
+      practitionerProfile: { id: UUID_C, user: { id: userId } },
     });
 
   describe('findOneOwnedBy', () => {
     it('retourne le diplôme de son propriétaire', async () => {
-      const diplome = ownedBy(4);
+      const diplome = ownedBy(UUID_D);
       mockRepository.findOne.mockResolvedValue(diplome);
 
-      await expect(service.findOneOwnedBy(1, 4)).resolves.toBe(diplome);
+      await expect(service.findOneOwnedBy(UUID_A, UUID_D)).resolves.toBe(
+        diplome,
+      );
     });
 
     it("refuse le diplôme d'un autre praticien", async () => {
-      mockRepository.findOne.mockResolvedValue(ownedBy(4));
+      mockRepository.findOne.mockResolvedValue(ownedBy(UUID_D));
 
-      await expect(service.findOneOwnedBy(1, 9)).rejects.toThrow(
+      await expect(service.findOneOwnedBy(UUID_A, UUID_B)).rejects.toThrow(
         ForbiddenException,
       );
     });
 
     it('autorise un administrateur', async () => {
-      const diplome = ownedBy(4);
+      const diplome = ownedBy(UUID_D);
       mockRepository.findOne.mockResolvedValue(diplome);
 
-      await expect(service.findOneOwnedBy(1, 9, true)).resolves.toBe(diplome);
+      await expect(service.findOneOwnedBy(UUID_A, UUID_B, true)).resolves.toBe(
+        diplome,
+      );
     });
   });
 
   describe('update', () => {
     it('met à jour et sauvegarde le diplôme', async () => {
-      const diplome = ownedBy(4);
+      const diplome = ownedBy(UUID_D);
       mockRepository.findOne.mockResolvedValue(diplome);
       mockRepository.save.mockResolvedValue({ ...diplome, year: 2022 });
 
-      const result = await service.update(1, { year: 2022 }, 4);
+      const result = await service.update(UUID_A, { year: 2022 }, UUID_D);
 
       expect(mockRepository.save).toHaveBeenCalled();
       expect(result.year).toBe(2022);
     });
 
     it("refuse la mise à jour du diplôme d'un tiers", async () => {
-      mockRepository.findOne.mockResolvedValue(ownedBy(4));
+      mockRepository.findOne.mockResolvedValue(ownedBy(UUID_D));
 
-      await expect(service.update(1, { year: 2022 }, 9)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.update(UUID_A, { year: 2022 }, UUID_B),
+      ).rejects.toThrow(ForbiddenException);
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
 
     it('lève NotFoundException si non trouvé', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      await expect(service.update(99, { year: 2022 }, 4)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.update(UUID_MISSING, { year: 2022 }, UUID_D),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('remove', () => {
     it('supprime le diplôme', async () => {
-      const diplome = ownedBy(4);
+      const diplome = ownedBy(UUID_D);
       mockRepository.findOne.mockResolvedValue(diplome);
       mockRepository.remove.mockResolvedValue(undefined);
 
-      await service.remove(1, 4);
+      await service.remove(UUID_A, UUID_D);
 
       expect(mockRepository.remove).toHaveBeenCalledWith(diplome);
     });
 
     it("refuse la suppression du diplôme d'un tiers", async () => {
-      mockRepository.findOne.mockResolvedValue(ownedBy(4));
+      mockRepository.findOne.mockResolvedValue(ownedBy(UUID_D));
 
-      await expect(service.remove(1, 9)).rejects.toThrow(ForbiddenException);
+      await expect(service.remove(UUID_A, UUID_B)).rejects.toThrow(
+        ForbiddenException,
+      );
       expect(mockRepository.remove).not.toHaveBeenCalled();
     });
 
     it('lève NotFoundException si non trouvé', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      await expect(service.remove(99, 4)).rejects.toThrow(NotFoundException);
+      await expect(service.remove(UUID_MISSING, UUID_D)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

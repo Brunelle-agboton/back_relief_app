@@ -10,8 +10,16 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
-const asUser = (userId: number, role: UserRole = UserRole.PRACTITIONER) =>
+const asUser = (userId: string, role: UserRole = UserRole.PRACTITIONER) =>
   ({ user: { userId, email: 'pro@test.com', role } }) as AuthenticatedRequest;
 
 describe('PractitionerProfileController', () => {
@@ -19,17 +27,17 @@ describe('PractitionerProfileController', () => {
   let service: PractitionerProfileService;
 
   const mockPractitionerProfileService = {
-    create: jest.fn((dto) => Promise.resolve({ id: 1, ...dto })),
+    create: jest.fn((dto) => Promise.resolve({ id: UUID_A, ...dto })),
     findAll: jest.fn(() => Promise.resolve([])),
     findOne: jest.fn((id) => Promise.resolve({ id, name: 'Test' })),
     update: jest.fn((id, dto) => Promise.resolve({ id, ...dto })),
     remove: jest.fn((id) => Promise.resolve({ id })),
     findForUser: jest.fn((userId) =>
-      Promise.resolve({ id: 1, userId, name: 'Test' }),
+      Promise.resolve({ id: UUID_A, userId, name: 'Test' }),
     ),
     findByEmail: jest.fn((email) => Promise.resolve({ email, name: 'Test' })),
     findPublicByEmail: jest.fn(() =>
-      Promise.resolve({ id: 1, availabilities: [] }),
+      Promise.resolve({ id: UUID_A, availabilities: [] }),
     ),
     addAvailability: jest.fn((profileId, dto) =>
       Promise.resolve({ profileId, ...dto }),
@@ -37,7 +45,7 @@ describe('PractitionerProfileController', () => {
     completePractionerProfile: jest.fn((id, dto) =>
       Promise.resolve({ id, ...dto }),
     ),
-    assertOwnedBy: jest.fn(() => Promise.resolve({ id: 1 })),
+    assertOwnedBy: jest.fn(() => Promise.resolve({ id: UUID_A })),
   };
 
   beforeEach(async () => {
@@ -76,7 +84,7 @@ describe('PractitionerProfileController', () => {
       const dto = new CreatePractitionerProfileDto();
       const result = await controller.create(dto);
       expect(service.create).toHaveBeenCalledWith(dto);
-      expect(result).toEqual({ id: 1, ...dto });
+      expect(result).toEqual({ id: UUID_A, ...dto });
     });
   });
 
@@ -90,19 +98,19 @@ describe('PractitionerProfileController', () => {
 
   describe('findOne', () => {
     it('should return a practitionerProfile', async () => {
-      const result = await controller.findOne(1, asUser(5));
-      expect(service.assertOwnedBy).toHaveBeenCalledWith(1, 5);
-      expect(service.findOne).toHaveBeenCalledWith(1);
-      expect(result).toEqual({ id: 1, name: 'Test' });
+      const result = await controller.findOne(UUID_A, asUser(UUID_E));
+      expect(service.assertOwnedBy).toHaveBeenCalledWith(UUID_A, UUID_E);
+      expect(service.findOne).toHaveBeenCalledWith(UUID_A);
+      expect(result).toEqual({ id: UUID_A, name: 'Test' });
     });
   });
 
   describe('update', () => {
     it('should update a practitionerProfile', async () => {
       const dto = new UpdatePractitionerProfileDto();
-      const result = await controller.update(1, dto, asUser(5));
-      expect(service.update).toHaveBeenCalledWith(1, dto);
-      expect(result).toEqual({ id: 1, ...dto });
+      const result = await controller.update(UUID_A, dto, asUser(UUID_E));
+      expect(service.update).toHaveBeenCalledWith(UUID_A, dto);
+      expect(result).toEqual({ id: UUID_A, ...dto });
     });
 
     // SEC-07 : aucun contrôle de propriété n'existait sur cette route.
@@ -112,7 +120,11 @@ describe('PractitionerProfileController', () => {
       );
 
       await expect(
-        controller.update(2, new UpdatePractitionerProfileDto(), asUser(5)),
+        controller.update(
+          UUID_B,
+          new UpdatePractitionerProfileDto(),
+          asUser(UUID_E),
+        ),
       ).rejects.toThrow(ForbiddenException);
       expect(service.update).not.toHaveBeenCalled();
     });
@@ -120,9 +132,9 @@ describe('PractitionerProfileController', () => {
     it("refuse un appelant qui n'est pas praticien", async () => {
       await expect(
         controller.update(
-          1,
+          UUID_A,
           new UpdatePractitionerProfileDto(),
-          asUser(5, UserRole.USER),
+          asUser(UUID_E, UserRole.USER),
         ),
       ).rejects.toThrow(ForbiddenException);
       expect(service.assertOwnedBy).not.toHaveBeenCalled();
@@ -131,18 +143,18 @@ describe('PractitionerProfileController', () => {
 
   describe('remove', () => {
     it('should remove a practitionerProfile', async () => {
-      const result = await controller.remove(1, asUser(5));
-      expect(service.assertOwnedBy).toHaveBeenCalledWith(1, 5);
-      expect(service.remove).toHaveBeenCalledWith(1);
-      expect(result).toEqual({ id: 1 });
+      const result = await controller.remove(UUID_A, asUser(UUID_E));
+      expect(service.assertOwnedBy).toHaveBeenCalledWith(UUID_A, UUID_E);
+      expect(service.remove).toHaveBeenCalledWith(UUID_A);
+      expect(result).toEqual({ id: UUID_A });
     });
   });
 
   describe('getProfile', () => {
     it('should return the practitioner profile for the current user', async () => {
-      const result = await controller.getProfile(asUser(1));
-      expect(service.findForUser).toHaveBeenCalledWith(1);
-      expect(result).toEqual({ id: 1, userId: 1, name: 'Test' });
+      const result = await controller.getProfile(asUser(UUID_A));
+      expect(service.findForUser).toHaveBeenCalledWith(UUID_A);
+      expect(result).toEqual({ id: UUID_A, userId: UUID_A, name: 'Test' });
     });
   });
 
@@ -151,7 +163,7 @@ describe('PractitionerProfileController', () => {
     it('renvoie une projection publique pour une adresse publiée', async () => {
       const result = await controller.getProfileByEmail('public@test.com');
       expect(service.findPublicByEmail).toHaveBeenCalledWith('public@test.com');
-      expect(result).toEqual({ id: 1, availabilities: [] });
+      expect(result).toEqual({ id: UUID_A, availabilities: [] });
     });
 
     it('renvoie 404 pour toute adresse non publiée, sans interroger la base', () => {
@@ -167,9 +179,9 @@ describe('PractitionerProfileController', () => {
     // SEC-07 : le profil cible provenait du corps de requête.
     it("rattache le créneau au profil de l'appelant", async () => {
       const dto = new AddAvailabilityToPractitionerDto();
-      await controller.addAvailability(asUser(42), dto);
-      expect(service.findForUser).toHaveBeenCalledWith(42);
-      expect(service.addAvailability).toHaveBeenCalledWith(1, dto);
+      await controller.addAvailability(asUser(UUID_D), dto);
+      expect(service.findForUser).toHaveBeenCalledWith(UUID_D);
+      expect(service.addAvailability).toHaveBeenCalledWith(UUID_A, dto);
     });
   });
 
@@ -177,13 +189,16 @@ describe('PractitionerProfileController', () => {
     it('should complete the practitioner profile', async () => {
       const dto = new CompletePractitionerProfileDto();
       const result = await controller.completePractionerProfile(
-        1,
+        UUID_A,
         dto,
-        asUser(5),
+        asUser(UUID_E),
       );
-      expect(service.assertOwnedBy).toHaveBeenCalledWith(1, 5);
-      expect(service.completePractionerProfile).toHaveBeenCalledWith(1, dto);
-      expect(result).toEqual({ id: 1, ...dto });
+      expect(service.assertOwnedBy).toHaveBeenCalledWith(UUID_A, UUID_E);
+      expect(service.completePractionerProfile).toHaveBeenCalledWith(
+        UUID_A,
+        dto,
+      );
+      expect(result).toEqual({ id: UUID_A, ...dto });
     });
   });
 });

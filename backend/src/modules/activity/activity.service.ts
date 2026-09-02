@@ -23,7 +23,7 @@ export class ActivityService {
     return this.repo.save(act);
   }
 
-  async findByUser(userId: number): Promise<Activity[]> {
+  async findByUser(userId: string): Promise<Activity[]> {
     return this.repo.find({
       where: { user: { id: userId } },
       order: { createdAt: 'DESC' },
@@ -36,8 +36,8 @@ export class ActivityService {
 
   /** SEC-07 : une activité ne peut être supprimée que par son propriétaire. */
   async remove(
-    id: number,
-    requesterId: number,
+    id: string,
+    requesterId: string,
     requesterIsAdmin = false,
   ): Promise<void> {
     const activity = await this.repo.findOne({

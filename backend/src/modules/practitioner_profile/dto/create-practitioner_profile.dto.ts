@@ -1,12 +1,11 @@
 import {
   IsString,
   IsOptional,
-  IsInt,
+  IsUUID,
   IsArray,
   IsEnum,
   IsObject,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import {
   ProfessionalType,
   EstablishmentType,
@@ -14,9 +13,8 @@ import {
 import { ToJsonArray, ToJsonObject } from '../../../common/transforms/coerce';
 
 export class CreatePractitionerProfileDto {
-  @Type(() => Number)
-  @IsInt()
-  userId: number;
+  @IsUUID()
+  userId: string;
 
   @IsEnum(ProfessionalType)
   professionalType: ProfessionalType;

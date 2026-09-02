@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { PractitionerProfile } from '../../practitioner_profile/entities/practitioner_profile.entity';
 
@@ -10,8 +19,8 @@ export enum AppointmentStatus {
 
 @Entity('appointments')
 export class Appointment {
-  @PrimaryGeneratedColumn('increment')
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Index()
   @ManyToOne(() => User)
@@ -51,8 +60,8 @@ export class Appointment {
   @JoinColumn({ name: 'cancelled_by' })
   cancelled_by: User;
 
-  @Column({ type: 'integer', nullable: true })
-  cancelled_byId: number;
+  @Column({ type: 'uuid', nullable: true })
+  cancelled_byId: string;
 
   @CreateDateColumn()
   created_at: Date;

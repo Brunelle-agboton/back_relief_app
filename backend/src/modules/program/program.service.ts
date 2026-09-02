@@ -22,7 +22,7 @@ export class ProgramService {
     });
   }
 
-  findOne(id: number) {
+  findOne(id: string) {
     return this.programRepository
       .findOne({
         where: { id },
@@ -57,11 +57,11 @@ export class ProgramService {
       });
   }
 
-  update(id: number, updateProgramDto: UpdateProgramDto) {
+  update(id: string, updateProgramDto: UpdateProgramDto) {
     return `This action updates a #${id} program`;
   }
 
-  remove(id: number) {
+  remove(id: string) {
     return `This action removes a #${id} program`;
   }
 }

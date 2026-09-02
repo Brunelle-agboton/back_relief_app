@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
@@ -10,6 +14,7 @@ import { CreateAppointmentDto } from '../appointment/dto/create-appointment.dto'
 import { RegisterPractitionerDto } from './dto/register-practitioner.dto';
 import { User } from '../user/entities/user.entity';
 import { UserRole } from '../../common/enums/user-role.enum';
+import { getOnboardingPractitionerEmail } from '../practitioner_profile/public-practitioners';
 import {
   getAccessTokenTtl,
   getJwtRefreshSecret,
@@ -24,9 +29,6 @@ export interface TokenPair {
   refresh_token: string;
   expires_in: string;
 }
-
-/** Identifiant du praticien « d'accueil » avec lequel un nouveau pro prend rendez-vous. */
-const ONBOARDING_PRACTITIONER_PROFILE_ID = 1;
 
 @Injectable()
 export class AuthService {
@@ -91,13 +93,13 @@ export class AuthService {
    * SEC-08 : la déconnexion invalide côté serveur tous les jetons déjà émis
    * (un jeton volé cesse d'être exploitable sans attendre son expiration).
    */
-  async logout(userId: number): Promise<{ message: string }> {
+  async logout(userId: string): Promise<{ message: string }> {
     await this.usersService.revokeTokens(userId);
     return { message: 'Session révoquée' };
   }
 
   private issueTokens(
-    userId: number,
+    userId: string,
     email: string,
     role: UserRole,
     tokenVersion: number,
@@ -136,10 +138,25 @@ export class AuthService {
     const profile =
       await this.practitionerProfileService.create(createProfileDto);
 
-    // Rendez-vous d'accueil : le nouveau praticien est ici le « patient ».
+    /**
+     * Rendez-vous d'accueil : le nouveau praticien est ici le « patient ».
+     *
+     * Le praticien d'accueil était désigné par l'identifiant `1` codé en dur.
+     * Les clés primaires étant désormais des UUID, il est résolu par son
+     * adresse e-mail (ONBOARDING_PRACTITIONER_EMAIL).
+     */
+    const onboardingEmail = getOnboardingPractitionerEmail();
+    if (!onboardingEmail) {
+      throw new ServiceUnavailableException(
+        "Aucun praticien d'accueil configuré (ONBOARDING_PRACTITIONER_EMAIL).",
+      );
+    }
+    const onboardingProfile =
+      await this.practitionerProfileService.findByEmail(onboardingEmail);
+
     const createAppointmentDto: CreateAppointmentDto = {
       patientId: user.id,
-      practitionerId: ONBOARDING_PRACTITIONER_PROFILE_ID,
+      practitionerId: onboardingProfile.id,
       startTime: appointment.startTime,
     };
     const newAppointment =

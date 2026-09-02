@@ -18,7 +18,7 @@ export class PractitionerDiplomeService {
 
   async create(
     dto: CreatePractitionerDiplomeDto,
-    profileId?: number,
+    profileId?: string,
   ): Promise<PractitionerDiplome> {
     const diplome = this.repo.create({
       ...dto,
@@ -31,13 +31,13 @@ export class PractitionerDiplomeService {
     return this.repo.find({ relations: ['practitionerProfile'] });
   }
 
-  async findByProfile(profileId: number): Promise<PractitionerDiplome[]> {
+  async findByProfile(profileId: string): Promise<PractitionerDiplome[]> {
     return this.repo.find({
       where: { practitionerProfile: { id: profileId } },
     });
   }
 
-  async findOne(id: number): Promise<PractitionerDiplome> {
+  async findOne(id: string): Promise<PractitionerDiplome> {
     const diplome = await this.repo.findOne({
       where: { id },
       relations: ['practitionerProfile', 'practitionerProfile.user'],
@@ -48,8 +48,8 @@ export class PractitionerDiplomeService {
 
   /** SEC-04/07 : un diplôme n'est lisible que par le praticien qui le détient. */
   async findOneOwnedBy(
-    id: number,
-    requesterId: number,
+    id: string,
+    requesterId: string,
     requesterIsAdmin = false,
   ): Promise<PractitionerDiplome> {
     const diplome = await this.findOne(id);
@@ -63,9 +63,9 @@ export class PractitionerDiplomeService {
   }
 
   async update(
-    id: number,
+    id: string,
     dto: UpdatePractitionerDiplomeDto,
-    requesterId: number,
+    requesterId: string,
     requesterIsAdmin = false,
   ): Promise<PractitionerDiplome> {
     const diplome = await this.findOneOwnedBy(
@@ -78,8 +78,8 @@ export class PractitionerDiplomeService {
   }
 
   async remove(
-    id: number,
-    requesterId: number,
+    id: string,
+    requesterId: string,
     requesterIsAdmin = false,
   ): Promise<void> {
     const diplome = await this.findOneOwnedBy(

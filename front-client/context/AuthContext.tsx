@@ -7,7 +7,8 @@ import { setOnUnauthorized } from '../services/api';
 type UserRole = 'user' | 'practitioner';
 
 interface UserProfile {
-  sub: number;
+  /** Identifiant utilisateur : UUID depuis le passage des clés primaires en uuid. */
+  sub: string;
   email: string;
   role: UserRole;
 }

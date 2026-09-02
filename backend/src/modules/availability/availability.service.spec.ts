@@ -4,7 +4,15 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Availability } from './entities/availability.entity';
 import { Repository } from 'typeorm';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
-import { PractitionerProfile } from '../practitioner_profile/entities/practitioner_profile.entity'
+import { PractitionerProfile } from '../practitioner_profile/entities/practitioner_profile.entity';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
 describe('AvailabilityService', () => {
   let service: AvailabilityService;
@@ -29,7 +37,9 @@ describe('AvailabilityService', () => {
     }).compile();
 
     service = module.get<AvailabilityService>(AvailabilityService);
-    repository = module.get<Repository<Availability>>(getRepositoryToken(Availability));
+    repository = module.get<Repository<Availability>>(
+      getRepositoryToken(Availability),
+    );
   });
 
   it('should be defined', () => {
@@ -71,11 +81,11 @@ describe('AvailabilityService', () => {
   describe('update', () => {
     it('should update an availability', async () => {
       const availability = new Availability();
-      availability.id = 1;
+      availability.id = UUID_A;
       const updatedAvailability = { ...availability, isBooked: true };
       mockRepository.save.mockResolvedValue(updatedAvailability);
 
-      const result = await service.update(1, updatedAvailability);
+      const result = await service.update(UUID_A, updatedAvailability);
 
       expect(mockRepository.save).toHaveBeenCalledWith(updatedAvailability);
       expect(result).toEqual(updatedAvailability);
@@ -83,21 +93,27 @@ describe('AvailabilityService', () => {
 
     it('should throw a BadRequestException if ID in path does not match entity ID', async () => {
       const availability = new Availability();
-      availability.id = 1;
+      availability.id = UUID_A;
 
-      await expect(service.update(2, availability)).rejects.toThrow('ID in path does not match entity ID.');
+      await expect(service.update(UUID_B, availability)).rejects.toThrow(
+        'ID in path does not match entity ID.',
+      );
     });
   });
 
   describe('findExactSlot', () => {
     it('should return an exact availability slot', async () => {
-      const practitionerProfileId = 1;
+      const practitionerProfileId = UUID_A;
       const startTime = new Date();
       const endTime = new Date();
       const availability = new Availability();
       mockRepository.findOne.mockResolvedValue(availability);
 
-      const result = await service.findExactSlot(practitionerProfileId, startTime, endTime);
+      const result = await service.findExactSlot(
+        practitionerProfileId,
+        startTime,
+        endTime,
+      );
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: {
@@ -111,12 +127,16 @@ describe('AvailabilityService', () => {
     });
 
     it('should return null if no exact availability slot is found', async () => {
-      const practitionerProfileId = 1;
+      const practitionerProfileId = UUID_A;
       const startTime = new Date();
       const endTime = new Date();
       mockRepository.findOne.mockResolvedValue(null);
 
-      const result = await service.findExactSlot(practitionerProfileId, startTime, endTime);
+      const result = await service.findExactSlot(
+        practitionerProfileId,
+        startTime,
+        endTime,
+      );
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: {

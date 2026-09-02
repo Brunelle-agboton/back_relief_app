@@ -19,6 +19,7 @@ import { APP_GUARD, APP_INTERCEPTOR, Reflector } from '@nestjs/core';
 import { User } from '../src/modules/user/entities/user.entity';
 import { UserRole } from '../src/common/enums/user-role.enum';
 import { TokenType } from '../src/modules/auth/jwt.constants';
+import { UUID_A, UUID_B } from '../src/common/testing/uuid.fixtures';
 
 const TEST_JWT_SECRET = 'e2e-test-secret';
 
@@ -52,7 +53,7 @@ describe('E2E — flux HTTP critiques', () => {
     const { JwtService } = await import('@nestjs/jwt');
     const jwtService = new JwtService({ secret: TEST_JWT_SECRET });
     return jwtService.sign({
-      sub: 1,
+      sub: UUID_A,
       email: 'a@a.com',
       role: UserRole.USER,
       tv: 0,
@@ -108,7 +109,7 @@ describe('E2E — flux HTTP critiques', () => {
     jest.clearAllMocks();
     // Contexte d'authentification par défaut : utilisateur 1, jeton non révoqué.
     mockUserService.findAuthContext.mockResolvedValue({
-      id: 1,
+      id: UUID_A,
       email: 'a@a.com',
       role: UserRole.USER,
       tokenVersion: 0,
@@ -133,7 +134,7 @@ describe('E2E — flux HTTP critiques', () => {
   describe('POST /user/login', () => {
     it('retourne 200 avec access_token pour des credentials valides', async () => {
       mockAuthService.validateUser.mockResolvedValue({
-        id: 1,
+        id: UUID_A,
         email: 'a@a.com',
         role: 'user',
       });
@@ -187,7 +188,7 @@ describe('E2E — flux HTTP critiques', () => {
     });
 
     it('retire les champs non déclarés du DTO (mass assignment)', async () => {
-      mockUserService.create.mockResolvedValue({ id: 1 });
+      mockUserService.create.mockResolvedValue({ id: UUID_A });
 
       await request(app.getHttpServer())
         .post('/user/register')
@@ -206,7 +207,7 @@ describe('E2E — flux HTTP critiques', () => {
 
     // SEC-03 : escalade de privilèges à l'inscription.
     it('ignore un rôle imposé par le client et crée un compte `user`', async () => {
-      mockUserService.create.mockResolvedValue({ id: 1 });
+      mockUserService.create.mockResolvedValue({ id: UUID_A });
 
       await request(app.getHttpServer())
         .post('/user/register')
@@ -226,7 +227,7 @@ describe('E2E — flux HTTP critiques', () => {
     // SEC-01 : le hash bcrypt ne doit plus être sérialisé.
     it('ne renvoie jamais le hash du mot de passe', async () => {
       const created = Object.assign(new User(), {
-        id: 1,
+        id: UUID_A,
         userName: 'Jean Test',
         email: 'jean@test.com',
         password: '$2b$10$hash',
@@ -260,14 +261,14 @@ describe('E2E — flux HTTP critiques', () => {
 
     it('PATCH /user/:id exige désormais une authentification', async () => {
       await request(app.getHttpServer())
-        .patch('/user/1')
+        .patch(`/user/${UUID_A}`)
         .send({ userName: 'pirate' })
         .expect(401);
       expect(mockUserService.update).not.toHaveBeenCalled();
     });
 
     it('DELETE /user/:id exige désormais une authentification', async () => {
-      await request(app.getHttpServer()).delete('/user/1').expect(401);
+      await request(app.getHttpServer()).delete(`/user/${UUID_A}`).expect(401);
       expect(mockUserService.remove).not.toHaveBeenCalled();
     });
   });
@@ -276,21 +277,24 @@ describe('E2E — flux HTTP critiques', () => {
 
   describe('Routes protégées par JwtAuthGuard', () => {
     it('retourne 401 sans token sur GET /user/me/:id', async () => {
-      await request(app.getHttpServer()).get('/user/me/1').expect(401);
+      await request(app.getHttpServer()).get(`/user/me/${UUID_A}`).expect(401);
     });
 
     it('retourne 401 avec un token invalide sur GET /user/me/:id', async () => {
       await request(app.getHttpServer())
-        .get('/user/me/1')
+        .get(`/user/me/${UUID_A}`)
         .set('Authorization', 'Bearer invalid.token.here')
         .expect(401);
     });
 
     it('retourne 200 avec un token valide sur GET /user/me/:id', async () => {
-      mockUserService.findOne.mockResolvedValue({ id: 1, email: 'a@a.com' });
+      mockUserService.findOne.mockResolvedValue({
+        id: UUID_A,
+        email: 'a@a.com',
+      });
 
       await request(app.getHttpServer())
-        .get('/user/me/1')
+        .get(`/user/me/${UUID_A}`)
         .set('Authorization', `Bearer ${await signAccessToken()}`)
         .expect(200);
     });
@@ -298,7 +302,7 @@ describe('E2E — flux HTTP critiques', () => {
     // SEC-07 : l'identifiant d'URL ne désigne plus un profil arbitraire.
     it("retourne 403 sur le profil d'un autre utilisateur", async () => {
       await request(app.getHttpServer())
-        .get('/user/me/2')
+        .get(`/user/me/${UUID_B}`)
         .set('Authorization', `Bearer ${await signAccessToken()}`)
         .expect(403);
 
@@ -308,17 +312,28 @@ describe('E2E — flux HTTP critiques', () => {
     // SEC-02 : suppression d'un compte tiers.
     it("retourne 403 à la suppression du compte d'un tiers", async () => {
       await request(app.getHttpServer())
-        .delete('/user/2')
+        .delete(`/user/${UUID_B}`)
         .set('Authorization', `Bearer ${await signAccessToken()}`)
         .expect(403);
 
       expect(mockUserService.remove).not.toHaveBeenCalled();
     });
 
+    // Les identifiants sont des UUID : un `:id` numérique n'est plus une
+    // ressource introuvable mais une requête malformée.
+    it("retourne 400 sur un identifiant qui n'est pas un UUID", async () => {
+      await request(app.getHttpServer())
+        .get('/user/me/1')
+        .set('Authorization', `Bearer ${await signAccessToken()}`)
+        .expect(400);
+
+      expect(mockUserService.findOne).not.toHaveBeenCalled();
+    });
+
     // SEC-08 : un refresh token ne vaut pas access token.
     it('retourne 401 si un refresh token est présenté comme access token', async () => {
       await request(app.getHttpServer())
-        .get('/user/me/1')
+        .get(`/user/me/${UUID_A}`)
         .set(
           'Authorization',
           `Bearer ${await signAccessToken({ typ: TokenType.REFRESH })}`,
@@ -329,14 +344,14 @@ describe('E2E — flux HTTP critiques', () => {
     // SEC-08 : révocation côté serveur.
     it('retourne 401 pour un jeton révoqué (tokenVersion incrémentée)', async () => {
       mockUserService.findAuthContext.mockResolvedValue({
-        id: 1,
+        id: UUID_A,
         email: 'a@a.com',
         role: UserRole.USER,
         tokenVersion: 1,
       });
 
       await request(app.getHttpServer())
-        .get('/user/me/1')
+        .get(`/user/me/${UUID_A}`)
         .set('Authorization', `Bearer ${await signAccessToken({ tv: 0 })}`)
         .expect(401);
     });
@@ -353,7 +368,7 @@ describe('E2E — flux HTTP critiques', () => {
 
     it('autorise un administrateur sur GET /user', async () => {
       mockUserService.findAuthContext.mockResolvedValue({
-        id: 1,
+        id: UUID_A,
         email: 'admin@a.com',
         role: UserRole.ADMIN,
         tokenVersion: 0,

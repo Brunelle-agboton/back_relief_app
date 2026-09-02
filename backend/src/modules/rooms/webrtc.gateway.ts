@@ -12,7 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { getJwtSecret, JwtPayload, TokenType } from '../auth/jwt.constants';
 
-type Presence = { userId: number; socketId: string; role?: string };
+type Presence = { userId: string; socketId: string; role?: string };
 
 @Injectable()
 @WebSocketGateway({
@@ -24,9 +24,9 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(WebrtcGateway.name);
 
   // simple in-memory stores
-  private socketsByUser = new Map<number, string>(); // userId -> socketId
-  private rooms = new Map<string, Set<number>>(); // roomId -> set(userId)
-  private initiatorByRoom = new Map<string, number>();
+  private socketsByUser = new Map<string, string>(); // userId -> socketId
+  private rooms = new Map<string, Set<string>>(); // roomId -> set(userId)
+  private initiatorByRoom = new Map<string, string>();
 
   constructor(private jwtService: JwtService) {}
 
@@ -139,7 +139,7 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     if (!set) {
-      set = new Set<number>();
+      set = new Set<string>();
       this.rooms.set(roomId, set);
       this.logger.log(`Created new room: ${roomId}`);
     }
@@ -297,13 +297,11 @@ export class WebrtcGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (participantId !== from.userId) {
         const targetSock = this.socketsByUser.get(participantId);
         if (targetSock) {
-          this.server
-            .to(targetSock)
-            .emit('ice_candidate', {
-              fromUserId: from.userId,
-              candidate,
-              roomId,
-            });
+          this.server.to(targetSock).emit('ice_candidate', {
+            fromUserId: from.userId,
+            candidate,
+            roomId,
+          });
         }
       }
     }

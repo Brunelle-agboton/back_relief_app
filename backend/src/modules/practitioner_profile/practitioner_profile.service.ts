@@ -93,7 +93,7 @@ export class PractitionerProfileService {
   }
 
   async completePractionerProfile(
-    id: number,
+    id: string,
     completePractionerProfile: CompletePractitionerProfileDto,
   ): Promise<PractitionerProfile> {
     const {
@@ -159,7 +159,7 @@ export class PractitionerProfileService {
     });
   }
 
-  findOne(id: number) {
+  findOne(id: string) {
     return this.practitionerProfileRepository.findOne({
       where: { id },
       relations: [
@@ -172,7 +172,7 @@ export class PractitionerProfileService {
     });
   }
 
-  async findForUser(userId: number): Promise<PractitionerProfile> {
+  async findForUser(userId: string): Promise<PractitionerProfile> {
     const profile = await this.practitionerProfileRepository.findOne({
       where: { user: { id: userId } },
       relations: [
@@ -221,7 +221,7 @@ export class PractitionerProfileService {
    * praticien) mais celui de l'appelant, résolu par le contrôleur.
    */
   async addAvailability(
-    profileId: number,
+    profileId: string,
     addAvailabilityDto: AddAvailabilityToPractitionerDto,
   ): Promise<Availability> {
     const profile = await this.practitionerProfileRepository.findOne({
@@ -268,7 +268,7 @@ export class PractitionerProfileService {
   }
 
   async update(
-    id: number,
+    id: string,
     updatePractitionerProfileDto: UpdatePractitionerProfileDto,
   ): Promise<PractitionerProfile> {
     const profile = await this.practitionerProfileRepository.findOne({
@@ -290,8 +290,8 @@ export class PractitionerProfileService {
    * toute lecture ou écriture ciblée par `:id`.
    */
   async assertOwnedBy(
-    profileId: number,
-    userId: number,
+    profileId: string,
+    userId: string,
   ): Promise<PractitionerProfile> {
     const profile = await this.practitionerProfileRepository.findOne({
       where: { id: profileId },
@@ -335,7 +335,7 @@ export class PractitionerProfileService {
     };
   }
 
-  async remove(id: number): Promise<{ message: string }> {
+  async remove(id: string): Promise<{ message: string }> {
     const result = await this.practitionerProfileRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(

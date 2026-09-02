@@ -10,6 +10,12 @@ import { AvailabilityService } from '../availability/availability.service';
 import { User } from '../user/entities/user.entity';
 import { PractitionerProfile } from '../practitioner_profile/entities/practitioner_profile.entity';
 import { Availability } from '../availability/entities/availability.entity';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
 describe('AppointmentService', () => {
   let service: AppointmentService;
@@ -71,8 +77,8 @@ describe('AppointmentService', () => {
   describe('create', () => {
     it('should create and save an appointment', async () => {
       const createAppointmentDto: CreateAppointmentDto = {
-        patientId: 1,
-        practitionerId: 1,
+        patientId: UUID_A,
+        practitionerId: UUID_B,
         startTime: new Date('2026-12-25T10:00:00.000Z').toISOString(),
         // end_at: new Date(),
         // notes: 'test note',
@@ -105,8 +111,8 @@ describe('AppointmentService', () => {
 
     it('should throw NotFoundException if patient not found', async () => {
       const createAppointmentDto: CreateAppointmentDto = {
-        patientId: 1,
-        practitionerId: 1,
+        patientId: UUID_A,
+        practitionerId: UUID_B,
         startTime: new Date('2026-12-25T10:00:00.000Z').toISOString(),
       };
       mockUserService.findOne.mockResolvedValue(null);
@@ -118,8 +124,8 @@ describe('AppointmentService', () => {
 
     it('should throw NotFoundException if practitioner not found', async () => {
       const createAppointmentDto: CreateAppointmentDto = {
-        patientId: 1,
-        practitionerId: 1,
+        patientId: UUID_A,
+        practitionerId: UUID_B,
         startTime: new Date('2026-12-25T10:00:00.000Z').toISOString(),
       };
       const patient = new User();
@@ -133,8 +139,8 @@ describe('AppointmentService', () => {
 
     it('should throw BadRequestException for invalid startTime format', async () => {
       const createAppointmentDto: CreateAppointmentDto = {
-        patientId: 1,
-        practitionerId: 1,
+        patientId: UUID_A,
+        practitionerId: UUID_B,
         startTime: 'invalid-date',
       };
       const patient = new User();
@@ -149,8 +155,8 @@ describe('AppointmentService', () => {
 
     it('should throw BadRequestException if appointment is in the past', async () => {
       const createAppointmentDto: CreateAppointmentDto = {
-        patientId: 1,
-        practitionerId: 1,
+        patientId: UUID_A,
+        practitionerId: UUID_B,
         startTime: new Date('2020-01-01T10:00:00.000Z').toISOString(),
       };
       const patient = new User();
@@ -165,8 +171,8 @@ describe('AppointmentService', () => {
 
     it('should throw BadRequestException if no matching availability slot found', async () => {
       const createAppointmentDto: CreateAppointmentDto = {
-        patientId: 1,
-        practitionerId: 1,
+        patientId: UUID_A,
+        practitionerId: UUID_B,
         startTime: new Date('2026-12-25T10:00:00.000Z').toISOString(),
       };
       const patient = new User();
@@ -182,8 +188,8 @@ describe('AppointmentService', () => {
 
     it('should throw BadRequestException if slot is already booked', async () => {
       const createAppointmentDto: CreateAppointmentDto = {
-        patientId: 1,
-        practitionerId: 1,
+        patientId: UUID_A,
+        practitionerId: UUID_B,
         startTime: new Date('2026-12-25T10:00:00.000Z').toISOString(),
       };
       const patient = new User();
@@ -214,7 +220,7 @@ describe('AppointmentService', () => {
 
   describe('findByPractitionerId', () => {
     it('should return appointments for a given practitioner ID', async () => {
-      const practitionerId = 1;
+      const practitionerId = UUID_B;
       const appointments = [new Appointment()];
       mockRepository.find.mockResolvedValue(appointments);
 
@@ -235,7 +241,7 @@ describe('AppointmentService', () => {
 
   describe('findByUserId', () => {
     it('should return appointments for a given user ID', async () => {
-      const userId = 1;
+      const userId = UUID_A;
       const appointments = [new Appointment()];
       mockRepository.find.mockResolvedValue(appointments);
 

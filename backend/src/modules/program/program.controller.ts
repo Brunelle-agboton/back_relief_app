@@ -43,20 +43,20 @@ export class ProgramController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.programService.findOne(+id);
+    return this.programService.findOne(id);
   }
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateProgramDto: UpdateProgramDto) {
-    return this.programService.update(+id, updateProgramDto);
+    return this.programService.update(id, updateProgramDto);
   }
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.programService.remove(+id);
+    return this.programService.remove(id);
   }
 }

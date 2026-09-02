@@ -7,6 +7,14 @@ import { PractitionerProfileService } from '../practitioner_profile/practitioner
 import { JwtAuthGuard } from './jwt.guard';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -53,7 +61,7 @@ describe('AuthController', () => {
         email: 'test@example.com',
         password: 'password',
       };
-      const user = { id: 1, email: 'test@example.com' };
+      const user = { id: UUID_A, email: 'test@example.com' };
       const loginResult = { access_token: 'some_token' };
 
       mockAuthService.validateUser.mockResolvedValue(user);
@@ -105,12 +113,12 @@ describe('AuthController', () => {
     it("révoque les jetons de l'appelant", async () => {
       mockAuthService.logout.mockResolvedValue({ message: 'Session révoquée' });
       const req = {
-        user: { userId: 8, email: 'a@a.com', role: UserRole.USER },
+        user: { userId: UUID_D, email: 'a@a.com', role: UserRole.USER },
       } as AuthenticatedRequest;
 
       const result = await controller.logout(req);
 
-      expect(service.logout).toHaveBeenCalledWith(8);
+      expect(service.logout).toHaveBeenCalledWith(UUID_D);
       expect(result).toEqual({ message: 'Session révoquée' });
     });
   });

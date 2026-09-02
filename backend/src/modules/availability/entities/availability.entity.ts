@@ -1,11 +1,18 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { PractitionerProfile } from '../../practitioner_profile/entities/practitioner_profile.entity';
 import { Exclude } from 'class-transformer';
 
 @Entity('availabilities')
 export class Availability {
-  @PrimaryGeneratedColumn('increment')
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Index()
   @ManyToOne(() => PractitionerProfile, (profile) => profile.availabilities)

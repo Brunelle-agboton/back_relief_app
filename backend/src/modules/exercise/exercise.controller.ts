@@ -43,7 +43,7 @@ export class ExerciseController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.exerciseService.findOne(+id);
+    return this.exerciseService.findOne(id);
   }
 
   @UseGuards(RolesGuard)
@@ -53,13 +53,13 @@ export class ExerciseController {
     @Param('id') id: string,
     @Body() updateExerciseDto: UpdateExerciseDto,
   ) {
-    return this.exerciseService.update(+id, updateExerciseDto);
+    return this.exerciseService.update(id, updateExerciseDto);
   }
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.exerciseService.remove(+id);
+    return this.exerciseService.remove(id);
   }
 }

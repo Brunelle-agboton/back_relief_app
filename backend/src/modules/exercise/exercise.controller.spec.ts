@@ -50,18 +50,18 @@ describe('ExerciseController', () => {
   it('should return one exercise', () => {
     (service.findOne as jest.Mock).mockReturnValue('one');
     expect(controller.findOne('1')).toBe('one');
-    expect(service.findOne).toHaveBeenCalledWith(1);
+    expect(service.findOne).toHaveBeenCalledWith('1');
   });
 
   it('should update an exercise', () => {
     (service.update as jest.Mock).mockReturnValue('updated');
     expect(controller.update('1', { title: 'new' } as any)).toBe('updated');
-    expect(service.update).toHaveBeenCalledWith(1, { title: 'new' });
+    expect(service.update).toHaveBeenCalledWith('1', { title: 'new' });
   });
 
   it('should remove an exercise', () => {
     (service.remove as jest.Mock).mockReturnValue('removed');
     expect(controller.remove('1')).toBe('removed');
-    expect(service.remove).toHaveBeenCalledWith(1);
+    expect(service.remove).toHaveBeenCalledWith('1');
   });
 });

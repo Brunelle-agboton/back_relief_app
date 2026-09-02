@@ -7,6 +7,14 @@ import { Exercise } from '../exercise/entities/exercise.entity';
 import { User } from '../user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { PainInputDto } from './dto/pain-input.dto';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
 describe('HealthService', () => {
   let service: HealthService;
@@ -91,7 +99,7 @@ describe('HealthService', () => {
         painDescription: '',
       };
       const user = new User();
-      user.id = 7;
+      user.id = UUID_C;
 
       await service.submitPain(dto, user);
 
@@ -150,7 +158,7 @@ describe('HealthService', () => {
     it('should return null for exercise if not found', async () => {
       const user = new User();
       const activity = new Activity();
-      activity.metadata = JSON.stringify({ exerciceId: 1 });
+      activity.metadata = JSON.stringify({ exerciceId: UUID_A });
       mockPainRecordRepository.find.mockResolvedValue([]);
       mockActivityRepository.find.mockResolvedValue([activity]);
       // MET-11 : une seule requête groupée remplace le findOne par activité.
@@ -164,9 +172,9 @@ describe('HealthService', () => {
     it('should return exercise details if found', async () => {
       const user = new User();
       const activity = new Activity();
-      activity.metadata = JSON.stringify({ exerciceId: 1 });
+      activity.metadata = JSON.stringify({ exerciceId: UUID_A });
       const exercise = new Exercise();
-      exercise.id = 1;
+      exercise.id = UUID_A;
       exercise.title = 'test exercise';
       exercise.image = 'test.jpg';
       mockPainRecordRepository.find.mockResolvedValue([]);
@@ -178,8 +186,24 @@ describe('HealthService', () => {
       // Une seule requête, quel que soit le nombre d'activités.
       expect(mockExerciseRepository.find).toHaveBeenCalledTimes(1);
       expect(result.exercises).toEqual([
-        { id: 1, title: 'test exercise', image: 'test.jpg' },
+        { id: UUID_A, title: 'test exercise', image: 'test.jpg' },
       ]);
+    });
+
+    // Depuis les clés uuid : un exerciceId qui n'est pas un UUID atteindrait
+    // une colonne uuid et ferait échouer la requête PostgreSQL en 500.
+    it("ignore un exerciceId qui n'est pas un UUID", async () => {
+      const user = new User();
+      const activity = new Activity();
+      activity.metadata = JSON.stringify({ exerciceId: 'abc' });
+      mockPainRecordRepository.find.mockResolvedValue([]);
+      mockActivityRepository.find.mockResolvedValue([activity]);
+      mockExerciseRepository.find.mockResolvedValue([]);
+
+      const result = await service.getPainsLatest(user);
+
+      expect(result.exercises).toEqual([null]);
+      expect(mockExerciseRepository.find).not.toHaveBeenCalled();
     });
 
     // MET-11 : une métadonnée corrompue ne doit plus faire tomber la route.
@@ -205,7 +229,7 @@ describe('HealthService', () => {
       mockHydrationRecordRepository.save.mockResolvedValue(hydrationRecord);
 
       const user = new User();
-      user.id = 7;
+      user.id = UUID_C;
 
       const result = await service.setHydratation(size, user);
 

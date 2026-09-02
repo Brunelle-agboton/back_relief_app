@@ -103,7 +103,7 @@ export class AppointmentService {
     return this.appointmentRepository.find();
   }
 
-  async findByPractitionerId(practitionerId: number): Promise<Appointment[]> {
+  async findByPractitionerId(practitionerId: string): Promise<Appointment[]> {
     return this.appointmentRepository.find({
       where: {
         practitionerProfile: { id: practitionerId },
@@ -115,7 +115,7 @@ export class AppointmentService {
     });
   }
 
-  async findByUserId(userId: number): Promise<Appointment[]> {
+  async findByUserId(userId: string): Promise<Appointment[]> {
     return this.appointmentRepository.find({
       where: {
         patient: { id: userId },

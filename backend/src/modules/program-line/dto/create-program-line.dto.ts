@@ -1,14 +1,12 @@
-import { IsInt, IsOptional, Min } from 'class-validator';
+import { IsInt, IsOptional, IsUUID, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateProgramLineDto {
-  @IsInt()
-  @Type(() => Number)
-  programId: number;
+  @IsUUID()
+  programId: string;
 
-  @IsInt()
-  @Type(() => Number)
-  exerciseId: number;
+  @IsUUID()
+  exerciseId: string;
 
   @IsInt()
   @Min(1)

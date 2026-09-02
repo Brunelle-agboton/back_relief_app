@@ -1,4 +1,4 @@
-import { Injectable,BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Availability } from './entities/availability.entity';
@@ -12,7 +12,9 @@ export class AvailabilityService {
   ) {}
 
   create(createAvailabilityDto: CreateAvailabilityDto): Promise<Availability> {
-    const availability = this.availabilityRepository.create(createAvailabilityDto);
+    const availability = this.availabilityRepository.create(
+      createAvailabilityDto,
+    );
     return this.availabilityRepository.save(availability);
   }
 
@@ -20,7 +22,11 @@ export class AvailabilityService {
     return this.availabilityRepository.find();
   }
 
-  async findExactSlot(practitionerProfileId: number, startTime: Date, endTime: Date): Promise<Availability | null> {
+  async findExactSlot(
+    practitionerProfileId: string,
+    startTime: Date,
+    endTime: Date,
+  ): Promise<Availability | null> {
     return this.availabilityRepository.findOne({
       where: {
         practitionerProfile: { id: practitionerProfileId },
@@ -31,7 +37,7 @@ export class AvailabilityService {
     });
   }
 
-  async update(id: number, availability: Availability): Promise<Availability> {
+  async update(id: string, availability: Availability): Promise<Availability> {
     // Ensure the ID matches the entity's ID
     if (id !== availability.id) {
       throw new BadRequestException('ID in path does not match entity ID.');

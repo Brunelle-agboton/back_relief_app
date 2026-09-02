@@ -5,7 +5,7 @@ import {
   Body,
   Patch,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Delete,
   UseGuards,
   Req,
@@ -88,7 +88,7 @@ export class PractitionerProfileController {
   @UseGuards(JwtAuthGuard)
   @Patch('complete-profile/:id')
   async completePractionerProfile(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() completePractitionerProfileDto: CompletePractitionerProfileDto,
     @Req() req: AuthenticatedRequest,
   ) {
@@ -111,7 +111,7 @@ export class PractitionerProfileController {
   @UseGuards(JwtAuthGuard)
   @Get(':id')
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
     await this.assertMayWrite(id, req);
@@ -123,7 +123,7 @@ export class PractitionerProfileController {
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updatePractitionerProfileDto: UpdatePractitionerProfileDto,
     @Req() req: AuthenticatedRequest,
   ) {
@@ -139,7 +139,7 @@ export class PractitionerProfileController {
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
     await this.assertMayWrite(id, req);
@@ -156,7 +156,7 @@ export class PractitionerProfileController {
   }
 
   private async assertMayWrite(
-    profileId: number,
+    profileId: string,
     req: AuthenticatedRequest,
   ): Promise<void> {
     if (isAdmin(req.user)) {

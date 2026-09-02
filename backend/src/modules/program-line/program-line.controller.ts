@@ -43,7 +43,7 @@ export class ProgramLineController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.programLineService.findOne(+id);
+    return this.programLineService.findOne(id);
   }
 
   @UseGuards(RolesGuard)
@@ -53,13 +53,13 @@ export class ProgramLineController {
     @Param('id') id: string,
     @Body() updateProgramLineDto: UpdateProgramLineDto,
   ) {
-    return this.programLineService.update(+id, updateProgramLineDto);
+    return this.programLineService.update(id, updateProgramLineDto);
   }
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.programLineService.remove(+id);
+    return this.programLineService.remove(id);
   }
 }

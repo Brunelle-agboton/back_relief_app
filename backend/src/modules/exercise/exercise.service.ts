@@ -7,11 +7,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class ExerciseService {
-   constructor(
-      @InjectRepository(Exercise)
-      private exerciseRepository: Repository<Exercise>,
-    ) {}
-  
+  constructor(
+    @InjectRepository(Exercise)
+    private exerciseRepository: Repository<Exercise>,
+  ) {}
 
   create(createExerciseDto: CreateExerciseDto) {
     return this.exerciseRepository.save(createExerciseDto);
@@ -21,15 +20,15 @@ export class ExerciseService {
     return this.exerciseRepository.find();
   }
 
-  findOne(id: number) {
+  findOne(id: string) {
     return `This action returns a #${id} exercise`;
   }
 
-  update(id: number, updateExerciseDto: UpdateExerciseDto) {
+  update(id: string, updateExerciseDto: UpdateExerciseDto) {
     return `This action updates a #${id} exercise`;
   }
 
-  remove(id: number) {
+  remove(id: string) {
     return `This action removes a #${id} exercise`;
   }
 }

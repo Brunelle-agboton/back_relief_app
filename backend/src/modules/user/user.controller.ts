@@ -6,7 +6,7 @@ import {
   Patch,
   Put,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Delete,
   HttpCode,
   HttpStatus,
@@ -74,7 +74,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('me/:id')
   findById(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
     assertSelfOrAdmin(req.user, id);
@@ -155,7 +155,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
     @Req() req: AuthenticatedRequest,
   ) {
@@ -168,7 +168,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Patch(':id/settings')
   updateUserSetting(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() settings: UpdateUserSettingsDto,
     @Req() req: AuthenticatedRequest,
   ) {
@@ -181,7 +181,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
     assertSelfOrAdmin(req.user, id);

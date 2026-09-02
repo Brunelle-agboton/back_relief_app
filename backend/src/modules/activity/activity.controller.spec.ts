@@ -9,8 +9,14 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { ForbiddenException } from '@nestjs/common';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
-const asUser = (userId: number, role: UserRole = UserRole.USER) =>
+const asUser = (userId: string, role: UserRole = UserRole.USER) =>
   ({ user: { userId, email: 'a@a.com', role } }) as AuthenticatedRequest;
 
 describe('ActivityController', () => {
@@ -53,7 +59,7 @@ describe('ActivityController', () => {
 
   describe('logAction', () => {
     it('should log an activity', async () => {
-      const userId = 1;
+      const userId = UUID_A;
       const user = new User();
       user.id = userId;
       const createActivityDto: CreateActivityDto = {
@@ -82,19 +88,17 @@ describe('ActivityController', () => {
         metadata: '{}',
       };
 
-      mockUserService.findOne.mockRejectedValue(
-        new Error('User with id 1 not found'),
-      );
+      mockUserService.findOne.mockRejectedValue(new Error('User introuvable'));
 
       await expect(
-        controller.logAction(asUser(1), createActivityDto),
-      ).rejects.toThrow('User with id 1 not found');
+        controller.logAction(asUser(UUID_A), createActivityDto),
+      ).rejects.toThrow('User introuvable');
     });
   });
 
   describe('getForUser', () => {
     it('should return activities for a user', async () => {
-      const userId = 1;
+      const userId = UUID_A;
       const activities = [new Activity()];
 
       mockActivityService.findByUser.mockResolvedValue(activities);
@@ -107,7 +111,7 @@ describe('ActivityController', () => {
 
     // SEC-04/07 : findByUser ignorait req.user.
     it("refuse l'historique d'un autre utilisateur", () => {
-      expect(() => controller.getForUser(2, asUser(1))).toThrow(
+      expect(() => controller.getForUser(UUID_B, asUser(UUID_A))).toThrow(
         ForbiddenException,
       );
       expect(activityService.findByUser).not.toHaveBeenCalled();
@@ -130,9 +134,13 @@ describe('ActivityController', () => {
     it("transmet l'appelant au service pour le contrôle de propriété", async () => {
       mockActivityService.remove.mockResolvedValue(undefined);
 
-      await controller.remove(1, asUser(3));
+      await controller.remove(UUID_A, asUser(UUID_C));
 
-      expect(activityService.remove).toHaveBeenCalledWith(1, 3, false);
+      expect(activityService.remove).toHaveBeenCalledWith(
+        UUID_A,
+        UUID_C,
+        false,
+      );
     });
   });
 });

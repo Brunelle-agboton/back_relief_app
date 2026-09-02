@@ -4,7 +4,7 @@ import {
   Post,
   Body,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Delete,
   UseGuards,
   Req,
@@ -55,13 +55,13 @@ export class ActivityController {
   }
 
   /**
-   * SEC-04/07 : la route était authentifiée mais `findByUser(+id)` ignorait
+   * SEC-04/07 : la route était authentifiée mais `findByUser(id)` ignorait
    * `req.user` — l'historique d'activité de n'importe quel utilisateur était
    * lisible avec un jeton valide quelconque.
    */
   @Get(':id')
   getForUser(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
     assertSelfOrAdmin(req.user, id);
@@ -78,7 +78,7 @@ export class ActivityController {
 
   @Delete(':id')
   remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.ActivityService.remove(id, req.user.userId, isAdmin(req.user));

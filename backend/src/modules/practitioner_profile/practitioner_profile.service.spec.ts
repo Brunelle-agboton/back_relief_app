@@ -15,6 +15,14 @@ import { User } from '../user/entities/user.entity';
 import { CompletePractitionerProfileDto } from './dto/complete-practitioner_profile.dto';
 import { AddAvailabilityToPractitionerDto } from './dto/add-availability-to-practitioner.dto';
 import { Availability } from '../availability/entities/availability.entity';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
 describe('PractitionerProfileService', () => {
   let service: PractitionerProfileService;
@@ -77,7 +85,7 @@ describe('PractitionerProfileService', () => {
   describe('create', () => {
     it('should create a practitioner profile', async () => {
       const dto: CreatePractitionerProfileDto = {
-        userId: 1,
+        userId: UUID_A,
         professionalType: ProfessionalType.KINESIOLOGUE,
         establishmentType: EstablishmentType.CANADIAN_HEALTH_FACILITY,
         availabilities: { '2025-12-25': ['09:00'] },
@@ -89,21 +97,21 @@ describe('PractitionerProfileService', () => {
         country: 'Canada',
       };
       const user = new User();
-      user.id = 1;
+      user.id = UUID_A;
       mockUserService.findOne.mockResolvedValue(user);
       mockRepository.create.mockReturnValue(new PractitionerProfile());
       mockRepository.save.mockResolvedValue(new PractitionerProfile());
 
       await service.create(dto);
 
-      expect(mockUserService.findOne).toHaveBeenCalledWith(1);
+      expect(mockUserService.findOne).toHaveBeenCalledWith(UUID_A);
       expect(mockRepository.create).toHaveBeenCalled();
       expect(mockRepository.save).toHaveBeenCalled();
     });
 
     it('should throw a NotFoundException if the user does not exist', async () => {
       const dto: CreatePractitionerProfileDto = {
-        userId: 1,
+        userId: UUID_A,
         professionalType: ProfessionalType.KINESIOLOGUE,
         establishmentType: EstablishmentType.CANADIAN_HEALTH_FACILITY,
         availabilities: { '2025-12-25': ['09:00'] },
@@ -117,13 +125,13 @@ describe('PractitionerProfileService', () => {
       mockUserService.findOne.mockResolvedValue(null);
 
       await expect(service.create(dto)).rejects.toThrow(
-        'User with ID 1 not found',
+        `User with ID ${UUID_A} not found`,
       );
     });
 
     it('should throw a BadRequestException if the establishmentType is invalid', async () => {
       const dto: CreatePractitionerProfileDto = {
-        userId: 1,
+        userId: UUID_A,
         professionalType: ProfessionalType.KINESIOLOGUE,
         establishmentType: 'invalid' as any,
         availabilities: { '2025-12-25': ['09:00'] },
@@ -135,7 +143,7 @@ describe('PractitionerProfileService', () => {
         country: 'Canada',
       };
       const user = new User();
-      user.id = 1;
+      user.id = UUID_A;
       mockUserService.findOne.mockResolvedValue(user);
 
       await expect(service.create(dto)).rejects.toThrow(
@@ -145,7 +153,7 @@ describe('PractitionerProfileService', () => {
 
     it('should throw a BadRequestException if the professionalType is invalid', async () => {
       const dto: CreatePractitionerProfileDto = {
-        userId: 1,
+        userId: UUID_A,
         professionalType: 'invalid' as any,
         establishmentType: EstablishmentType.CANADIAN_HEALTH_FACILITY,
         availabilities: { '2025-12-25': ['09:00'] },
@@ -157,7 +165,7 @@ describe('PractitionerProfileService', () => {
         country: 'Canada',
       };
       const user = new User();
-      user.id = 1;
+      user.id = UUID_A;
       mockUserService.findOne.mockResolvedValue(user);
 
       await expect(service.create(dto)).rejects.toThrow(
@@ -170,14 +178,14 @@ describe('PractitionerProfileService', () => {
     // Le service n'a plus qu'à gérer l'absence de valeur.
     it('accepte un profil sans spécialités', async () => {
       const dto: CreatePractitionerProfileDto = {
-        userId: 1,
+        userId: UUID_A,
         professionalType: ProfessionalType.KINESIOLOGUE,
         establishmentType: EstablishmentType.CANADIAN_HEALTH_FACILITY,
         availabilities: {},
         postalCode: 'H1H1H1',
       };
       const user = new User();
-      user.id = 1;
+      user.id = UUID_A;
       mockUserService.findOne.mockResolvedValue(user);
       const profile = new PractitionerProfile();
       mockRepository.create.mockReturnValue(profile);
@@ -208,10 +216,10 @@ describe('PractitionerProfileService', () => {
       const profile = new PractitionerProfile();
       mockRepository.findOne.mockResolvedValue(profile);
 
-      const result = await service.findOne(1);
+      const result = await service.findOne(UUID_A);
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 1 },
+        where: { id: UUID_A },
         relations: [
           'user',
           'availabilities',
@@ -231,9 +239,11 @@ describe('PractitionerProfileService', () => {
       mockRepository.findOne.mockResolvedValue(profile);
       mockRepository.save.mockResolvedValue(profile);
 
-      const result = await service.update(1, dto);
+      const result = await service.update(UUID_A, dto);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: UUID_A },
+      });
       expect(mockRepository.save).toHaveBeenCalledWith(profile);
       expect(result).toEqual(profile);
     });
@@ -242,8 +252,8 @@ describe('PractitionerProfileService', () => {
       const dto = new UpdatePractitionerProfileDto();
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update(1, dto)).rejects.toThrow(
-        'PractitionerProfile with ID 1 not found',
+      await expect(service.update(UUID_A, dto)).rejects.toThrow(
+        `PractitionerProfile with ID ${UUID_A} not found`,
       );
     });
   });
@@ -252,19 +262,19 @@ describe('PractitionerProfileService', () => {
     it('should remove a practitioner profile', async () => {
       mockRepository.delete.mockResolvedValue({ affected: 1 });
 
-      const result = await service.remove(1);
+      const result = await service.remove(UUID_A);
 
-      expect(mockRepository.delete).toHaveBeenCalledWith(1);
+      expect(mockRepository.delete).toHaveBeenCalledWith(UUID_A);
       expect(result).toEqual({
-        message: `PractitionerProfile with ID 1 has been successfully removed`,
+        message: `PractitionerProfile with ID ${UUID_A} has been successfully removed`,
       });
     });
 
     it('should throw a NotFoundException if the practitioner profile to remove does not exist', async () => {
       mockRepository.delete.mockResolvedValue({ affected: 0 });
 
-      await expect(service.remove(1)).rejects.toThrow(
-        'PractitionerProfile with ID 1 not found',
+      await expect(service.remove(UUID_A)).rejects.toThrow(
+        `PractitionerProfile with ID ${UUID_A} not found`,
       );
     });
   });
@@ -280,9 +290,11 @@ describe('PractitionerProfileService', () => {
       mockRepository.findOne.mockResolvedValue(profile);
       mockRepository.save.mockResolvedValue(profile);
 
-      const result = await service.completePractionerProfile(1, dto);
+      const result = await service.completePractionerProfile(UUID_A, dto);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: UUID_A },
+      });
       expect(mockRepository.save).toHaveBeenCalledWith(profile);
       expect(result).toEqual(profile);
     });
@@ -295,9 +307,9 @@ describe('PractitionerProfileService', () => {
       };
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.completePractionerProfile(1, dto)).rejects.toThrow(
-        'Practioner with ID 1 not found',
-      );
+      await expect(
+        service.completePractionerProfile(UUID_A, dto),
+      ).rejects.toThrow(`Practioner with ID ${UUID_A} not found`);
     });
 
     it('accepte une complétion sans spécialités', async () => {
@@ -309,7 +321,7 @@ describe('PractitionerProfileService', () => {
       mockRepository.findOne.mockResolvedValue(profile);
       mockRepository.save.mockResolvedValue(profile);
 
-      await service.completePractionerProfile(1, dto);
+      await service.completePractionerProfile(UUID_A, dto);
 
       expect(profile.specialties).toEqual([]);
     });
@@ -324,9 +336,11 @@ describe('PractitionerProfileService', () => {
       mockRepository.findOne.mockResolvedValue(profile);
       mockRepository.save.mockResolvedValue(profile);
 
-      const result = await service.completePractionerProfile(1, dto);
+      const result = await service.completePractionerProfile(UUID_A, dto);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: UUID_A },
+      });
       expect(mockRepository.save).toHaveBeenCalledWith(profile);
       expect(profile.specialties).toEqual(['test']);
       expect(result).toEqual(profile);
@@ -344,9 +358,11 @@ describe('PractitionerProfileService', () => {
       mockRepository.findOne.mockResolvedValue(profile);
       mockRepository.save.mockResolvedValue(profile);
 
-      const result = await service.completePractionerProfile(1, dto);
+      const result = await service.completePractionerProfile(UUID_A, dto);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: UUID_A },
+      });
       expect(mockRepository.save).toHaveBeenCalledWith(profile);
       expect(profile.diplomes[0].diplome).toEqual('test');
       expect(result).toEqual(profile);
@@ -361,7 +377,7 @@ describe('PractitionerProfileService', () => {
       mockRepository.findOne.mockResolvedValue(profile);
       mockRepository.save.mockResolvedValue(profile);
 
-      await service.completePractionerProfile(1, dto);
+      await service.completePractionerProfile(UUID_A, dto);
 
       expect(profile.diplomes).toEqual([]);
     });
@@ -372,10 +388,10 @@ describe('PractitionerProfileService', () => {
       const profile = new PractitionerProfile();
       mockRepository.findOne.mockResolvedValue(profile);
 
-      const result = await service.findForUser(1);
+      const result = await service.findForUser(UUID_A);
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { user: { id: 1 } },
+        where: { user: { id: UUID_A } },
         relations: [
           'user',
           'availabilities',
@@ -390,8 +406,8 @@ describe('PractitionerProfileService', () => {
     it('should throw a NotFoundException if the practitioner profile for the user does not exist', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findForUser(1)).rejects.toThrow(
-        'Practitioner profile for user with ID 1 not found',
+      await expect(service.findForUser(UUID_A)).rejects.toThrow(
+        `Practitioner profile for user with ID ${UUID_A} not found`,
       );
     });
   });
@@ -429,10 +445,10 @@ describe('PractitionerProfileService', () => {
       mockRepository.findOne.mockResolvedValue(profile);
       mockAvailabilityService.create.mockResolvedValue(new Availability());
 
-      const result = await service.addAvailability(1, dto);
+      const result = await service.addAvailability(UUID_A, dto);
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 1 },
+        where: { id: UUID_A },
         relations: ['availabilities'],
       });
       expect(mockAvailabilityService.create).toHaveBeenCalled();
@@ -448,8 +464,8 @@ describe('PractitionerProfileService', () => {
       };
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.addAvailability(1, dto)).rejects.toThrow(
-        'Practitioner profile 1 not found',
+      await expect(service.addAvailability(UUID_A, dto)).rejects.toThrow(
+        `Practitioner profile ${UUID_A} not found`,
       );
     });
 
@@ -464,7 +480,7 @@ describe('PractitionerProfileService', () => {
       profile.availabilities = [];
       mockRepository.findOne.mockResolvedValue(profile);
 
-      await expect(service.addAvailability(1, dto)).rejects.toThrow(
+      await expect(service.addAvailability(UUID_A, dto)).rejects.toThrow(
         'Start time must be before end time.',
       );
     });
@@ -480,7 +496,7 @@ describe('PractitionerProfileService', () => {
       profile.availabilities = [];
       mockRepository.findOne.mockResolvedValue(profile);
 
-      await expect(service.addAvailability(1, dto)).rejects.toThrow(
+      await expect(service.addAvailability(UUID_A, dto)).rejects.toThrow(
         'Cannot add availability in the past.',
       );
     });
@@ -499,7 +515,7 @@ describe('PractitionerProfileService', () => {
       profile.availabilities = [existingAvailability];
       mockRepository.findOne.mockResolvedValue(profile);
 
-      await expect(service.addAvailability(1, dto)).rejects.toThrow(
+      await expect(service.addAvailability(UUID_A, dto)).rejects.toThrow(
         'This availability slot already exists.',
       );
     });
@@ -517,7 +533,7 @@ describe('PractitionerProfileService', () => {
       const saved = new Availability();
       mockAvailabilityService.create.mockResolvedValue(saved);
 
-      await service.addAvailability(1, dto);
+      await service.addAvailability(UUID_A, dto);
 
       const created = mockAvailabilityService.create.mock
         .calls[0][0] as Availability;
@@ -536,7 +552,7 @@ describe('PractitionerProfileService', () => {
       mockRepository.findOne.mockResolvedValue(profile);
       mockRepository.save.mockResolvedValue(profile);
 
-      await service.completePractionerProfile(1, dto);
+      await service.completePractionerProfile(UUID_A, dto);
 
       expect(profile.specialties).toEqual([]);
     });
@@ -551,7 +567,7 @@ describe('PractitionerProfileService', () => {
       mockRepository.findOne.mockResolvedValue(profile);
       mockRepository.save.mockResolvedValue(profile);
 
-      await service.completePractionerProfile(1, dto);
+      await service.completePractionerProfile(UUID_A, dto);
 
       expect(profile.diplomes).toEqual([]);
     });
@@ -573,7 +589,7 @@ describe('PractitionerProfileService', () => {
       mockRepository.findOne.mockResolvedValue(profile);
       mockRepository.save.mockResolvedValue(profile);
 
-      await service.completePractionerProfile(1, dto);
+      await service.completePractionerProfile(UUID_A, dto);
 
       expect(profile.diplomes[0].year).toBe(2019);
     });

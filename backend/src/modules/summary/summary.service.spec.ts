@@ -7,6 +7,14 @@ import { ProgramLine } from '../program-line/entities/program-line.entity';
 import { User } from '../user/entities/user.entity';
 import { Exercise } from '../exercise/entities/exercise.entity';
 import { Repository } from 'typeorm';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
 describe('SummaryService', () => {
   let service: SummaryService;
@@ -64,7 +72,7 @@ describe('SummaryService', () => {
   describe('getSummaryForUser', () => {
     const makeUser = () => {
       const user = new User();
-      user.id = 1;
+      user.id = UUID_A;
       user.hourSit = 8;
       user.restReminder = true;
       user.drinkReminder = false;
@@ -100,8 +108,8 @@ describe('SummaryService', () => {
 
     it('retourne "Unknown exercise" si la programLine est introuvable', async () => {
       const act = Object.assign(new Activity(), {
-        id: 1,
-        metadata: JSON.stringify({ exerciceId: 99, lineOrder: 1 }),
+        id: UUID_A,
+        metadata: JSON.stringify({ exerciceId: UUID_MISSING, lineOrder: 1 }),
         createdAt: new Date('2026-05-28T10:00:00.000Z'),
         type: ActivityType.PAUSE_COMPLETED,
       });
@@ -121,14 +129,14 @@ describe('SummaryService', () => {
 
     it("retourne les détails de l'exercice si la programLine est trouvée", async () => {
       const act = Object.assign(new Activity(), {
-        id: 2,
-        metadata: JSON.stringify({ exerciceId: 1, lineOrder: 1 }),
+        id: UUID_B,
+        metadata: JSON.stringify({ exerciceId: UUID_A, lineOrder: 1 }),
         createdAt: new Date('2026-05-28T10:00:00.000Z'),
         type: ActivityType.PAUSE_COMPLETED,
       });
       const exercise = Object.assign(new Exercise(), {
         title: 'Gainage',
-        id: 1,
+        id: UUID_A,
       });
       const progLine = Object.assign(new ProgramLine(), {
         exercise,
@@ -151,7 +159,7 @@ describe('SummaryService', () => {
 
     // MET-11 : N+1 supprimé — une seule requête quel que soit le nombre d'activités.
     it("ne fait qu'une requête programLine pour plusieurs activités", async () => {
-      const acts = [1, 2, 3].map((id) =>
+      const acts = [UUID_A, UUID_B, UUID_C].map((id) =>
         Object.assign(new Activity(), {
           id,
           metadata: JSON.stringify({ exerciceId: id, lineOrder: 1 }),
@@ -172,7 +180,7 @@ describe('SummaryService', () => {
     // MET-11 : une métadonnée corrompue ne doit plus faire tomber la route.
     it('ignore une métadonnée JSON malformée sans lever', async () => {
       const act = Object.assign(new Activity(), {
-        id: 9,
+        id: UUID_B,
         metadata: 'pas du json du tout',
         createdAt: new Date('2026-05-28T10:00:00.000Z'),
         type: ActivityType.PAUSE_COMPLETED,
@@ -189,7 +197,7 @@ describe('SummaryService', () => {
 
   describe('getUserHealth', () => {
     it('retourne painLevel null et streak 0 sans données', async () => {
-      const user = Object.assign(new User(), { id: 1 });
+      const user = Object.assign(new User(), { id: UUID_A });
       mockHealthRepo.find.mockResolvedValue([]);
       mockActRepo.find.mockResolvedValue([]);
 
@@ -205,7 +213,7 @@ describe('SummaryService', () => {
         painLevel: 7,
         recordedAt: new Date(),
       });
-      const user = Object.assign(new User(), { id: 1 });
+      const user = Object.assign(new User(), { id: UUID_A });
       mockHealthRepo.find.mockResolvedValue([pain]);
       mockActRepo.find.mockResolvedValue([]);
 
@@ -215,7 +223,7 @@ describe('SummaryService', () => {
     });
 
     it('calcule un streak de 3 jours consécutifs', async () => {
-      const user = Object.assign(new User(), { id: 1 });
+      const user = Object.assign(new User(), { id: UUID_A });
       const makeAct = (dateStr: string) =>
         Object.assign(new Activity(), {
           createdAt: new Date(dateStr),
@@ -236,7 +244,7 @@ describe('SummaryService', () => {
     });
 
     it("s'arrête au premier jour manquant dans le streak", async () => {
-      const user = Object.assign(new User(), { id: 1 });
+      const user = Object.assign(new User(), { id: UUID_A });
       const makeAct = (dateStr: string) =>
         Object.assign(new Activity(), {
           createdAt: new Date(dateStr),

@@ -49,7 +49,7 @@ export class SummaryService {
 
     const exerciseIds = [...metadataByActivity.values()]
       .map((meta) => meta.exerciceId)
-      .filter((id): id is number => id !== undefined && id !== null);
+      .filter((id): id is string => id !== undefined && id !== null);
 
     const programLines = exerciseIds.length
       ? await this.programLineRepo.find({

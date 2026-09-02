@@ -5,7 +5,7 @@ import {
   Body,
   Patch,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Delete,
   UseGuards,
   Req,
@@ -66,7 +66,7 @@ export class PractitionerDiplomeController {
 
   @Get(':id')
   findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.practitionerDiplomeService.findOneOwnedBy(
@@ -78,7 +78,7 @@ export class PractitionerDiplomeController {
 
   @Patch(':id')
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updatePratitionerDiplomeDto: UpdatePractitionerDiplomeDto,
     @Req() req: AuthenticatedRequest,
   ) {
@@ -92,7 +92,7 @@ export class PractitionerDiplomeController {
 
   @Delete(':id')
   remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.practitionerDiplomeService.remove(

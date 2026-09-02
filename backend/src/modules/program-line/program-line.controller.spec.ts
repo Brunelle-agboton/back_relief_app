@@ -42,18 +42,18 @@ describe('ProgramLineController', () => {
   it('should return one program line', () => {
     (service.findOne as jest.Mock).mockReturnValue('one');
     expect(controller.findOne('1')).toBe('one');
-    expect(service.findOne).toHaveBeenCalledWith(1);
+    expect(service.findOne).toHaveBeenCalledWith('1');
   });
 
   it('should update a program line', () => {
     (service.update as jest.Mock).mockReturnValue('updated');
     expect(controller.update('1', { order: 2 } as any)).toBe('updated');
-    expect(service.update).toHaveBeenCalledWith(1, { order: 2 });
+    expect(service.update).toHaveBeenCalledWith('1', { order: 2 });
   });
 
   it('should remove a program line', () => {
     (service.remove as jest.Mock).mockReturnValue('removed');
     expect(controller.remove('1')).toBe('removed');
-    expect(service.remove).toHaveBeenCalledWith(1);
+    expect(service.remove).toHaveBeenCalledWith('1');
   });
 });

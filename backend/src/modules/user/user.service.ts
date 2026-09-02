@@ -66,7 +66,7 @@ export class UserService {
       .getOne();
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
@@ -80,7 +80,7 @@ export class UserService {
    * un compte supprimé.
    */
   async findAuthContext(
-    id: number,
+    id: string,
   ): Promise<Pick<User, 'id' | 'email' | 'role' | 'tokenVersion'> | null> {
     return this.usersRepository.findOne({
       where: { id },
@@ -92,7 +92,7 @@ export class UserService {
     return this.usersRepository.find();
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
 
     /**
@@ -113,7 +113,7 @@ export class UserService {
 
   /** SEC-09 : changement de mot de passe avec re-vérification et révocation des jetons. */
   async changePassword(
-    id: number,
+    id: string,
     currentPassword: string,
     newPassword: string,
   ): Promise<void> {
@@ -142,7 +142,7 @@ export class UserService {
   }
 
   async updateUserSetting(
-    id: number,
+    id: string,
     settings: UpdateUserSettingsDto,
   ): Promise<string> {
     const user = await this.findOne(id);
@@ -158,13 +158,13 @@ export class UserService {
   }
 
   /** SEC-08 : révocation immédiate de tous les jetons émis pour cet utilisateur. */
-  async revokeTokens(id: number): Promise<void> {
+  async revokeTokens(id: string): Promise<void> {
     const user = await this.findOne(id);
     user.tokenVersion = (user.tokenVersion ?? 0) + 1;
     await this.usersRepository.save(user);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const user = await this.findOne(id);
     await this.usersRepository.remove(user);
   }

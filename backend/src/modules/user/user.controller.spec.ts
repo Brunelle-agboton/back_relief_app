@@ -8,9 +8,10 @@ import { User } from './entities/user.entity';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { UserRole } from '../../common/enums/user-role.enum';
+import { UUID_A, UUID_B, UUID_C } from '../../common/testing/uuid.fixtures';
 import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
 
-const asUser = (userId: number, role: UserRole = UserRole.USER) =>
+const asUser = (userId: string, role: UserRole = UserRole.USER) =>
   ({ user: { userId, email: 'a@a.com', role } }) as AuthenticatedRequest;
 
 describe('UserController', () => {
@@ -117,12 +118,12 @@ describe('UserController', () => {
     it('should find a user by id', () => {
       const user = new User();
       mockUserService.findOne.mockResolvedValue(user);
-      expect(controller.findById(1, asUser(1))).resolves.toBe(user);
+      expect(controller.findById(UUID_A, asUser(UUID_A))).resolves.toBe(user);
     });
 
     // SEC-07
     it("refuse la lecture du profil d'un autre utilisateur", () => {
-      expect(() => controller.findById(2, asUser(1))).toThrow(
+      expect(() => controller.findById(UUID_B, asUser(UUID_A))).toThrow(
         ForbiddenException,
       );
       expect(userService.findOne).not.toHaveBeenCalled();
@@ -131,9 +132,9 @@ describe('UserController', () => {
     it("autorise un administrateur à lire n'importe quel profil", () => {
       const user = new User();
       mockUserService.findOne.mockResolvedValue(user);
-      expect(controller.findById(2, asUser(1, UserRole.ADMIN))).resolves.toBe(
-        user,
-      );
+      expect(
+        controller.findById(UUID_B, asUser(UUID_A, UserRole.ADMIN)),
+      ).resolves.toBe(user);
     });
   });
 
@@ -141,8 +142,8 @@ describe('UserController', () => {
     it("lit le profil de l'appelant sans paramètre d'URL", () => {
       const user = new User();
       mockUserService.findOne.mockResolvedValue(user);
-      expect(controller.findMe(asUser(7))).resolves.toBe(user);
-      expect(userService.findOne).toHaveBeenCalledWith(7);
+      expect(controller.findMe(asUser(UUID_C))).resolves.toBe(user);
+      expect(userService.findOne).toHaveBeenCalledWith(UUID_C);
     });
   });
 
@@ -158,14 +159,16 @@ describe('UserController', () => {
     it('should update a user', () => {
       const dto: UpdateUserDto = { userName: 'new' };
       mockUserService.update.mockResolvedValue({} as any);
-      expect(controller.update(1, dto, asUser(1))).resolves.toEqual({});
+      expect(controller.update(UUID_A, dto, asUser(UUID_A))).resolves.toEqual(
+        {},
+      );
     });
 
     // SEC-02
     it("refuse la modification du compte d'un tiers", () => {
-      expect(() => controller.update(2, { userName: 'x' }, asUser(1))).toThrow(
-        ForbiddenException,
-      );
+      expect(() =>
+        controller.update(UUID_B, { userName: 'x' }, asUser(UUID_A)),
+      ).toThrow(ForbiddenException);
       expect(userService.update).not.toHaveBeenCalled();
     });
   });
@@ -174,15 +177,19 @@ describe('UserController', () => {
     it('should update user settings', () => {
       const dto = { restReminder: true, drinkReminder: false };
       mockUserService.updateUserSetting.mockResolvedValue('ok');
-      expect(controller.updateUserSetting(1, dto, asUser(1))).resolves.toBe(
-        'ok',
-      );
+      expect(
+        controller.updateUserSetting(UUID_A, dto, asUser(UUID_A)),
+      ).resolves.toBe('ok');
     });
 
     // SEC-07
     it("refuse la modification des préférences d'un tiers", () => {
       expect(() =>
-        controller.updateUserSetting(2, { restReminder: true }, asUser(1)),
+        controller.updateUserSetting(
+          UUID_B,
+          { restReminder: true },
+          asUser(UUID_A),
+        ),
       ).toThrow(ForbiddenException);
     });
   });
@@ -190,12 +197,16 @@ describe('UserController', () => {
   describe('remove', () => {
     it('should remove a user', () => {
       mockUserService.remove.mockResolvedValue(undefined);
-      expect(controller.remove(1, asUser(1))).resolves.toBeUndefined();
+      expect(
+        controller.remove(UUID_A, asUser(UUID_A)),
+      ).resolves.toBeUndefined();
     });
 
     // SEC-02
     it("refuse la suppression du compte d'un tiers", () => {
-      expect(() => controller.remove(2, asUser(1))).toThrow(ForbiddenException);
+      expect(() => controller.remove(UUID_B, asUser(UUID_A))).toThrow(
+        ForbiddenException,
+      );
       expect(userService.remove).not.toHaveBeenCalled();
     });
   });
@@ -204,12 +215,12 @@ describe('UserController', () => {
     // SEC-09
     it("délègue au service pour le compte de l'appelant", async () => {
       mockUserService.changePassword.mockResolvedValue(undefined);
-      await controller.changePassword(asUser(3), {
+      await controller.changePassword(asUser(UUID_C), {
         currentPassword: 'old',
         newPassword: 'newpass',
       });
       expect(userService.changePassword).toHaveBeenCalledWith(
-        3,
+        UUID_C,
         'old',
         'newpass',
       );

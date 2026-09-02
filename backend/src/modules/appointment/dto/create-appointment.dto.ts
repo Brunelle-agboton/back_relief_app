@@ -1,11 +1,10 @@
 import {
-  IsInt,
+  IsUUID,
   IsString,
   IsOptional,
   IsDateString,
   MaxLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 /**
  * SEC-04/07 : `patientId` est optionnel et ignoré pour un patient — le
@@ -14,13 +13,11 @@ import { Type } from 'class-transformer';
  */
 export class CreateAppointmentDto {
   @IsOptional()
-  @IsInt()
-  @Type(() => Number)
-  patientId?: number;
+  @IsUUID()
+  patientId?: string;
 
-  @IsInt()
-  @Type(() => Number)
-  practitionerId: number;
+  @IsUUID()
+  practitionerId: string;
 
   @IsDateString()
   startTime: string; // ISO 8601 date string

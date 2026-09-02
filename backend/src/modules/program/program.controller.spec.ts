@@ -42,18 +42,18 @@ describe('ProgramController', () => {
   it('should return one program', () => {
     (service.findOne as jest.Mock).mockReturnValue('one');
     expect(controller.findOne('1')).toBe('one');
-    expect(service.findOne).toHaveBeenCalledWith(1);
+    expect(service.findOne).toHaveBeenCalledWith('1');
   });
 
   it('should update a program', () => {
     (service.update as jest.Mock).mockReturnValue('updated');
     expect(controller.update('1', { title: 'new' } as any)).toBe('updated');
-    expect(service.update).toHaveBeenCalledWith(1, { title: 'new' });
+    expect(service.update).toHaveBeenCalledWith('1', { title: 'new' });
   });
 
   it('should remove a program', () => {
     (service.remove as jest.Mock).mockReturnValue('removed');
     expect(controller.remove('1')).toBe('removed');
-    expect(service.remove).toHaveBeenCalledWith(1);
+    expect(service.remove).toHaveBeenCalledWith('1');
   });
 });

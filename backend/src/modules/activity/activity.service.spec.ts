@@ -5,6 +5,12 @@ import { Activity } from './entities/activity.entity';
 import { Repository } from 'typeorm';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { User } from '../user/entities/user.entity';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
 describe('ActivityService', () => {
   let service: ActivityService;
@@ -42,7 +48,7 @@ describe('ActivityService', () => {
   describe('log', () => {
     it('should create and save an activity', async () => {
       const user = new User();
-      user.id = 1;
+      user.id = UUID_A;
       const createActivityDto: CreateActivityDto = {
         type: 'test' as any,
         metadata: '{}',
@@ -64,7 +70,7 @@ describe('ActivityService', () => {
 
   describe('findByUser', () => {
     it('should return activities for a user', async () => {
-      const userId = 1;
+      const userId = UUID_A;
       const activities = [new Activity()];
       mockRepository.find.mockResolvedValue(activities);
 
@@ -95,26 +101,26 @@ describe('ActivityService', () => {
   describe('remove', () => {
     it('should delete the activity by id', async () => {
       const owner = new User();
-      owner.id = 3;
+      owner.id = UUID_C;
       const activity = new Activity();
       activity.user = owner;
       mockRepository.findOne.mockResolvedValue(activity);
       mockRepository.delete.mockResolvedValue({ affected: 1 });
 
-      await service.remove(1, 3);
+      await service.remove(UUID_A, UUID_C);
 
-      expect(repository.delete).toHaveBeenCalledWith(1);
+      expect(repository.delete).toHaveBeenCalledWith(UUID_A);
     });
 
     // SEC-07
     it("refuse la suppression d'une activité appartenant à un tiers", async () => {
       const owner = new User();
-      owner.id = 3;
+      owner.id = UUID_C;
       const activity = new Activity();
       activity.user = owner;
       mockRepository.findOne.mockResolvedValue(activity);
 
-      await expect(service.remove(1, 9)).rejects.toThrow(
+      await expect(service.remove(UUID_A, UUID_B)).rejects.toThrow(
         'Accès limité à vos propres données',
       );
       expect(repository.delete).not.toHaveBeenCalled();
@@ -122,8 +128,8 @@ describe('ActivityService', () => {
 
     it('renvoie 404 pour une activité inexistante', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      await expect(service.remove(1, 3)).rejects.toThrow(
-        'Activity #1 not found',
+      await expect(service.remove(UUID_A, UUID_C)).rejects.toThrow(
+        `Activity #${UUID_A} not found`,
       );
     });
   });

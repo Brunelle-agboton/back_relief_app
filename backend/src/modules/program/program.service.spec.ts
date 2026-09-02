@@ -3,6 +3,14 @@ import { ProgramService } from './program.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Program } from './entities/program.entity';
 import { Repository } from 'typeorm';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
 const mockRepo = () => ({
   save: jest.fn(),
@@ -32,7 +40,7 @@ describe('ProgramService', () => {
 
   it('should create a program', async () => {
     const dto = { title: 'Test', description: 'desc', image: 'img.jpg' };
-    const saved = { id: 1, ...dto, lines: [] };
+    const saved = { id: UUID_A, ...dto, lines: [] };
     repo.save.mockResolvedValue(saved);
 
     const result = await service.create(dto as any);
@@ -42,7 +50,7 @@ describe('ProgramService', () => {
   });
 
   it('should find all programs', async () => {
-    const programs = [{ id: 1 }, { id: 2 }] as any[];
+    const programs = [{ id: UUID_A }, { id: UUID_B }] as any[];
     repo.find.mockResolvedValue(programs);
 
     const result = await service.findAll();
@@ -55,7 +63,7 @@ describe('ProgramService', () => {
 
   it('should find one program and map lines', async () => {
     const program = {
-      id: 1,
+      id: UUID_A,
       title: 'Test',
       description: 'desc',
       image: 'img.jpg',
@@ -66,7 +74,7 @@ describe('ProgramService', () => {
           duration: 30,
           calories: 10,
           exercise: {
-            id: 1,
+            id: UUID_A,
             title: 'ex',
             image: 'img',
             category: 'cat',
@@ -78,7 +86,7 @@ describe('ProgramService', () => {
           duration: 20,
           calories: 5,
           exercise: {
-            id: 2,
+            id: UUID_B,
             title: 'ex2',
             image: 'img2',
             category: 'cat2',
@@ -88,10 +96,10 @@ describe('ProgramService', () => {
     };
     repo.findOne.mockResolvedValue(program as any);
 
-    const result = await service.findOne(1);
+    const result = await service.findOne(UUID_A);
 
     expect(repo.findOne).toHaveBeenCalledWith({
-      where: { id: 1 },
+      where: { id: UUID_A },
       relations: ['lines', 'lines.exercise'],
     });
     // lines should be sorted by order
@@ -105,14 +113,20 @@ describe('ProgramService', () => {
   it('should throw if program not found', async () => {
     repo.findOne.mockResolvedValue(null);
 
-    await expect(service.findOne(42)).rejects.toThrow('Program with id 42 not found');
+    await expect(service.findOne(UUID_MISSING)).rejects.toThrow(
+      `Program with id ${UUID_MISSING} not found`,
+    );
   });
 
   it('should return update string', () => {
-    expect(service.update(1, {} as any)).toBe('This action updates a #1 program');
+    expect(service.update(UUID_A, {} as any)).toBe(
+      `This action updates a #${UUID_A} program`,
+    );
   });
 
   it('should return remove string', () => {
-    expect(service.remove(1)).toBe('This action removes a #1 program');
+    expect(service.remove(UUID_A)).toBe(
+      `This action removes a #${UUID_A} program`,
+    );
   });
 });

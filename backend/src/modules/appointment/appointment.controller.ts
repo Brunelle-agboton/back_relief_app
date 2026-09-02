@@ -4,7 +4,7 @@ import {
   Post,
   Body,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   UseGuards,
   Req,
   ForbiddenException,
@@ -61,7 +61,7 @@ export class AppointmentController {
   /** SEC-04/07 : l'agenda médical d'un patient donné, par simple `:id`. */
   @Get('as-patient/:id')
   findByUserId(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
     assertSelfOrAdmin(req.user, id);
@@ -71,7 +71,7 @@ export class AppointmentController {
   /** `:id` désigne ici un profil praticien, qui doit appartenir à l'appelant. */
   @Get('practitioner/:id')
   async findByPractitionerId(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
     if (!isAdmin(req.user)) {

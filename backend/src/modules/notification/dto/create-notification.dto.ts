@@ -1,5 +1,4 @@
-import { IsString, IsDateString, IsInt } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsDateString, IsUUID } from 'class-validator';
 
 export class CreateNotificationDto {
   @IsString()
@@ -11,7 +10,6 @@ export class CreateNotificationDto {
   @IsDateString()
   date: string;
 
-  @IsInt()
-  @Type(() => Number)
-  userId: number;
+  @IsUUID()
+  userId: string;
 }

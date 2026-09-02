@@ -82,7 +82,7 @@ export class HealthService {
       ...new Set(
         completed
           .map((act) => parseActivityMetadata(act.metadata).exerciceId)
-          .filter((id): id is number => id !== undefined && id !== null),
+          .filter((id): id is string => id !== undefined && id !== null),
       ),
     ];
 

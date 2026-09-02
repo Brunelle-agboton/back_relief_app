@@ -21,3 +21,21 @@ export function getPublicPractitionerEmails(): string[] {
 export function isPubliclyListedPractitioner(email: string): boolean {
   return getPublicPractitionerEmails().includes(email.trim().toLowerCase());
 }
+
+/**
+ * Praticien avec lequel un nouveau professionnel prend son rendez-vous
+ * d'accueil.
+ *
+ * Il était jusqu'ici désigné par l'identifiant numérique `1` codé en dur dans
+ * AuthService. Avec des clés primaires UUID, cet identifiant n'est plus
+ * devinable ni stable d'un environnement à l'autre : le praticien est désormais
+ * résolu par son adresse e-mail, tirée de ONBOARDING_PRACTITIONER_EMAIL ou, à
+ * défaut, de la première entrée de PUBLIC_PRACTITIONER_EMAILS.
+ */
+export function getOnboardingPractitionerEmail(): string | null {
+  const dedicated = (process.env.ONBOARDING_PRACTITIONER_EMAIL ?? '').trim();
+  if (dedicated) {
+    return dedicated.toLowerCase();
+  }
+  return getPublicPractitionerEmails()[0] ?? null;
+}

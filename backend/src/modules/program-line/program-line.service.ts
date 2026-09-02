@@ -54,7 +54,7 @@ export class ProgramLineService {
     });
   }
 
-  findOne(id: number) {
+  findOne(id: string) {
     return this.programLineRepository
       .findOne({
         where: { id },
@@ -85,7 +85,7 @@ export class ProgramLineService {
       });
   }
 
-  async update(id: number, updateProgramLineDto: UpdateProgramLineDto) {
+  async update(id: string, updateProgramLineDto: UpdateProgramLineDto) {
     const line = await this.programLineRepository.findOneBy({ id });
     if (!line)
       throw new NotFoundException(`ProgramLine with id ${id} not found`);
@@ -119,7 +119,7 @@ export class ProgramLineService {
     return this.programLineRepository.save(line);
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     const result = await this.programLineRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`ProgramLine with ID ${id} not found`);

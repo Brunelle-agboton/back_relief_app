@@ -3,6 +3,14 @@ import { JwtStrategy } from './jwt.strategy';
 import { UserService } from '../user/user.service';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { JwtPayload, TokenType } from './jwt.constants';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_D,
+  UUID_E,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
@@ -12,7 +20,7 @@ describe('JwtStrategy', () => {
   };
 
   const payload = (overrides: Partial<JwtPayload> = {}): JwtPayload => ({
-    sub: 42,
+    sub: UUID_D,
     email: 'user@test.com',
     role: UserRole.USER,
     tv: 0,

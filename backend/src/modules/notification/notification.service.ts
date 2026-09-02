@@ -26,32 +26,36 @@ export class NotificationService {
     return this.repo.find({ relations: ['user'] });
   }
 
-  async findByUser(userId: number): Promise<Notification[]> {
+  async findByUser(userId: string): Promise<Notification[]> {
     return this.repo.find({
       where: { user: { id: userId } },
       order: { date: 'DESC' },
     });
   }
 
-  async findOne(id: number): Promise<Notification> {
-    const notification = await this.repo.findOne({ where: { id }, relations: ['user'] });
-    if (!notification) throw new NotFoundException(`Notification #${id} not found`);
+  async findOne(id: string): Promise<Notification> {
+    const notification = await this.repo.findOne({
+      where: { id },
+      relations: ['user'],
+    });
+    if (!notification)
+      throw new NotFoundException(`Notification #${id} not found`);
     return notification;
   }
 
-  async update(id: number, dto: UpdateNotificationDto): Promise<Notification> {
+  async update(id: string, dto: UpdateNotificationDto): Promise<Notification> {
     const notification = await this.findOne(id);
     Object.assign(notification, dto);
     return this.repo.save(notification);
   }
 
-  async markAsRead(id: number): Promise<Notification> {
+  async markAsRead(id: string): Promise<Notification> {
     const notification = await this.findOne(id);
     notification.isRead = true;
     return this.repo.save(notification);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const notification = await this.findOne(id);
     await this.repo.remove(notification);
   }

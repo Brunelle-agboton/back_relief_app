@@ -9,12 +9,12 @@ import { UserRole } from '../enums/user-role.enum';
  */
 export function assertSelfOrAdmin(
   user: AuthenticatedUser,
-  targetUserId: number,
+  targetUserId: string,
 ): void {
   if (user.role === UserRole.ADMIN) {
     return;
   }
-  if (!Number.isInteger(targetUserId) || user.userId !== targetUserId) {
+  if (!targetUserId || user.userId !== targetUserId) {
     throw new ForbiddenException('Accès limité à vos propres données');
   }
 }

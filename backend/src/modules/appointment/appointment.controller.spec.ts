@@ -9,8 +9,14 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { AuthenticatedRequest } from '../../common/types/authenticated-request.interface';
 import { ForbiddenException } from '@nestjs/common';
+import {
+  UUID_A,
+  UUID_B,
+  UUID_C,
+  UUID_MISSING,
+} from '../../common/testing/uuid.fixtures';
 
-const asUser = (userId: number, role: UserRole = UserRole.USER) =>
+const asUser = (userId: string, role: UserRole = UserRole.USER) =>
   ({ user: { userId, email: 'a@a.com', role } }) as AuthenticatedRequest;
 
 describe('AppointmentController', () => {
@@ -60,18 +66,21 @@ describe('AppointmentController', () => {
   describe('create', () => {
     it('should create an appointment', async () => {
       const createAppointmentDto: CreateAppointmentDto = {
-        practitionerId: 1,
+        practitionerId: UUID_A,
         startTime: new Date().toISOString(),
       };
       const expectedAppointment = new Appointment();
       mockAppointmentService.create.mockResolvedValue(expectedAppointment);
 
-      const result = await controller.create(createAppointmentDto, asUser(7));
+      const result = await controller.create(
+        createAppointmentDto,
+        asUser(UUID_C),
+      );
 
       // SEC-07 : le patient est celui du jeton.
       expect(service.create).toHaveBeenCalledWith({
         ...createAppointmentDto,
-        patientId: 7,
+        patientId: UUID_C,
       });
       expect(result).toEqual(expectedAppointment);
     });
@@ -81,15 +90,15 @@ describe('AppointmentController', () => {
 
       await controller.create(
         {
-          patientId: 999,
-          practitionerId: 1,
+          patientId: UUID_MISSING,
+          practitionerId: UUID_A,
           startTime: new Date().toISOString(),
         },
-        asUser(7),
+        asUser(UUID_C),
       );
 
       expect(service.create).toHaveBeenCalledWith(
-        expect.objectContaining({ patientId: 7 }),
+        expect.objectContaining({ patientId: UUID_C }),
       );
     });
 
@@ -98,15 +107,15 @@ describe('AppointmentController', () => {
 
       await controller.create(
         {
-          patientId: 999,
-          practitionerId: 1,
+          patientId: UUID_MISSING,
+          practitionerId: UUID_A,
           startTime: new Date().toISOString(),
         },
-        asUser(7, UserRole.ADMIN),
+        asUser(UUID_C, UserRole.ADMIN),
       );
 
       expect(service.create).toHaveBeenCalledWith(
-        expect.objectContaining({ patientId: 999 }),
+        expect.objectContaining({ patientId: UUID_MISSING }),
       );
     });
   });
@@ -130,15 +139,15 @@ describe('AppointmentController', () => {
         expectedAppointments,
       );
 
-      const result = await controller.findByUserId(1, asUser(1));
+      const result = await controller.findByUserId(UUID_A, asUser(UUID_A));
 
-      expect(service.findByUserId).toHaveBeenCalledWith(1);
+      expect(service.findByUserId).toHaveBeenCalledWith(UUID_A);
       expect(result).toEqual(expectedAppointments);
     });
 
     // SEC-04/07 : l'agenda médical d'un autre patient n'est plus lisible.
     it("refuse l'agenda d'un autre patient", () => {
-      expect(() => controller.findByUserId(2, asUser(1))).toThrow(
+      expect(() => controller.findByUserId(UUID_B, asUser(UUID_A))).toThrow(
         ForbiddenException,
       );
       expect(service.findByUserId).not.toHaveBeenCalled();
@@ -148,26 +157,33 @@ describe('AppointmentController', () => {
   describe('findByPractitionerId', () => {
     it('should return appointments for a given practitioner ID', async () => {
       const expectedAppointments = [new Appointment()];
-      mockPractitionerProfileService.findForUser.mockResolvedValue({ id: 1 });
+      mockPractitionerProfileService.findForUser.mockResolvedValue({
+        id: UUID_A,
+      });
       mockAppointmentService.findByPractitionerId.mockResolvedValue(
         expectedAppointments,
       );
 
       const result = await controller.findByPractitionerId(
-        1,
-        asUser(5, UserRole.PRACTITIONER),
+        UUID_A,
+        asUser(UUID_C, UserRole.PRACTITIONER),
       );
 
-      expect(service.findByPractitionerId).toHaveBeenCalledWith(1);
+      expect(service.findByPractitionerId).toHaveBeenCalledWith(UUID_A);
       expect(result).toEqual(expectedAppointments);
     });
 
     // SEC-04/07
     it("refuse l'agenda d'un autre praticien", async () => {
-      mockPractitionerProfileService.findForUser.mockResolvedValue({ id: 2 });
+      mockPractitionerProfileService.findForUser.mockResolvedValue({
+        id: UUID_B,
+      });
 
       await expect(
-        controller.findByPractitionerId(1, asUser(5, UserRole.PRACTITIONER)),
+        controller.findByPractitionerId(
+          UUID_A,
+          asUser(UUID_C, UserRole.PRACTITIONER),
+        ),
       ).rejects.toThrow(ForbiddenException);
       expect(service.findByPractitionerId).not.toHaveBeenCalled();
     });

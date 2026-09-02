@@ -6,8 +6,8 @@ export enum TokenType {
 }
 
 export interface JwtPayload {
-  /** Identifiant utilisateur. */
-  sub: number;
+  /** Identifiant utilisateur (UUID). */
+  sub: string;
   email: string;
   role: UserRole;
   /** Version de jeton : toute incrémentation côté utilisateur révoque les jetons émis avant. */
