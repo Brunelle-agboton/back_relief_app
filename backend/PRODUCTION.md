@@ -47,6 +47,9 @@ arbitrent entre confort de développement et sécurité.
 | `CORS_ORIGINS` | vide (`*`) | liste explicite | En dev on accepte n'importe quelle origine ; en prod seules les origines web légitimes doivent l'être. L'application mobile n'envoie pas d'en-tête `Origin` : elle n'est pas concernée par ce réglage |
 | `JWT_REFRESH_SECRET` | facultatif (repli sur `JWT_SECRET`) | **obligatoire** | Séparer les secrets limite l'impact de la fuite de l'un des deux. En dev, le repli évite d'imposer une seconde variable ; en prod le démarrage échoue si elle manque |
 | `SEED_PRACTITIONER_EMAIL` / `SEED_PRACTITIONER_PASSWORD` / `SEED_PRACTITIONER_NAME` | définies | **non définies** | Compte de démonstration : n'existe qu'en dev. Sans ces variables, aucun compte n'est semé |
+| `POSTGRES_SSL_MODE` | `disable` | `verify-full` (ou `disable` sur réseau privé, explicitement) | `rejectUnauthorized: false` chiffrait sans vérifier le certificat : un attaquant sur le chemin réseau pouvait se faire passer pour la base. En dev il n'y a pas de TLS du tout |
+| `TRUST_PROXY_HOPS` | absent (`false`) | `1` | En dev il n'y a pas de proxy, et faire confiance à `X-Forwarded-For` permettrait à un client de falsifier son adresse. En prod, sans ce réglage, tous les utilisateurs partagent un unique quota |
+| `SWAGGER_USER` / `SWAGGER_PASSWORD` | inutiles | obligatoires si `SWAGGER_ENABLED=true` | La documentation est fermée en prod ; si elle y est ouverte, elle doit être protégée — le démarrage échoue sinon |
 
 ### 1.3 Utilisées dans les deux environnements, valeurs au choix
 
@@ -55,32 +58,43 @@ arbitrent entre confort de développement et sécurité.
 | `JWT_ACCESS_EXPIRES_IN` | `1h` | durée de vie de l'access token |
 | `JWT_REFRESH_EXPIRES_IN` | `30d` | durée de vie du refresh token |
 | `PUBLIC_PRACTITIONER_EMAILS` | vide | liste blanche, séparée par des virgules, des adresses interrogeables sans authentification via `GET /practitioner-profile/by-email/:email` (voir §4) |
+| `ONBOARDING_PRACTITIONER_EMAIL` | 1re entrée de `PUBLIC_PRACTITIONER_EMAILS` | praticien avec lequel le rendez-vous d'accueil est pris à l'inscription professionnelle (voir §4) |
+| `THROTTLE_TTL_MS` / `THROTTLE_LIMIT` | `60000` / `120` | fenêtre et plafond du quota global, par adresse IP |
+| `LOG_LEVEL` | `info` en prod, `debug` en dev | niveau de journalisation |
 
 ---
 
 ## 2. Schéma de base de données
 
-Le module utilisateur gagne une colonne `tokenVersion`, support de la
-révocation de jetons. Comme `DB_SYNCHRONIZE` doit rester à `false` en
-production, appliquer la migration **avant** le premier déploiement :
+Le schéma est créé et fait évoluer **par les migrations TypeORM**, jamais par
+`synchronize`. `render.yaml` exécute `npm run migration:run:prod` en
+`preDeployCommand`, c'est-à-dire avant la bascule du trafic.
 
-```sql
-ALTER TABLE "user"
-  ADD COLUMN IF NOT EXISTS "tokenVersion" integer NOT NULL DEFAULT 0;
+```bash
+npm run migration:show          # état des migrations
+npm run migration:run           # applique (dev, via ts-node)
+npm run migration:run:prod      # applique (prod, depuis dist/)
+npm run migration:revert        # annule la dernière
+npm run migration:generate -- src/database/migrations/NomDeLaMigration
 ```
 
-Le dépôt ne contient pas encore de dossier de migrations TypeORM
-(`migrations: ['src/migration/*.ts']` pointe vers un répertoire vide et n'est de
-toute façon pas résolu depuis `dist/`). Deux options pour l'amorçage initial :
+La migration initiale (`InitialSchema`) crée l'intégralité du schéma avec des
+clés primaires `uuid`. Elle est strictement additive — aucun `DROP` — et crée
+l'extension `uuid-ossp` dont dépend `uuid_generate_v4()`.
 
-1. exécuter le SQL ci-dessus (recommandé) ;
-2. démarrer **une seule fois** avec `DB_SYNCHRONIZE=true`, puis repasser
-   immédiatement à `false`.
-
-Mettre en place de vraies migrations reste un chantier à part entière, à
-planifier avant la prochaine évolution du schéma.
-
----
+> **Important — bases existantes.** Cette migration part d'une base **vide**,
+> ce qui correspond à la situation décrite par l'audit (« le schéma n'est jamais
+> créé en production »). Appliquée sur une base qui contiendrait déjà les tables
+> en identifiants entiers, elle échouera franchement au lieu de détruire quoi que
+> ce soit. Deux cas :
+>
+> - **base vide ou de démonstration** (cas attendu avant la mise en ligne) :
+>   rien à faire, la migration crée tout ;
+> - **base contenant des données réelles à conserver** : la conversion
+>   `integer → uuid` d'une base peuplée est une migration de données à part
+>   entière (ajout des colonnes uuid, remplissage, réécriture de chaque clé
+>   étrangère, bascule des contraintes). Elle n'est pas fournie ici : à écrire
+>   et à répéter sur une copie avant toute exécution.
 
 ## 3. Secrets
 
@@ -120,7 +134,14 @@ c'est-à-dire celle que le client mobile interroge aujourd'hui en dur.
 
 ```
 PUBLIC_PRACTITIONER_EMAILS=adresse-du-praticien-accueil@exemple.com
+ONBOARDING_PRACTITIONER_EMAIL=adresse-du-praticien-accueil@exemple.com
 ```
+
+`ONBOARDING_PRACTITIONER_EMAIL` désigne le praticien avec lequel le rendez-vous
+d'accueil est pris lors d'une inscription professionnelle. Il était auparavant
+codé en dur (`practitionerId: 1`) ; les clés primaires étant désormais des UUID,
+il ne peut plus l'être. Sans cette variable (ni `PUBLIC_PRACTITIONER_EMAILS`),
+`POST /auth/register-practitioner` répond 503 avec un message explicite.
 
 Sans cette variable, l'écran « Choisissez votre créneau » de l'inscription
 praticien affichera une erreur.
@@ -145,6 +166,8 @@ codée en dur.
 | `GET /health`, `GET|PATCH|DELETE /health/:id` (échafaudage) | supprimées ; `GET /health` désigne sans ambiguïté la sonde de disponibilité |
 | `GET /appointments*`, `GET /activity`, `GET /pratitioner-diplome` publics | authentification + contrôle de propriété |
 | `POST /practitioner-profile/me/availability` prenait un `userId` | le créneau est rattaché au profil de l'appelant |
+| Les identifiants étaient des entiers auto-incrémentés | ce sont des **UUID**. Un `:id` non conforme renvoie `400` (« uuid is expected ») et non `404`. Les clients doivent traiter les identifiants comme des chaînes opaques — ne plus faire de `parseInt` |
+| `POST /user/login` renvoyait `sub` numérique dans le JWT | `sub` est un UUID |
 
 Le mot de passe ne peut plus être modifié via `PATCH /user/:id` : utiliser
 `PATCH /user/me/password`, qui exige le mot de passe courant et révoque les
@@ -159,7 +182,10 @@ sessions ouvertes.
 - [ ] `MODE=PROD`, `DB_SYNCHRONIZE=false`, `SEED_ON_BOOT=false`, `SWAGGER_ENABLED=false`
 - [ ] `CORS_ORIGINS` renseignée si une interface web consomme l'API
 - [ ] `PUBLIC_PRACTITIONER_EMAILS` renseignée (§4)
-- [ ] Colonne `tokenVersion` créée (§2)
+- [ ] Migrations appliquées — `npm run migration:show` ne liste rien en attente (§2)
+- [ ] `POSTGRES_SSL_MODE` choisi explicitement (`verify-full` + `POSTGRES_SSL_CA`, ou `disable` sur réseau privé)
+- [ ] `TRUST_PROXY_HOPS=1` (sans quoi tous les utilisateurs partagent un quota)
+- [ ] `ONBOARDING_PRACTITIONER_EMAIL` renseignée
 - [ ] `healthCheckPath` positionné sur `/health`
 - [ ] Aucune variable `SEED_PRACTITIONER_*` définie en production
 
@@ -167,7 +193,6 @@ sessions ouvertes.
 
 ## 7. Points restants (hors périmètre de ce lot)
 
-- **Migrations TypeORM** : à mettre en place (§2).
 - **Politique de mot de passe** : la contrainte reste `MinLength(6)`, comme
   avant. La renforcer (longueur, complexité) est souhaitable mais rejetterait
   des inscriptions que le client mobile actuel laisse passer, avec un message

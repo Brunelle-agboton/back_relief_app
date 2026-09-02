@@ -39,6 +39,9 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: .
     healthCheckPath: /health
+    # DEP-01 : le schéma est créé et fait évoluer par les migrations, jouées
+    # avant la bascule du trafic. `synchronize` reste désactivé.
+    preDeployCommand: npm run migration:run:prod
     envVars:
       # --- Mode d'exécution -------------------------------------------------
       - key: MODE
@@ -67,8 +70,8 @@ services:
           name: healthtracker_51um
           property: database
 
-      # `true` uniquement pour amorcer le schéma au tout premier déploiement,
-      # à repasser à `false` immédiatement après.
+      # Le schéma est géré par les migrations : `synchronize` ne doit jamais
+      # être réactivé en production.
       - key: DB_SYNCHRONIZE
         value: false
       # Le seed de démonstration ne doit jamais tourner sur la base de prod.
@@ -84,5 +87,27 @@ services:
       - key: JWT_REFRESH_SECRET
         sync: false
       # Liste blanche CORS (l'app mobile n'envoie pas d'en-tête Origin).
+      # Vide ⇒ CORS désactivé en production, ce qui est le comportement voulu
+      # tant qu'aucune interface web ne consomme l'API.
       - key: CORS_ORIGINS
         sync: false
+
+      # --- TLS PostgreSQL (SEC-11) -----------------------------------------
+      # `verify-full` par défaut ; exige POSTGRES_SSL_CA. Sur le réseau privé
+      # Render, `disable` est un choix légitime — mais explicite.
+      - key: POSTGRES_SSL_MODE
+        value: disable
+
+      # --- Praticien d'accueil ---------------------------------------------
+      # Adresse interrogeable sans authentification par le parcours
+      # d'inscription praticien, et praticien avec lequel le rendez-vous
+      # d'accueil est pris (les clés primaires étant des UUID, il ne peut plus
+      # être désigné par un identifiant codé en dur).
+      - key: PUBLIC_PRACTITIONER_EMAILS
+        sync: false
+      - key: ONBOARDING_PRACTITIONER_EMAIL
+        sync: false
+
+      # --- Proxy et quota (SEC-12) -----------------------------------------
+      - key: TRUST_PROXY_HOPS
+        value: 1

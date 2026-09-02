@@ -55,6 +55,14 @@ jobs:
         # MODE=DEV : JWT_REFRESH_SECRET retombe sur JWT_SECRET (obligatoire en prod uniquement).
         # Seed désactivé : la CI n'a pas besoin du praticien de démonstration.
         echo "SEED_ON_BOOT=false" >> backend/.env
+        echo "POSTGRES_SSL_MODE=disable" >> backend/.env
+        # DEP-01 : la CI joue les migrations plutôt que de compter sur
+        # `synchronize`, de sorte qu'une migration cassée soit détectée ici.
+        echo "DB_SYNCHRONIZE=false" >> backend/.env
+
+    - name: Run database migrations
+      working-directory: ./backend
+      run: npm run migration:run
 
     - name: Run backend unit tests
       working-directory: ./backend
