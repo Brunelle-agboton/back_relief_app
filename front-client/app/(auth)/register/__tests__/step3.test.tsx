@@ -22,7 +22,23 @@ jest.mock('@/services/api', () => ({
   post: jest.fn(),
 }));
 
+jest.mock('@/services/NotificationService', () => ({
+  __esModule: true,
+  DEFAULT_REMINDER_SETTINGS: {
+    enabled: true,
+    intervalHours: 2,
+    pause: true,
+    water: true,
+    startTime: '09:00',
+    endTime: '18:00',
+    pauseDurationMinutes: 5,
+    exerciseCount: '3-4',
+  },
+  default: { saveSettings: jest.fn(() => Promise.resolve()) },
+}));
+
 import api from '@/services/api';
+import NotificationService from '@/services/NotificationService';
 import RegisterStep3Screen from '../step3';
 
 describe('RegisterStep3Screen', () => {
@@ -102,5 +118,49 @@ describe('RegisterStep3Screen', () => {
     fireEvent.press(getByText('Suivant')); // Changed from 'Valider' to 'Suivant'
 
     expect(await findByText(/Erreur lors de l'inscription/)).toBeTruthy();
+  });
+
+  it('applique les rappels par défaut selon le consentement recueilli', async () => {
+    // L'inscription ne demande qu'un accord : le reste du réglage prend les
+    // valeurs par défaut, pour que les rappels fonctionnent immédiatement.
+    (api.post as jest.Mock).mockResolvedValue({});
+    const { getByTestId, getByLabelText } = render(<RegisterStep3Screen />);
+
+    fireEvent.press(getByTestId('sit-10'));
+    fireEvent.press(getByTestId('activity-leger'));
+    fireEvent.press(getByTestId('reset-yes'));
+    fireEvent.press(getByTestId('drink-no'));
+    fireEvent.press(getByLabelText('Suivant'));
+
+    await waitFor(() => {
+      expect(NotificationService.saveSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          enabled: true,
+          pause: true,
+          water: false,
+          intervalHours: 2,
+          startTime: '09:00',
+          endTime: '18:00',
+        }),
+      );
+    });
+  });
+
+  it("n'échoue pas l'inscription si la planification des rappels échoue", async () => {
+    // L'inscription est déjà validée côté API à ce stade : un échec de
+    // notification ne doit pas la faire apparaître comme perdue.
+    (api.post as jest.Mock).mockResolvedValue({});
+    (NotificationService.saveSettings as jest.Mock).mockRejectedValueOnce(new Error('refusé'));
+    const { getByTestId, getByLabelText } = render(<RegisterStep3Screen />);
+
+    fireEvent.press(getByTestId('sit-10'));
+    fireEvent.press(getByTestId('activity-leger'));
+    fireEvent.press(getByLabelText('Suivant'));
+
+    await waitFor(() => {
+      expect(useRouter().push).toHaveBeenCalledWith(
+        expect.objectContaining({ pathname: '/register/done' }),
+      );
+    });
   });
 });

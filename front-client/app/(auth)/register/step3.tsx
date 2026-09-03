@@ -19,7 +19,9 @@ import {
   findActivityLevel,
   type ActivityLevelId,
 } from '@/constants/registerProfile';
+import { DEFAULT_REMINDER_SETTINGS } from '@/constants/reminderSettings';
 import api from '@/services/api';
+import NotificationService from '@/services/NotificationService';
 import { makeStyles, px } from '@/theme';
 import { toNumber, toText } from '@/utils/searchParams';
 
@@ -77,6 +79,23 @@ export default function RegisterStep3Screen() {
         restReminder,
         drinkReminder,
       });
+
+      // Le consentement recueilli ici suffit à faire fonctionner les rappels :
+      // le reste du réglage prend les valeurs par défaut, que l'utilisateur
+      // affinera dans ses paramètres s'il le souhaite. Un échec de
+      // planification ne doit pas faire échouer une inscription déjà validée
+      // côté API.
+      try {
+        await NotificationService.saveSettings({
+          ...DEFAULT_REMINDER_SETTINGS,
+          enabled: restReminder || drinkReminder,
+          pause: restReminder,
+          water: drinkReminder,
+        });
+      } catch (notificationError) {
+        console.warn('[rappels] planification impossible :', notificationError);
+      }
+
       router.push({
         pathname: '/register/done',
         params: {
@@ -86,6 +105,7 @@ export default function RegisterStep3Screen() {
           taille: toText(taille),
           hourSit: String(hourSit),
           activity: activity ?? '',
+          remindersEnabled: String(restReminder || drinkReminder),
         },
       });
     } catch (e) {

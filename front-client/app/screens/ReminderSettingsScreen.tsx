@@ -1,218 +1,218 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Switch, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import NotificationService, { ReminderSettings } from '../../services/NotificationService';
-import { router, useLocalSearchParams, useRouter } from 'expo-router';import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { View } from 'react-native';
 
-import { getUserId } from '../../context/AuthContext';
-import api from '../../services/api';
+import {
+  Button,
+  Chip,
+  FormMessage,
+  OptionRow,
+  ScrollScreen,
+  Segmented,
+  Text,
+  TextField,
+} from '@/components/ui';
+import {
+  CUSTOM_FREQUENCY_OPTIONS,
+  DEFAULT_REMINDER_SETTINGS,
+  EXERCISE_COUNTS,
+  FREQUENCY_OPTIONS,
+  PAUSE_DURATIONS,
+  type ReminderSettings,
+} from '@/constants/reminderSettings';
+import NotificationService from '@/services/NotificationService';
+import { makeStyles } from '@/theme';
+
+const YES_NO = [
+  { label: 'Oui', value: true },
+  { label: 'Non', value: false },
+];
+
+const useStyles = makeStyles((theme) => ({
+  section: {
+    gap: theme.spacing.xs,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  rowItem: {
+    flex: 1,
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
+  },
+}));
 
 export default function ReminderSettingsScreen() {
-  const [enabled, setEnabled] = useState(false);
-  const [interval, setInterval] = useState(1);
-  const [type, setType] = useState<'pause'|'water'>('pause');
-    const [restReminder, setRestReminder] = useState(false);
-    const [drinkReminder, setDrinkReminder] = useState(false);
-    const [error, setError] = useState('');
   const router = useRouter();
+  const styles = useStyles();
+
+  const [settings, setSettings] = useState<ReminderSettings>(DEFAULT_REMINDER_SETTINGS);
+  const [customFrequency, setCustomFrequency] = useState(false);
+  const [error, setError] = useState('');
+  const [saved, setSaved] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const userId = await getUserId(); // Récupérez l'ID de l'utilisateur
-                     if (!userId) {
-                       router.replace('/screens/LoginScreen');
-                       return;
-                     }
-           const id = parseInt(userId, 10);
-            const { data } = await api.get(`user/me/${id}`);
-                  setRestReminder(data.restReminder);
-            setDrinkReminder(data.drinkReminder);
-
-      const saved = await NotificationService.loadSettings();
-      if (saved) {
-        setEnabled(saved.enabled);
-        setInterval(saved.intervalHours);
-        setType(saved.type);
+      const stored = await NotificationService.loadSettings();
+      if (stored) {
+        setSettings(stored);
+        setCustomFrequency(
+          CUSTOM_FREQUENCY_OPTIONS.some((o) => o.intervalHours === stored.intervalHours),
+        );
       }
     })();
   }, []);
 
-  const save = async () => {
-   const settings: ReminderSettings = { enabled, intervalHours: interval, type };
-   try {
-     await NotificationService.saveSettings(settings);
-     Alert.alert(
-       "Succès",
-       "Paramètres enregistrés !",
-       [{ text: "OK" }],
-       { cancelable: false }
-     );
-    router.push('/(tabs)/pauseActive');
+  /** Applique une modification partielle sans écraser le reste du réglage. */
+  const update = (patch: Partial<ReminderSettings>) =>
+    setSettings((current) => ({ ...current, ...patch }));
 
-   } catch (err) {
-     console.error(err);
-     Alert.alert(
-       "Erreur",
-       "La sauvegarde a échoué, réessaie plus tard.",
-       [{ text: "OK" }],
-       { cancelable: false }
-     );
-   }
-};
+  const handleSave = async () => {
+    setSubmitting(true);
+    setError('');
+    setSaved('');
+    try {
+      await NotificationService.saveSettings(settings);
+      setSaved('Vos rappels ont été mis à jour.');
+    } catch (e) {
+      console.error(e);
+      setError("L'enregistrement a échoué. Réessayez plus tard.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const frequencies = customFrequency ? CUSTOM_FREQUENCY_OPTIONS : FREQUENCY_OPTIONS;
 
   return (
-    <View style={styles.container}>
-        <View style={styles.titleContainer}>
-              <TouchableOpacity onPress={() => router.back()} >
-                <Ionicons name="chevron-back" size={34} color="black" />
-      
-              </TouchableOpacity>
-              <Text style={styles.title}>Modifier mes informations</Text>
-      
-            </View>
-      
-              <Text style={styles.label}>Souhaitez-vous activer les rappels :</Text>
-                <View style={styles.row}>
-                  <Text style={styles.optionText}>Rappel de pause :</Text>
-                  <View style={styles.radioGroup}>
-                  <View style={styles.radioOption}>
-                    <TouchableOpacity
-                    testID='reset-yes'
-                    style={[styles.option, restReminder === true && styles.selectedRadioButton]}
-                    onPress={() => setRestReminder(true)}
-                    />
-                      <Text style={styles.radioText}>Oui</Text>
-                  <TouchableOpacity
-                    testID='reset-no'
-                    style={[styles.option, restReminder === false && styles.selectedRadioButton]}
-                    onPress={() => setRestReminder(false)}
-                  />
-                    <Text style={styles.radioText}>Non</Text>
-                </View>
-                </View>
-                </View>
-      
-                <View style={styles.row}>
-                  <Text style={styles.optionText}>Rappel d'hydratation :</Text>
-                  <View style={styles.radioGroup}>
-                  <View style={styles.radioOption}>
-      
-                    <TouchableOpacity
-                      testID='drink-yes'
-                      style={[styles.option, drinkReminder === true && styles.selectedRadioButton]}
-                      onPress={() => setDrinkReminder(true)}
-                    />
-                      <Text style={styles.radioText}>Oui</Text>
-                    <TouchableOpacity
-                      testID='drink-no'
-                      style={[styles.option, drinkReminder === false && styles.selectedRadioButton]}
-                      onPress={() => setDrinkReminder(false)}
-                    />
-                      <Text style={styles.radioText}>Non</Text>
-                    </View>
-                  </View>
-                </View>  
-      {/* <View style={styles.row}>
-        <Text>Activer rappels</Text>
-        <Switch value={enabled} onValueChange={setEnabled} />
-      </View> */}
-      <View style={styles.row}>
-        <Text  style={{ width: 150, fontSize: 18, }}>Intervalle (heures)</Text>
-        <Picker
-          selectedValue={interval}
-          style={{ width: 100 }}
-          onValueChange={(v) => setInterval(v)}
-        >
-          <Picker.Item label="1h" value={1} />
-          <Picker.Item label="2h" value={2} />
-          <Picker.Item label="3h" value={3} />
-        </Picker>
+    <ScrollScreen>
+      <View>
+        <Text variant="h1">Personnalisez vos pauses</Text>
+        <Text variant="sub">Quand et comment vous souhaitez être relancé.</Text>
       </View>
-      <View style={styles.row}>
-        <Text  style={{ width: 150, fontSize: 18, }}>Type de rappel</Text>
-        <Picker
-          selectedValue={type}
-          style={{ width: 150, fontSize: 18, }}
-          onValueChange={(v) => setType(v as 'pause'|'water')}
-        >
-          <Picker.Item label="Pause Active" value="pause" />
-          <Picker.Item label="Boire de l’eau" value="water" />
-        </Picker>
+
+      <View style={styles.section}>
+        <Text variant="meta">Rappel de pause</Text>
+        <Segmented
+          accessibilityLabel="Rappel de pause"
+          value={settings.pause}
+          onChange={(pause) => update({ pause })}
+          options={[
+            { ...YES_NO[0], testID: 'pause-yes' },
+            { ...YES_NO[1], testID: 'pause-no' },
+          ]}
+        />
       </View>
-       <TouchableOpacity style={styles.buttonSave}>
-              <Text style={styles.buttonText} onPress={save}>Enregistrer</Text>
-            </TouchableOpacity>
-    </View>
+
+      <View style={styles.section}>
+        <Text variant="meta">Rappel d&apos;hydratation</Text>
+        <Segmented
+          accessibilityLabel="Rappel d'hydratation"
+          value={settings.water}
+          onChange={(water) => update({ water })}
+          options={[
+            { ...YES_NO[0], testID: 'water-yes' },
+            { ...YES_NO[1], testID: 'water-no' },
+          ]}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text variant="meta">Fréquence des rappels</Text>
+        {frequencies.map((option) => (
+          <OptionRow
+            key={option.intervalHours}
+            testID={`frequency-${option.intervalHours}`}
+            label={option.label}
+            selected={settings.intervalHours === option.intervalHours}
+            onPress={() => update({ intervalHours: option.intervalHours })}
+          />
+        ))}
+        <OptionRow
+          testID="frequency-custom"
+          label="Personnalisé"
+          selected={customFrequency}
+          onPress={() => setCustomFrequency((value) => !value)}
+        />
+      </View>
+
+      <View style={styles.row}>
+        <View style={styles.rowItem}>
+          <TextField
+            label="À partir de"
+            placeholder="09:00"
+            value={settings.startTime}
+            onChangeText={(startTime) => update({ startTime })}
+            keyboardType="numbers-and-punctuation"
+          />
+        </View>
+        <View style={styles.rowItem}>
+          <TextField
+            label="Jusqu'à"
+            placeholder="18:00"
+            value={settings.endTime}
+            onChangeText={(endTime) => update({ endTime })}
+            keyboardType="numbers-and-punctuation"
+          />
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text variant="meta">Durée idéale d&apos;une pause</Text>
+        <View style={styles.chips}>
+          {PAUSE_DURATIONS.map((minutes) => (
+            <Chip
+              key={minutes}
+              testID={`duration-${minutes}`}
+              label={`${minutes} min`}
+              variant={settings.pauseDurationMinutes === minutes ? 'on' : 'default'}
+              selected={settings.pauseDurationMinutes === minutes}
+              onPress={() => update({ pauseDurationMinutes: minutes })}
+            />
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text variant="meta">Exercices par séance</Text>
+        <View style={styles.chips}>
+          {EXERCISE_COUNTS.map((count) => (
+            <Chip
+              key={count}
+              testID={`exercises-${count}`}
+              label={count}
+              variant={settings.exerciseCount === count ? 'on' : 'default'}
+              selected={settings.exerciseCount === count}
+              onPress={() => update({ exerciseCount: count })}
+            />
+          ))}
+        </View>
+      </View>
+
+      <FormMessage message={error} testID="reminder-error" />
+      <FormMessage message={saved} tone="success" testID="reminder-saved" />
+
+      <Button
+        accessibilityLabel="Valider le profil"
+        title="Valider le profil"
+        size="lg"
+        block
+        loading={submitting}
+        onPress={handleSave}
+      />
+
+      <Button
+        accessibilityLabel="Retour"
+        title="Retour"
+        variant="ghost"
+        block
+        onPress={() => router.back()}
+      />
+    </ScrollScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-    titleContainer: {
-    flexDirection: 'row',
-    width: '100%',
-    paddingHorizontal: 4,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 20,
-    color: '#333',
-  },
-  row:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 12 },
-    label: {
-      fontSize: 18,
-      marginVertical: 10,
-    },
-    option: {
-      padding: 10,
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 5,
-    },
-    selectedOption: {
-      backgroundColor: '#CDFBE2',
-    },
-    optionText: {
-      fontSize: 18,
-
-      color: '#000',
-    },
-    radioGroup: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-    radioOption: {
-      flexDirection: 'row', // Aligne le bouton radio et le texte horizontalement
-      alignItems: 'stretch', // Aligne le texte au centre verticalement
-      marginHorizontal: 0, // Espace entre les options "Oui" et "Non"
-    },
-    radioButton: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 10,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
-      marginHorizontal: 5,
-    },
-    selectedRadioButton: {
-      backgroundColor: '#CDFBE2',
-    },
-    radioText: {
-      marginLeft: 5,
-      marginRight: 8,
-    },
-     buttonSave: {
-    margin: 60,
-    paddingHorizontal: 0,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 28,
-    backgroundColor: '#CDFBE2'
-  },
-  buttonText: { color: '#000', fontSize: 18 },
-
-});

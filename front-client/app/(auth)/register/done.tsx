@@ -5,6 +5,7 @@ import { View } from 'react-native';
 
 import { Button, Card, Divider, ScrollScreen, Text } from '@/components/ui';
 import { findActivityLevel, findSitOption } from '@/constants/registerProfile';
+import { DEFAULT_REMINDER_SETTINGS, findFrequencyLabel } from '@/constants/reminderSettings';
 import { makeStyles, px, useTheme } from '@/theme';
 import { toText } from '@/utils/searchParams';
 
@@ -39,6 +40,9 @@ const useStyles = makeStyles((theme) => ({
     flexShrink: 1,
     textAlign: 'right',
   },
+  note: {
+    textAlign: 'center',
+  },
 }));
 
 /** Une ligne du récapitulatif : intitulé à gauche, valeur à droite. */
@@ -66,6 +70,19 @@ function formatSitting(hourSit: string): string {
 function formatActivity(activity: string): string {
   const level = findActivityLevel(activity);
   return level ? `${level.label} · ${level.description}` : '—';
+}
+
+/**
+ * Les rappels ne sont pas configurés pendant l'inscription : seul le
+ * consentement l'est. Le récapitulatif annonce donc le réglage par défaut
+ * effectivement appliqué, pour que l'utilisateur sache à quoi s'attendre.
+ */
+function formatReminders(enabled: string): string {
+  if (enabled !== 'true') {
+    return 'Désactivés';
+  }
+  const { intervalHours, startTime, endTime } = DEFAULT_REMINDER_SETTINGS;
+  return `${findFrequencyLabel(intervalHours)}, ${startTime} – ${endTime}`;
 }
 
 function formatOrDash(value: string, suffix: string): string {
@@ -119,7 +136,13 @@ export default function RegisterDoneScreen() {
         <SummaryRow label="Temps assis" value={formatSitting(toText(params.hourSit))} />
         <Divider />
         <SummaryRow label="Activité" value={formatActivity(toText(params.activity))} />
+        <Divider />
+        <SummaryRow label="Rappels" value={formatReminders(toText(params.remindersEnabled))} />
       </Card>
+
+      <Text variant="caption" style={styles.note}>
+        Vos rappels sont modifiables à tout moment depuis vos paramètres.
+      </Text>
 
       <Button
         accessibilityLabel="Se connecter"
