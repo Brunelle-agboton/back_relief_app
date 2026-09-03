@@ -12,28 +12,16 @@ import {
   StepProgress,
   Text,
 } from '@/components/ui';
+import {
+  ACTIVITY_LEVELS,
+  REGISTER_STEP_COUNT,
+  SIT_OPTIONS,
+  findActivityLevel,
+  type ActivityLevelId,
+} from '@/constants/registerProfile';
 import api from '@/services/api';
 import { makeStyles, px } from '@/theme';
 import { toNumber, toText } from '@/utils/searchParams';
-
-import { REGISTER_STEP_COUNT } from './step1';
-
-/** Paliers d'heures assises. Le dernier couvre tout ce qui dépasse 12 h. */
-const SIT_OPTIONS = [
-  { hours: 8, label: '8' },
-  { hours: 9, label: '9' },
-  { hours: 10, label: '10' },
-  { hours: 12, label: '12' },
-  { hours: 14, label: 'Plus de 12' },
-];
-
-/** Séances hebdomadaires. Le dernier palier couvre tout ce qui dépasse 3. */
-const TRAINING_OPTIONS = [
-  { times: 1, label: '1' },
-  { times: 2, label: '2' },
-  { times: 3, label: '3' },
-  { times: 4, label: 'Plus de 3' },
-];
 
 const YES_NO = [
   { label: 'Oui', value: true },
@@ -62,12 +50,14 @@ export default function RegisterStep3Screen() {
   const { email, password, userName, age, sexe, poids, taille } = useLocalSearchParams();
 
   const [hourSit, setHourSit] = useState<number | null>(null);
-  const [isExercise, setIsExercise] = useState<boolean | null>(null);
-  const [numberTraining, setNumberTraining] = useState<number | null>(null);
+  const [activity, setActivity] = useState<ActivityLevelId | null>(null);
   const [restReminder, setRestReminder] = useState(false);
   const [drinkReminder, setDrinkReminder] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Le niveau d'activité porte les deux champs attendus par l'API.
+  const activityLevel = activity ? findActivityLevel(activity) : undefined;
 
   const handleRegister = async () => {
     setSubmitting(true);
@@ -82,8 +72,8 @@ export default function RegisterStep3Screen() {
         poids: toNumber(poids),
         taille: toNumber(taille),
         hourSit: Number(hourSit),
-        isExercise,
-        numberTraining: Number(numberTraining),
+        isExercise: activityLevel ? activityLevel.isExercise : null,
+        numberTraining: activityLevel ? activityLevel.numberTraining : 0,
         restReminder,
         drinkReminder,
       });
@@ -95,8 +85,7 @@ export default function RegisterStep3Screen() {
           poids: toText(poids),
           taille: toText(taille),
           hourSit: String(hourSit),
-          isExercise: String(isExercise),
-          numberTraining: String(numberTraining),
+          activity: activity ?? '',
         },
       });
     } catch (e) {
@@ -122,50 +111,34 @@ export default function RegisterStep3Screen() {
 
       <View style={styles.section}>
         <Text variant="meta" style={styles.fieldLabel}>
-          En moyenne, vous êtes assis (heures par jour)
+          En moyenne, vous êtes assis
         </Text>
         {SIT_OPTIONS.map((option) => (
           <OptionRow
-            key={option.hours}
-            testID={`sit-${option.hours}`}
+            key={option.value}
+            testID={`sit-${option.value}`}
             label={option.label}
-            selected={hourSit === option.hours}
-            onPress={() => setHourSit(option.hours)}
+            selected={hourSit === option.value}
+            onPress={() => setHourSit(option.value)}
           />
         ))}
       </View>
 
       <View style={styles.section}>
         <Text variant="meta" style={styles.fieldLabel}>
-          Activité physique régulière ?
+          Niveau d'activité physique
         </Text>
-        <Segmented
-          accessibilityLabel="Activité physique régulière"
-          value={isExercise}
-          onChange={setIsExercise}
-          options={[
-            { ...YES_NO[0], testID: 'exercise-yes' },
-            { ...YES_NO[1], testID: 'exercise-no' },
-          ]}
-        />
+        {ACTIVITY_LEVELS.map((level) => (
+          <OptionRow
+            key={level.id}
+            testID={`activity-${level.id}`}
+            label={level.label}
+            description={level.description}
+            selected={activity === level.id}
+            onPress={() => setActivity(level.id)}
+          />
+        ))}
       </View>
-
-      {isExercise ? (
-        <View style={styles.section}>
-          <Text variant="meta" style={styles.fieldLabel}>
-            Si oui, combien de fois par semaine ?
-          </Text>
-          {TRAINING_OPTIONS.map((option) => (
-            <OptionRow
-              key={option.times}
-              testID={`training-${option.times}`}
-              label={option.label}
-              selected={numberTraining === option.times}
-              onPress={() => setNumberTraining(option.times)}
-            />
-          ))}
-        </View>
-      ) : null}
 
       <View style={styles.section}>
         <Text variant="meta" style={styles.fieldLabel}>

@@ -28,8 +28,7 @@ describe('RegisterDoneScreen', () => {
       age: '30',
       taille: '1.70',
       hourSit: '10',
-      isExercise: 'true',
-      numberTraining: '2',
+      activity: 'leger',
     });
   });
 
@@ -40,24 +39,27 @@ describe('RegisterDoneScreen', () => {
     expect(screen.getByText('john@mail.com')).toBeTruthy();
     expect(screen.getByText('60 kg · 30 ans')).toBeTruthy();
     expect(screen.getByText('1.70 m')).toBeTruthy();
-    expect(screen.getByText('10 h par jour')).toBeTruthy();
-    expect(screen.getByText('2 séances / semaine')).toBeTruthy();
+    expect(screen.getByText('10 h')).toBeTruthy();
+    expect(screen.getByText('Léger · 1 à 2 séances / semaine')).toBeTruthy();
   });
 
-  it('restitue les paliers hauts par leur libellé, pas par leur valeur', () => {
-    // 14 et 4 sont des sentinelles de l'étape 3 : elles signifient « plus de
-    // 12 h » et « plus de 3 séances », et ne doivent pas s'afficher telles quelles.
-    withParams({ hourSit: '14', isExercise: 'true', numberTraining: '4' });
+  it('restitue les tranches par leur libellé, jamais par le nombre qui les code', () => {
+    // 7 et 12 représentent « moins de 8 h » et « plus de 10 h » : ce sont des
+    // valeurs de tranche, elles ne doivent pas s'afficher telles quelles.
+    withParams({ hourSit: '7', activity: 'actif' });
     render(<RegisterDoneScreen />);
 
-    expect(screen.getByText('Plus de 12 h par jour')).toBeTruthy();
-    expect(screen.getByText('Plus de 3 séances / semaine')).toBeTruthy();
+    expect(screen.getByText('Moins de 8 h')).toBeTruthy();
+    expect(screen.queryByText(/^7/)).toBeNull();
+    expect(screen.getByText('Actif · 5 séances / semaine ou plus')).toBeTruthy();
   });
 
-  it('accorde le singulier pour une séance', () => {
-    withParams({ isExercise: 'true', numberTraining: '1' });
+  it('restitue le palier haut du temps assis', () => {
+    withParams({ hourSit: '12', activity: 'sedentaire' });
     render(<RegisterDoneScreen />);
-    expect(screen.getByText('1 séance / semaine')).toBeTruthy();
+
+    expect(screen.getByText('Plus de 10 h')).toBeTruthy();
+    expect(screen.getByText('Sédentaire · Peu ou pas de sport')).toBeTruthy();
   });
 
   it('rend les valeurs absentes lisibles', () => {
@@ -65,7 +67,6 @@ describe('RegisterDoneScreen', () => {
     render(<RegisterDoneScreen />);
 
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
-    expect(screen.getByText('Pas d’activité régulière')).toBeTruthy();
   });
 
   it('remplace l’écran plutôt que de l’empiler en rejoignant la connexion', () => {

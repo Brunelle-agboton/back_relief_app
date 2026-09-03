@@ -4,6 +4,7 @@ import React from 'react';
 import { View } from 'react-native';
 
 import { Button, Card, Divider, ScrollScreen, Text } from '@/components/ui';
+import { findActivityLevel, findSitOption } from '@/constants/registerProfile';
 import { makeStyles, px, useTheme } from '@/theme';
 import { toText } from '@/utils/searchParams';
 
@@ -54,26 +55,17 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Le dernier palier de l'étape 3 couvre tout ce qui dépasse 12 h. */
+/**
+ * Les valeurs transmises à l'API représentent des tranches : le récapitulatif
+ * restitue le libellé choisi, jamais le nombre qui le code.
+ */
 function formatSitting(hourSit: string): string {
-  if (!hourSit || hourSit === 'null') {
-    return '—';
-  }
-  return hourSit === '14' ? 'Plus de 12 h par jour' : `${hourSit} h par jour`;
+  return findSitOption(hourSit)?.label ?? '—';
 }
 
-/** Le dernier palier de l'étape 3 couvre tout ce qui dépasse 3 séances. */
-function formatActivity(isExercise: string, numberTraining: string): string {
-  if (isExercise !== 'true') {
-    return 'Pas d’activité régulière';
-  }
-  if (numberTraining === '4') {
-    return 'Plus de 3 séances / semaine';
-  }
-  if (!numberTraining || numberTraining === 'null') {
-    return 'Activité régulière';
-  }
-  return `${numberTraining} séance${numberTraining === '1' ? '' : 's'} / semaine`;
+function formatActivity(activity: string): string {
+  const level = findActivityLevel(activity);
+  return level ? `${level.label} · ${level.description}` : '—';
 }
 
 function formatOrDash(value: string, suffix: string): string {
@@ -124,12 +116,9 @@ export default function RegisterDoneScreen() {
         <Divider />
         <SummaryRow label="Taille" value={formatOrDash(taille, 'm')} />
         <Divider />
-        <SummaryRow label="Sédentarité" value={formatSitting(toText(params.hourSit))} />
+        <SummaryRow label="Temps assis" value={formatSitting(toText(params.hourSit))} />
         <Divider />
-        <SummaryRow
-          label="Activité"
-          value={formatActivity(toText(params.isExercise), toText(params.numberTraining))}
-        />
+        <SummaryRow label="Activité" value={formatActivity(toText(params.activity))} />
       </Card>
 
       <Button

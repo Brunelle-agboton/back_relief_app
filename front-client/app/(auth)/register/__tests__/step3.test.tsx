@@ -47,21 +47,19 @@ describe('RegisterStep3Screen', () => {
   it('affiche le logo et les champs', () => {
     const { getByText, getByRole } = render(<RegisterStep3Screen />);
     expect(getByText(/En moyenne, vous êtes assis/i)).toBeTruthy();
-    expect(getByText(/Activité physique régulière/i)).toBeTruthy();
+    expect(getByText(/Niveau d'activité physique/i)).toBeTruthy();
     expect(getByText(/Souhaitez-vous activer les rappels/i)).toBeTruthy();
   });
 
   it('envoie les données et navigue vers LoginScreen', async () => {
     (api.post as jest.Mock).mockResolvedValue({});
 
-    const { getByText, getAllByText,getByTestId, findByTestId, getByLabelText } = render(<RegisterStep3Screen />);
-    // Sélectionne "10" heures assis
-    fireEvent.press(getByText('10'));
-    // Sélectionne "Oui" pour activité physique
-    fireEvent.press(getByTestId('exercise-yes'));
-    // Attendre que le bouton training-2 soit présent
-    const training2Btn = await findByTestId('training-2');
-    fireEvent.press(training2Btn);
+    const { getByTestId, getByLabelText } = render(<RegisterStep3Screen />);
+    // Sélectionne "10 h" de temps assis
+    fireEvent.press(getByTestId('sit-10'));
+    // Le niveau d'activité porte désormais `isExercise` et `numberTraining` :
+    // « Léger » vaut une activité régulière à deux séances par semaine.
+    fireEvent.press(getByTestId('activity-leger'));
     // Sélectionne "Oui" pour rappel de pause
     fireEvent.press(getByTestId('reset-yes'));
     // Sélectionne "Non" pour rappel d'hydratation
@@ -96,12 +94,9 @@ describe('RegisterStep3Screen', () => {
 
   it('affiche une erreur si l\'API échoue', async () => {
     (api.post as jest.Mock).mockRejectedValue(new Error('fail'));
-    const { getByText, getAllByText, findByText, getByTestId, findByTestId } = render(<RegisterStep3Screen />);
-    fireEvent.press(getByText('10'));
-    fireEvent.press(getAllByText('Oui')[0]);
-    fireEvent.press(getByTestId('exercise-yes'));
-    const training2Btn = await findByTestId('training-2');
-    fireEvent.press(training2Btn);
+    const { getByText, findByText, getByTestId } = render(<RegisterStep3Screen />);
+    fireEvent.press(getByTestId('sit-10'));
+    fireEvent.press(getByTestId('activity-leger'));
     fireEvent.press(getByTestId('reset-yes'));
     fireEvent.press(getByTestId('drink-no'));
     fireEvent.press(getByText('Suivant')); // Changed from 'Valider' to 'Suivant'

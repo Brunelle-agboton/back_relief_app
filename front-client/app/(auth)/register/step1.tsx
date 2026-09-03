@@ -11,10 +11,8 @@ import {
   Text,
   TextField,
 } from '@/components/ui';
+import { REGISTER_STEP_COUNT } from '@/constants/registerProfile';
 import { makeStyles, px } from '@/theme';
-
-/** Le parcours d'inscription patient compte trois étapes. */
-export const REGISTER_STEP_COUNT = 3;
 
 const useStyles = makeStyles((theme) => ({
   // Médaillon de l'écran de bienvenue du design : disque d'aplat clair.

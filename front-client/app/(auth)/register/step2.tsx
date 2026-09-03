@@ -12,9 +12,8 @@ import {
   Text,
   TextField,
 } from '@/components/ui';
+import { REGISTER_STEP_COUNT } from '@/constants/registerProfile';
 import { makeStyles, px } from '@/theme';
-
-import { REGISTER_STEP_COUNT } from './step1';
 
 /**
  * Les libellés servent aussi de valeurs : c'est ce que l'API attend pour
