@@ -26,7 +26,7 @@ export default function UserInfos2() {
     (async () => {
      const userId = await getUserId(); // Récupérez l'ID de l'utilisateur
                if (!userId) {
-                 router.replace('/screens/LoginScreen');
+                 router.replace('/(auth)/login');
                  return;
                }
      const id = parseInt(userId, 10);

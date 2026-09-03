@@ -192,19 +192,19 @@ function RootLayout() {
             <Stack.Screen 
               name="screens/UserInfos1" 
               options={{
-                headerLeft: () => <></>,
+                headerLeft: () => <BackButton />,
                 headerTitle: 'Compte', 
                 headerTitleAlign: 'center', 
                 headerStyle: { backgroundColor: '#CDFBE2' } }}/>
             <Stack.Screen 
               name="screens/UserInfos2" 
               options={{
-                headerLeft: () => <></>,
+                headerLeft: () => <BackButton />,
                 headerTitle: 'Informations', 
                 headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>
             <Stack.Screen name="screens/ReminderSettingsScreen" 
               options={{ 
-                headerLeft: () => <></>,
+                headerLeft: () => <BackButton />,
                 headerTitle: 'Notifications', 
                 headerTitleAlign: 'center', 
                 headerStyle: { backgroundColor: '#CDFBE2' }}}/>      
