@@ -42,7 +42,10 @@ const renderAppointment = ({ item }: { item: Appointment }) => {
 
 export default function ProDashboard() {
   const router = useRouter();
-  const { profile, loading: loadingProfile, refetch: refetchProfile } = usePractitioner();
+  // `PractitionerContext` expose `isLoading` et `refetchProfile` : les noms
+  // employés jusqu'ici valaient `undefined`, si bien que l'indicateur de
+  // chargement ne se coupait jamais et que le rafraîchissement aurait levé.
+  const { profile, isLoading: loadingProfile, refetchProfile } = usePractitioner();
   const { authState, isLoading } = useAuth();
 
   const [interviewAppointments, setInterviewAppointments] = useState<Appointment[]>([]);
@@ -92,7 +95,12 @@ export default function ProDashboard() {
     
 
   const fetchInterviewAppointments = useCallback(async () => {
-    if (!authState.user?.sub) return;
+    if (!authState.user?.sub) {
+      // Sans utilisateur, il n'y a rien à charger — mais l'indicateur doit
+      // quand même être relâché, sans quoi l'écran tourne indéfiniment.
+      setLoadingInterviews(false);
+      return;
+    }
     try {
       setLoadingInterviews(true);
       const response = await api.get<Appointment[]>(`/appointments/as-patient/${authState.user.sub}`);
