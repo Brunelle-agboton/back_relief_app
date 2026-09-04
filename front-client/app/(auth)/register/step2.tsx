@@ -71,6 +71,9 @@ export default function RegisterStep2Screen() {
   const [taille, setTaille] = useState('');
   const [poids, setPoids] = useState('');
 
+  // Même règle qu'à l'étape 3 : sans ces réponses, l'API recevrait `NaN`.
+  const canSubmit = !!sexe && !!age.trim() && !!taille.trim() && !!poids.trim();
+
   const handleNext = () => {
     router.push({
       pathname: '/register/step3',
@@ -159,6 +162,7 @@ export default function RegisterStep2Screen() {
             title="Suivant"
             size="lg"
             block
+            disabled={!canSubmit}
             onPress={handleNext}
           />
         </View>

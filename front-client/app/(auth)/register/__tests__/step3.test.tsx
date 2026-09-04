@@ -120,6 +120,23 @@ describe('RegisterStep3Screen', () => {
     expect(await findByText(/Erreur lors de l'inscription/)).toBeTruthy();
   });
 
+  it('refuse une soumission incomplète', () => {
+    // Sans garde, l'API recevait `hourSit: 0` et `isExercise: null`, et le
+    // récapitulatif n'avait qu'un tiret à afficher.
+    const { getByLabelText, getByTestId } = render(<RegisterStep3Screen />);
+
+    fireEvent.press(getByLabelText('Suivant'));
+    expect(api.post).not.toHaveBeenCalled();
+
+    // Le temps assis seul ne suffit pas : le niveau d'activité est requis.
+    fireEvent.press(getByTestId('sit-10'));
+    fireEvent.press(getByLabelText('Suivant'));
+    expect(api.post).not.toHaveBeenCalled();
+
+    fireEvent.press(getByTestId('activity-leger'));
+    expect(getByLabelText('Suivant')).toHaveAccessibilityState({ disabled: false });
+  });
+
   it('applique les rappels par défaut selon le consentement recueilli', async () => {
     // L'inscription ne demande qu'un accord : le reste du réglage prend les
     // valeurs par défaut, pour que les rappels fonctionnent immédiatement.

@@ -44,6 +44,19 @@ describe('step2', () => {
     expect(screen.getByTestId('radio-nonbinaire')).toBeTruthy();
   });
 
+  it('refuse une soumission incomplète', () => {
+    // Sans garde, l'API recevait `NaN` pour l'âge, la taille et le poids.
+    render(<RegisterStep2Screen />);
+
+    fireEvent.press(screen.getByLabelText('Suivant'));
+    expect(mockPush).not.toHaveBeenCalled();
+
+    fireEvent.press(screen.getByTestId('radio-femme'));
+    fireEvent.changeText(screen.getByPlaceholderText('Âge'), '30');
+    fireEvent.press(screen.getByLabelText('Suivant'));
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
   it('navigue vers RegisterStep3Screen avec les bonnes valeurs', () => {
     render(<RegisterStep2Screen />);
     // Sélectionne "Femme"

@@ -26,8 +26,9 @@ const useStyles = makeStyles((theme) => ({
     paddingLeft: px(14),
     paddingRight: px(14),
   },
+  // Réserve la place du révélateur, qui se superpose au champ.
   fieldWithToggle: {
-    paddingRight: px(6),
+    paddingRight: TOGGLE_SIZE + px(6),
   },
   focused: {
     borderColor: theme.colors.focus,
@@ -46,10 +47,15 @@ const useStyles = makeStyles((theme) => ({
     // afin que le rembourrage du champ reste celui du design.
     padding: 0,
   },
+  // Positionné hors du flux : mesurant 37.5 pt, il rendait sinon le champ de
+  // mot de passe plus haut que les autres, l'interligne du texte n'en faisant
+  // que 22. Sa zone tactile couvre toute la hauteur du champ, donc les 44 pt.
   toggle: {
+    position: 'absolute',
+    right: px(6),
+    top: 0,
+    bottom: 0,
     width: TOGGLE_SIZE,
-    height: TOGGLE_SIZE,
-    borderRadius: TOGGLE_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -134,9 +140,6 @@ export function TextField({
             accessibilityRole="button"
             accessibilityLabel={revealed ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
             onPress={() => setRevealed((value) => !value)}
-            // Le disque fait 37.5 pt : `hitSlop` porte la zone tactile aux 44 pt
-            // exigés sans grossir le repère visuel prévu par le design.
-            hitSlop={4}
             style={({ pressed }) => [styles.toggle, pressed && styles.togglePressed]}
           >
             <Ionicons

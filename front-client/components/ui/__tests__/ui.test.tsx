@@ -159,6 +159,17 @@ describe('TextField — révélation du mot de passe', () => {
     expect(screen.getByLabelText('Masquer le mot de passe')).toBeTruthy();
   });
 
+  it('ne rend pas le champ plus haut que les autres', () => {
+    // Le révélateur mesure 37.5 pt là où l'interligne du texte en fait 22 :
+    // dans le flux, il rendait le champ de mot de passe visiblement plus haut
+    // que celui de l'e-mail, juste au-dessus.
+    render(<TextField placeholder="Mot de passe" secureTextEntry />);
+
+    expect(screen.getByLabelText('Afficher le mot de passe')).toHaveStyle({
+      position: 'absolute',
+    });
+  });
+
   it('n’affiche pas le révélateur sur un champ ordinaire', () => {
     render(<TextField label="Email" placeholder="Email" />);
     expect(screen.queryByLabelText('Afficher le mot de passe')).toBeNull();

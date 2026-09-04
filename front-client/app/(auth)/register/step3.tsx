@@ -61,6 +61,11 @@ export default function RegisterStep3Screen() {
   // Le niveau d'activité porte les deux champs attendus par l'API.
   const activityLevel = activity ? findActivityLevel(activity) : undefined;
 
+  // Le design conditionne chaque étape à ses réponses. Sans cela l'écran
+  // acceptait une soumission vide : l'API recevait `hourSit: 0` et
+  // `isExercise: null`, et le récapitulatif n'avait rien à afficher.
+  const canSubmit = hourSit !== null && activityLevel !== undefined;
+
   const handleRegister = async () => {
     setSubmitting(true);
     try {
@@ -211,6 +216,7 @@ export default function RegisterStep3Screen() {
             title="Suivant"
             size="lg"
             block
+            disabled={!canSubmit}
             loading={submitting}
             onPress={handleRegister}
           />
