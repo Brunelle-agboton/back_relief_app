@@ -1,96 +1,101 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import React from 'react';
+import { Image, Pressable, View } from 'react-native';
 
-type RootStackParamList = {
-  '/(auth)/register/step1': undefined;
-  '/(auth)/login': undefined;
-};
+import { Button, ScrollScreen, Text } from '@/components/ui';
+import { makeStyles, px } from '@/theme';
+
+const BADGE = px(84);
+
+const useStyles = makeStyles((theme) => ({
+  // `OnbWelcome` : médaillon d'aplat clair, illustration centrée.
+  badge: {
+    width: BADGE,
+    height: BADGE,
+    borderRadius: BADGE / 2,
+    backgroundColor: theme.colors.accentSoft,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: px(58),
+    height: px(58),
+    resizeMode: 'contain',
+  },
+  intro: {
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  centered: {
+    textAlign: 'center',
+  },
+  actions: {
+    gap: theme.spacing.sm,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: theme.spacing.xxs,
+  },
+}));
 
 export default function Home() {
   const router = useRouter();
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const styles = useStyles();
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Bienvenue</Text>
-      <Text style={styles.subtitle}>sur BackRelief Play</Text>
-      <Text style={styles.description}>
-        votre allié santé pour réduire les douleurs liées à la sédentarité et améliorer votre bien-être au quotidien.
-      </Text>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.SignupButton}
-          onPress={() =>  router.push('/(auth)/register/step1')} // Redirection vers la page d'inscription
-        >
-          {/* S'inscrire */}
-          <Text style={styles.buttonText}>Je suis un particulier</Text> 
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() =>  router.push('/(auth)/login')} // Redirection vers la page de connexion
-        >
-          {/* Se connecter */}
-          <Text style={styles.buttonText}>Je suis un professionnel</Text>
-        </TouchableOpacity>
+    <ScrollScreen centered>
+      <View style={styles.badge}>
+        <Image source={require('@/assets/images/icon.png')} style={styles.logo} />
       </View>
-    </View>
+
+      <View style={styles.intro}>
+        <Text variant="h1" style={styles.centered}>
+          Bienvenue sur BackRelief
+        </Text>
+        <Text variant="sub" style={styles.centered}>
+          Quelques informations suffisent pour personnaliser vos pauses actives et suivre vos
+          progrès.
+        </Text>
+      </View>
+
+      <View style={styles.actions}>
+        <Button
+          accessibilityLabel="Je suis un particulier"
+          title="Je suis un particulier"
+          size="lg"
+          block
+          onPress={() => router.push('/(auth)/register/step1')}
+        />
+        <Button
+          accessibilityLabel="Je suis un professionnel"
+          title="Je suis un professionnel"
+          variant="secondary"
+          size="lg"
+          block
+          onPress={() => router.push('/(auth)/login')}
+        />
+      </View>
+
+      {/*
+        Le design conclut sur ce rappel, absent de l'écran jusqu'ici : un patient
+        déjà inscrit n'avait aucune entrée évidente, les deux boutons annonçant
+        une création de compte.
+      */}
+      <View style={styles.footer}>
+        <Text variant="sub">Déjà un compte ?</Text>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel="Se connecter"
+          onPress={() => router.push('/(auth)/login')}
+        >
+          <Text variant="bodyStrong" color="accentDeep">
+            Se connecter
+          </Text>
+        </Pressable>
+      </View>
+    </ScrollScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#32CD32', // Couleur de fond similaire à l'image
-    padding: 20,
-  },
-  title: {
-    fontSize: 52,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 38,
-  },
-  subtitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 36,
-  },
-  description: {
-    fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 62,
-  },
-  buttonContainer: {
-    flexDirection: 'column',
-    gap: 46,
-  },
-  button: {
-    width: '100%',
-    alignItems: 'center',
-    // borderWidth: 1,
-    borderColor: '#f8bb54',
-    backgroundColor: '#fff',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 28,
-  },
-  SignupButton: {
-    width: '100%',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    // borderWidth: 1,
-    // borderColor: '#ED6A5E',
-    paddingVertical: 14,
-    paddingHorizontal: 34,
-    borderRadius: 28,
-  },
-  buttonText: {
-    color: '#32CD32',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});

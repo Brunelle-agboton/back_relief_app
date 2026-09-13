@@ -1,5 +1,5 @@
 import { initSentry, Sentry } from '../utils/sentry';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 
 initSentry();
 import {
@@ -19,34 +19,107 @@ import { AuthProvider } from '../context/AuthContext';
 import { SocketProvider } from '../context/SocketContext';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import 'react-native-reanimated';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import NotificationService from '../services/NotificationService';
 import BackButton from '../components/BackButton';
-import { useColorScheme } from '@/hooks/useColorScheme';
 
 
 import { SafeAreaView } from 'react-native-safe-area-context'; // Importation ajoutée
+import { ThemeProvider, toNavigationTheme, useTheme } from '@/theme';
+
+/**
+ * Relaie le thème applicatif vers React Navigation (fonds d'écran, en-têtes,
+ * transitions) et vers la barre d'état système.
+ *
+ * Ce composant est distinct de `RootLayout` parce qu'il doit être *sous* le
+ * `ThemeProvider` pour pouvoir appeler `useTheme()`.
+ */
+function ThemedChrome({ children }: { children: ReactNode }) {
+  const theme = useTheme();
+
+  return (
+    <NavigationThemeProvider value={toNavigationTheme(theme)}>
+      {children}
+      <StatusBar style={theme.statusBarStyle} />
+    </NavigationThemeProvider>
+  );
+}
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+/**
+ * Délai au-delà duquel l'app démarre sans attendre les polices.
+ *
+ * `useFonts` peut ne jamais se résoudre — fichier illisible par la plateforme,
+ * module natif absent d'un build de développement obsolète. Sans cette borne,
+ * l'écran de démarrage reste affiché indéfiniment et l'app paraît figée sans
+ * qu'aucune erreur n'apparaisse dans le terminal.
+ */
+const FONT_LOADING_TIMEOUT_MS = 4000;
 
 function RootLayout() {
     const router = useRouter();
     const [lastNotification, setLastNotification] = useState<Notifications.Notification | null>(null);
 
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
+  // Les clés doivent correspondre exactement aux familles déclarées dans
+  // `theme/tokens/typography.ts`. Lexend est fourni en police variable : les
+  // quatre instances statiques en sont extraites, React Native ne sachant pas
+  // sélectionner une graisse dans un fichier variable.
+  const [fontsLoaded, fontError] = useFonts({
+    'Lexend-Regular': require('../assets/fonts/Lexend-Regular.ttf'),
+    'Lexend-Medium': require('../assets/fonts/Lexend-Medium.ttf'),
+    'Lexend-SemiBold': require('../assets/fonts/Lexend-SemiBold.ttf'),
+    'Lexend-Bold': require('../assets/fonts/Lexend-Bold.ttf'),
+    'AtkinsonHyperlegible-Regular': require('../assets/fonts/AtkinsonHyperlegible-Regular.ttf'),
+    'AtkinsonHyperlegible-Bold': require('../assets/fonts/AtkinsonHyperlegible-Bold.ttf'),
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
+  const [fontTimeout, setFontTimeout] = useState(false);
 
+  // Les polices sont un enrichissement, jamais un prérequis : chaque variante
+  // typographique porte aussi sa graisse, si bien qu'un repli sur la police
+  // système reste lisible et correctement hiérarchisé.
+  const ready = fontsLoaded || !!fontError || fontTimeout;
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      return;
+    }
+    const timer = setTimeout(() => setFontTimeout(true), FONT_LOADING_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [fontsLoaded]);
+
+  useEffect(() => {
+    if (fontError) {
+      console.error(
+        '[polices] chargement impossible, repli sur les polices système :',
+        fontError,
+      );
+    }
+  }, [fontError]);
+
+  useEffect(() => {
+    if (!fontsLoaded && ready) {
+      console.warn(
+        `[polices] démarrage sans les polices après ${FONT_LOADING_TIMEOUT_MS} ms.`,
+      );
+    }
+  }, [fontsLoaded, ready]);
+
+  useEffect(() => {
+    if (ready) {
+      // Rejette si l'écran est déjà masqué : sans garde, l'exception remonte
+      // et masque la vraie cause d'un démarrage anormal.
+      SplashScreen.hideAsync().catch(() => undefined);
+    }
+  }, [ready]);
+
+  useEffect(() => {
     (async () => {
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== 'granted') {
@@ -91,16 +164,19 @@ function RootLayout() {
       setTimeout(() => setLastNotification(null), 5000);
     });
     return () => sub.remove();
-  }, [loaded]);
+    // Cet effet n'a plus à dépendre du chargement des polices : il s'exécutait
+    // deux fois, enregistrant deux fois l'écouteur de notification tapée.
+  }, [router]);
 
-  if (!loaded) {
+  if (!ready) {
     return null;
   }
 
   return (
     <ErrorBoundary>
     <SafeAreaView style={{ flex: 1 }}>
-      <ThemeProvider value={ DefaultTheme}>
+      <ThemeProvider>
+        <ThemedChrome>
         <AuthProvider>
           <SocketProvider>
           <Stack>
@@ -116,19 +192,19 @@ function RootLayout() {
             <Stack.Screen 
               name="screens/UserInfos1" 
               options={{
-                headerLeft: () => <></>,
+                headerLeft: () => <BackButton />,
                 headerTitle: 'Compte', 
                 headerTitleAlign: 'center', 
                 headerStyle: { backgroundColor: '#CDFBE2' } }}/>
             <Stack.Screen 
               name="screens/UserInfos2" 
               options={{
-                headerLeft: () => <></>,
+                headerLeft: () => <BackButton />,
                 headerTitle: 'Informations', 
                 headerTitleAlign: 'center', headerStyle: { backgroundColor: '#CDFBE2' }}}/>
             <Stack.Screen name="screens/ReminderSettingsScreen" 
               options={{ 
-                headerLeft: () => <></>,
+                headerLeft: () => <BackButton />,
                 headerTitle: 'Notifications', 
                 headerTitleAlign: 'center', 
                 headerStyle: { backgroundColor: '#CDFBE2' }}}/>      
@@ -152,9 +228,9 @@ function RootLayout() {
             />
             <Stack.Screen name="+not-found" />
           </Stack>
-          <StatusBar style="auto" />
         </SocketProvider>
         </AuthProvider>
+        </ThemedChrome>
       </ThemeProvider>
     </SafeAreaView>
     </ErrorBoundary>

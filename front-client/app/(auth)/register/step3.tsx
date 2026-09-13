@@ -1,290 +1,227 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { View, TextInput, Pressable, Text, Image } from 'react-native';
-import { StyleSheet, TouchableOpacity } from 'react-native';
-import { useNavigation, NavigationProp, useRoute, RouteProp } from '@react-navigation/native';
-import api from '@/services/api';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { View } from 'react-native';
 
-type RootStackParamList = {
-  '/(auth)/login': undefined;
-  '/(auth)/register/step3': {
-    email: string;
-    password: string;
-    userName: string;
-    age: string;
-    sexe: string;
-    poids: string;
-    taille: string;
-  };
-}
+import {
+  Button,
+  FormMessage,
+  OptionRow,
+  ScrollScreen,
+  Segmented,
+  StepHeader,
+  StepProgress,
+  Text,
+} from '@/components/ui';
+import {
+  ACTIVITY_LEVELS,
+  REGISTER_STEP_COUNT,
+  SIT_OPTIONS,
+  findActivityLevel,
+  type ActivityLevelId,
+} from '@/constants/registerProfile';
+import { DEFAULT_REMINDER_SETTINGS } from '@/constants/reminderSettings';
+import api from '@/services/api';
+import NotificationService from '@/services/NotificationService';
+import { makeStyles, px } from '@/theme';
+import { toNumber, toText } from '@/utils/searchParams';
+
+const YES_NO = [
+  { label: 'Oui', value: true },
+  { label: 'Non', value: false },
+];
+
+const useStyles = makeStyles((theme) => ({
+  section: {
+    gap: theme.spacing.xs,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  actionItem: {
+    flex: 1,
+  },
+  fieldLabel: {
+    marginBottom: px(2),
+  },
+}));
 
 export default function RegisterStep3Screen() {
-    const router = useRouter();
-  
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, '/(auth)/register/step3'>>();
+  const router = useRouter();
+  const styles = useStyles();
   const { email, password, userName, age, sexe, poids, taille } = useLocalSearchParams();
 
-  const [hourSit, setHourSit] = useState('');
-  const [isExercise, setIsExercise] = useState<boolean | null>(null);
-  const [numberTraining, setNumberTraining] = useState('');
+  const [hourSit, setHourSit] = useState<number | null>(null);
+  const [activity, setActivity] = useState<ActivityLevelId | null>(null);
   const [restReminder, setRestReminder] = useState(false);
   const [drinkReminder, setDrinkReminder] = useState(false);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Le niveau d'activité porte les deux champs attendus par l'API.
+  const activityLevel = activity ? findActivityLevel(activity) : undefined;
+
+  // Le design conditionne chaque étape à ses réponses. Sans cela l'écran
+  // acceptait une soumission vide : l'API recevait `hourSit: 0` et
+  // `isExercise: null`, et le récapitulatif n'avait rien à afficher.
+  const canSubmit = hourSit !== null && activityLevel !== undefined;
 
   const handleRegister = async () => {
+    setSubmitting(true);
     try {
       await api.post('/user/register', {
-        email,
-        password,
-        userName,
+        email: toText(email),
+        password: toText(password),
+        userName: toText(userName),
         role: 'user',
-        age: parseInt(age, 10),
-        sexe,
-        poids: parseInt(poids, 10),
-        taille: parseInt(taille, 10),
-        hourSit: parseInt(hourSit, 10),
-        isExercise,
-        numberTraining: parseInt(numberTraining, 10),
+        age: toNumber(age),
+        sexe: toText(sexe),
+        poids: toNumber(poids),
+        taille: toNumber(taille),
+        hourSit: Number(hourSit),
+        isExercise: activityLevel ? activityLevel.isExercise : null,
+        numberTraining: activityLevel ? activityLevel.numberTraining : 0,
         restReminder,
         drinkReminder,
       });
-      router.push('/login');
-      
+
+      // Le consentement recueilli ici suffit à faire fonctionner les rappels :
+      // le reste du réglage prend les valeurs par défaut, que l'utilisateur
+      // affinera dans ses paramètres s'il le souhaite. Un échec de
+      // planification ne doit pas faire échouer une inscription déjà validée
+      // côté API.
+      try {
+        await NotificationService.saveSettings({
+          ...DEFAULT_REMINDER_SETTINGS,
+          enabled: restReminder || drinkReminder,
+          pause: restReminder,
+          water: drinkReminder,
+        });
+      } catch (notificationError) {
+        console.warn('[rappels] planification impossible :', notificationError);
+      }
+
+      router.push({
+        pathname: '/register/done',
+        params: {
+          email: toText(email),
+          age: toText(age),
+          poids: toText(poids),
+          taille: toText(taille),
+          hourSit: String(hourSit),
+          activity: activity ?? '',
+          remindersEnabled: String(restReminder || drinkReminder),
+        },
+      });
     } catch (e) {
-      setError('Erreur lors de l\'inscription');
+      setError("Erreur lors de l'inscription");
+    } finally {
+      setSubmitting(false);
     }
   };
-  
+
   const handleBack = () => {
     router.back();
   };
 
   return (
-    <View style={styles.container}>
-        <Image
-        source={require('@/assets/images/icon.png')}
-        style={styles.logo}
-      />
-        <Text style={styles.label}>En moyenne, vous êtes assis :</Text>
-        <View style={styles.row}>
-        {[8, 9, 10, 12, 14].map((hours) => (
-            <TouchableOpacity
-            key={hours}
-            style={[styles.option, parseInt(hourSit, 10) === hours && styles.selectedOption]}
-            onPress={() => setHourSit(hours.toString())}
-            >
-            <Text style={styles.optionText}>{hours === 14 ? 'Plus de 12' : hours}</Text>
-            </TouchableOpacity>
+    <ScrollScreen>
+      <StepHeader step={2} count={REGISTER_STEP_COUNT} onBack={handleBack} />
+      <StepProgress step={2} count={REGISTER_STEP_COUNT} />
+
+      <View>
+        <Text variant="h1">Votre quotidien</Text>
+        <Text variant="sub">Ces réponses ajustent la fréquence de vos pauses.</Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text variant="meta" style={styles.fieldLabel}>
+          En moyenne, vous êtes assis
+        </Text>
+        {SIT_OPTIONS.map((option) => (
+          <OptionRow
+            key={option.value}
+            testID={`sit-${option.value}`}
+            label={option.label}
+            selected={hourSit === option.value}
+            onPress={() => setHourSit(option.value)}
+          />
         ))}
+      </View>
 
+      <View style={styles.section}>
+        <Text variant="meta" style={styles.fieldLabel}>
+          Niveau d'activité physique
+        </Text>
+        {ACTIVITY_LEVELS.map((level) => (
+          <OptionRow
+            key={level.id}
+            testID={`activity-${level.id}`}
+            label={level.label}
+            description={level.description}
+            selected={activity === level.id}
+            onPress={() => setActivity(level.id)}
+          />
+        ))}
+      </View>
+
+      <View style={styles.section}>
+        <Text variant="meta" style={styles.fieldLabel}>
+          Souhaitez-vous activer les rappels :
+        </Text>
+
+        <Text variant="bodySm" color="ink2">
+          Rappel de pause
+        </Text>
+        <Segmented
+          accessibilityLabel="Rappel de pause"
+          value={restReminder}
+          onChange={setRestReminder}
+          options={[
+            { ...YES_NO[0], testID: 'reset-yes' },
+            { ...YES_NO[1], testID: 'reset-no' },
+          ]}
+        />
+
+        <Text variant="bodySm" color="ink2">
+          Rappel d'hydratation
+        </Text>
+        <Segmented
+          accessibilityLabel="Rappel d'hydratation"
+          value={drinkReminder}
+          onChange={setDrinkReminder}
+          options={[
+            { ...YES_NO[0], testID: 'drink-yes' },
+            { ...YES_NO[1], testID: 'drink-no' },
+          ]}
+        />
+      </View>
+
+      <FormMessage message={error} testID="step3-error" />
+
+      <View style={styles.actions}>
+        <View style={styles.actionItem}>
+          <Button
+            accessibilityLabel="Précédent"
+            title="Précédent"
+            variant="secondary"
+            size="lg"
+            block
+            onPress={handleBack}
+          />
         </View>
-
-        <Text style={styles.label}>Activité physique régulière ?</Text>
-        <View style={styles.row}>
-            <TouchableOpacity
-            testID="exercise-yes"
-                style={[styles.option, isExercise === true ? styles.selectedOption : null]}
-                onPress={() => setIsExercise(true)}
-            />
-            <Text >Oui</Text>
-            <TouchableOpacity
-            testID="exercise-no"
-                style={[styles.option, isExercise === false && styles.selectedOption]}
-                onPress={() => setIsExercise(false)}
-            />
-            <Text style={styles.radioText}>Non</Text>
+        <View style={styles.actionItem}>
+          <Button
+            accessibilityLabel="Suivant"
+            title="Suivant"
+            size="lg"
+            block
+            disabled={!canSubmit}
+            loading={submitting}
+            onPress={handleRegister}
+          />
         </View>
-
-        {isExercise && (
-        <>
-            <Text style={styles.label}>Si oui, combien de fois par semaine ?</Text>
-            <View style={styles.row}>
-            {[1, 2, 3, 4].map((times) => (
-                <TouchableOpacity
-                key={times}
-                testID={`training-${times}`}
-                style={[styles.option, parseInt(numberTraining, 10) === times && styles.selectedOption]}
-                onPress={() => setNumberTraining(times.toString())}
-                >
-                <Text style={styles.optionText}>{times === 4 ? 'Plus de 3' : times}</Text>
-                </TouchableOpacity>
-            ))}
-            </View>
-        </>
-        )}
-
-        <Text style={styles.label}>Souhaitez-vous activer les rappels :</Text>
-          <View style={styles.row}>
-            <Text style={styles.optionText}>Rappel de pause :</Text>
-            <View style={styles.radioGroup}>
-            <View style={styles.radioOption}>
-              <TouchableOpacity
-              testID='reset-yes'
-              style={[styles.option, restReminder === true && styles.selectedRadioButton]}
-              onPress={() => setRestReminder(true)}
-              />
-                <Text style={styles.radioText}>Oui</Text>
-            <TouchableOpacity
-              testID='reset-no'
-              style={[styles.option, restReminder === false && styles.selectedRadioButton]}
-              onPress={() => setRestReminder(false)}
-            />
-              <Text style={styles.radioText}>Non</Text>
-          </View>
-          </View>
-          </View>
-
-          <View style={styles.row}>
-            <Text style={styles.optionText}>Rappel d'hydratation :</Text>
-            <View style={styles.radioGroup}>
-            <View style={styles.radioOption}>
-
-              <TouchableOpacity
-                testID='drink-yes'
-                style={[styles.option, drinkReminder === true && styles.selectedRadioButton]}
-                onPress={() => setDrinkReminder(true)}
-              />
-                <Text style={styles.radioText}>Oui</Text>
-              <TouchableOpacity
-                testID='drink-no'
-                style={[styles.option, drinkReminder === false && styles.selectedRadioButton]}
-                onPress={() => setDrinkReminder(false)}
-              />
-                <Text style={styles.radioText}>Non</Text>
-              </View>
-            </View>
-          </View>  
-        
-     <View style={styles.rowRight}>
-            <Pressable
-              onPress={handleBack}
-              style={({ pressed }) => [
-                styles.button,
-                styles.buttonSmall,
-                pressed && styles.pressed,
-                { marginRight: 18 } // espace entre les deux boutons
-              ]}
-              accessibilityLabel="Précédent"
-            >
-              <Text style={styles.buttonText}>Précédent</Text>
-            </Pressable>
-    
-            <Pressable
-              onPress={handleRegister}
-              style={({ pressed }) => [
-                styles.button,
-                pressed && styles.pressed
-              ]}
-              accessibilityLabel="Suivant"
-            >
-              <Text style={styles.buttonText}>Suivant</Text>
-            </Pressable>
-          </View>
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-        </View>
+      </View>
+    </ScrollScreen>
   );
 }
-const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      padding: 20,
-      marginTop:60,
-
-      backgroundColor: '#fff',
-    },
-    label: {
-      fontSize: 16,
-      marginVertical: 10,
-    },
-    row: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      marginVertical: 10,
-    },
-    option: {
-      padding: 10,
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 5,
-    },
-    selectedOption: {
-      backgroundColor: '#CDFBE2',
-    },
-    optionText: {
-      color: '#000',
-    },
-    radioGroup: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-    radioOption: {
-      flexDirection: 'row', // Aligne le bouton radio et le texte horizontalement
-      alignItems: 'stretch', // Aligne le texte au centre verticalement
-      marginHorizontal: 0, // Espace entre les options "Oui" et "Non"
-    },
-    radioButton: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 10,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
-      marginHorizontal: 5,
-    },
-    selectedRadioButton: {
-      backgroundColor: '#CDFBE2',
-    },
-    radioText: {
-      marginLeft: 5,
-      marginRight: 8,
-    },
-    error: {
-      color: 'red',
-      marginTop: 10,
-    },
-    logo: {
-    width: 90,
-    height: 90,
-    resizeMode: 'contain',
-    alignSelf: 'center',
-    marginBottom: 8,
-    marginTop: 16,
-  },
-  
- rowRight: {
-    width: '100%',
-    alignItems: 'flex-end',
-    marginTop: 32,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  button: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 30,
-    paddingVertical: 12,
-    paddingHorizontal: 26,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonSmall: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-  pressed: {
-    transform: [{ scale: 0.985 }],
-    shadowOpacity: 0.04,
-    elevation: 3,
-  },
-  buttonText: {
-    color: '#6b6b6b',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-});

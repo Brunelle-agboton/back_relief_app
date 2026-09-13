@@ -1,12 +1,14 @@
 import React from "react";
 import { Platform, TouchableOpacity, View, Image, Text, StyleSheet } from "react-native";
-import { Tabs, Stack, useRouter } from "expo-router";
+import { Tabs, Stack, Redirect, useRouter } from "expo-router";
 import { PractitionerProvider } from "@/context/PractitionerContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BackButton from '@/components/BackButton';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { isEnabled } from '@/config/featureFlags';
+import { useAuth } from '@/context/AuthContext';
+import { resolveProAccess } from '@/utils/proAccess';
 const Date= require('@/assets/images/Consultation/Date.svg');
 
 /**
@@ -25,6 +27,25 @@ const Logo = () => (
 
 const ProLayout = () => {
   const router = useRouter();
+  const { authState, isLoading } = useAuth();
+
+  // L'espace praticien ne propose ni déconnexion ni retour vers l'espace
+  // patient : y entrer sans y avoir droit revient à s'y retrouver enfermé.
+  const access = resolveProAccess({
+    isLoading,
+    isAuthenticated: authState.isAuthenticated,
+    role: authState.user?.role,
+  });
+
+  if (access === 'pending') {
+    return <View style={{ flex: 1, backgroundColor: '#F6F7F8' }} />;
+  }
+  if (access === 'anonymous') {
+    return <Redirect href="/_home" />;
+  }
+  if (access === 'patient') {
+    return <Redirect href="/(tabs)" />;
+  }
 
   return (
     <PractitionerProvider>
