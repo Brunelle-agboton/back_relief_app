@@ -21,7 +21,7 @@ services:
       - POSTGRES_HOST
       - POSTGRES_USER
       - POSTGRES_PASSWORD
-      - POSTGRES_DB
+      - POSTGRES_DATABASE
     depends_on:
       db:
         condition: service_healthy
@@ -29,18 +29,16 @@ services:
   db:
     image: postgres
     restart: always
+    env_file:
+      - ./backend/.env
     environment:
-      POSTGRES_HOST: db
-      POSTGRES_USER: backrelief
-      POSTGRES_PASSWORD: password100
-      POSTGRES_DB: healthtracker
-      PGDATA: customDataFolder
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5433:5432"
     volumes:
-      - ./dbData:/var/lib/postgresql/data/customDataFolder
+      - ./dbData:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d healthtracker -U backrelief" ]
+      test: ["CMD-SHELL", "psql -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\" -c 'SELECT 1' >/dev/null" ]
       interval: 5s
       timeout: 5s
       retries: 10
