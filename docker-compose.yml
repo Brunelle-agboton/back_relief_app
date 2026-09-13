@@ -15,32 +15,42 @@ services:
       # installées dans l'image.
       - /api/node_modules
       - ./front-client/assets/images:/front-client/assets/images:ro
+    # Toute la configuration vient de backend/.env — y compris POSTGRES_HOST,
+    # qui doit valoir `db` (le nom du service) et non `localhost` sous compose.
     env_file:
       - ./backend/.env
-    environment:
-      - POSTGRES_HOST
-      - POSTGRES_USER
-      - POSTGRES_PASSWORD
-      - POSTGRES_DB
     depends_on:
       db:
         condition: service_healthy
         restart: true
   db:
-    image: postgres
+    # Version épinglée : une image `postgres` flottante finit par changer de
+    # version majeure et rend le répertoire de données illisible.
+    image: postgres:17
     restart: always
+    env_file:
+      # Fournit POSTGRES_USER, POSTGRES_PASSWORD et POSTGRES_DB.
+      #
+      # Attention : l'image postgres ne connaît QUE `POSTGRES_DB`. Le backend,
+      # lui, lit `POSTGRES_DATABASE`. Les deux variables doivent exister et
+      # porter la même valeur, sinon l'image crée une base nommée d'après
+      # POSTGRES_USER et le backend cherche une base inexistante.
+      - ./backend/.env
     environment:
-      POSTGRES_HOST: db
-      POSTGRES_USER: backrelief
-      POSTGRES_PASSWORD: password100
-      POSTGRES_DB: healthtracker
-      PGDATA: customDataFolder
+      # Chemin ABSOLU, à l'intérieur du volume monté ci-dessous. Un chemin
+      # relatif est résolu dans le conteneur : les données ne survivent alors
+      # pas à sa suppression.
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5433:5432"
     volumes:
-      - ./dbData:/var/lib/postgresql/data/customDataFolder
+      - ./dbData:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d healthtracker -U backrelief" ]
+      # `pg_isready` renvoie 0 dès que le serveur répond, même si la base
+      # demandée n'existe pas : le backend démarrait alors pour boucler sur
+      # « database does not exist ». Une vraie requête vérifie la base.
+      test:
+        ["CMD-SHELL", "psql -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\" -c 'SELECT 1' >/dev/null"]
       interval: 5s
       timeout: 5s
       retries: 10

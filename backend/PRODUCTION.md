@@ -88,8 +88,9 @@ l'extension `uuid-ossp` dont dépend `uuid_generate_v4()`.
 > en identifiants entiers, elle échouera franchement au lieu de détruire quoi que
 > ce soit. Deux cas :
 >
-> - **base vide ou de démonstration** (cas attendu avant la mise en ligne) :
->   rien à faire, la migration crée tout ;
+> - **base vide ou de démonstration** (cas confirmé pour ce projet : il n'y a
+>   pas encore de base de production, et la base de test est recréée) : rien à
+>   faire, la migration crée tout ;
 > - **base contenant des données réelles à conserver** : la conversion
 >   `integer → uuid` d'une base peuplée est une migration de données à part
 >   entière (ajout des colonnes uuid, remplissage, réécriture de chaque clé
